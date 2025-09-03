@@ -5,6 +5,7 @@ import lombok.Setter;
 
 
 public class AuthReq {
+
     @Getter
     @Setter
     public class joinReqDto{
@@ -24,7 +25,7 @@ public class AuthReq {
     }
     @Getter
     @Setter
-    public class emailReqDto{
+    public static class emailReqDto{
         private String email;
     }
     @Getter

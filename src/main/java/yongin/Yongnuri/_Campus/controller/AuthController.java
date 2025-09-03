@@ -1,41 +1,56 @@
 package yongin.Yongnuri._Campus.controller;
 
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.AuthReq;
+import yongin.Yongnuri._Campus.servise.MailService;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/auth")
+@AllArgsConstructor
 public class AuthController {
+    private final MailService mailService;
+
+    @PostMapping("/checkEmail")
+    public void sendSimpleMailMessage(@RequestBody AuthReq.emailReqDto email) {
+        mailService.sendSimpleMailMessage(email.getEmail());
+    }
+
+    @GetMapping("/html")
+    public void sendMimeMessage() {
+        mailService.sendMimeMessage();
+    }
 
     // 1. 회원가입
     @PostMapping("/join")
-    public ResponseEntity<?> join(@RequestBody AuthReq.joinReqDto request) {
+    public ResponseEntity<?> join(@RequestBody AuthReq.joinReqDto req) {
 
-        if (request.getEmail() == null || request.getPassword() == null || request.getEmailCheck() == null || request.getPasswordCheck() == null) {
+        
+
+        if (Stream.of(req.getEmail(), req.getPassword(), req.getEmailCheck(),
+                        req.getPasswordCheck(), req.getName(), req.getMajor(), req.getNickname())
+                .anyMatch(Objects::isNull)) {
             return ResponseEntity.badRequest().body("데이터 미입력");
         }
-        if () {
-            return ResponseEntity.status(401).body("비밀번호 불일치");
-        }
-        // TODO: 이메일/닉네임 중복 체크 -> 409
-        // TODO: DB 저장
+//        if () {
+//            return ResponseEntity.status(401).body("비밀번호 불일치");
+//        }
 
         return ResponseEntity.ok("회원가입 성공");
     }
 
     // 2. 로그인
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, Object> request) {
-        String email = (String) request.get("email");
-        String password = (String) request.get("password");
+    public ResponseEntity<?> login(@RequestBody AuthReq.loginReqDto req) {
+        String email = req.getEmail();
+        String password = req.getPassword();
 
         if (email == null || password == null) {
             return ResponseEntity.badRequest().body("데이터 미입력");
