@@ -11,7 +11,7 @@ public class AuthReq {
     public class joinReqDto{
         private String email;
         private String name;
-        private String emailCheck;
+//        private String emailCheck;
         private String major;
         private String nickname;
         private String password;
@@ -30,9 +30,9 @@ public class AuthReq {
     }
     @Getter
     @Setter
-    public class verifyReqDto{
-        private String numberCheck;
-        private String numberId;
+    public static class verifyReqDto{
+        private String email;
+        private int number;
     }
     @Getter
     @Setter

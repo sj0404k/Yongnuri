@@ -2,11 +2,13 @@ package yongin.Yongnuri._Campus.domain;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Entity
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
@@ -20,7 +22,7 @@ public class User {
     private Long studentId;
 
     @Column(name = "pass_word")
-    private String passWord;
+    private String password;
 
     @Column(name = "name")
     private String name;
