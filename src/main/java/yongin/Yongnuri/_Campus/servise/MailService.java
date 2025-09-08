@@ -72,6 +72,7 @@ public class MailService {
             Verification verification = Verification.builder()
                     .email(email)
                     .code(code)
+                    .count(+1)
                     .createdAt(LocalDateTime.now())
                     .verified(false)
                     .build();

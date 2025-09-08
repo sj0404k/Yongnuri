@@ -24,7 +24,7 @@ public class Verification {
     private boolean verified;
     //인증 횟수 카운트
     @Column
-    private String count;
+    private int count;
     @Column
     private LocalDateTime createdAt;
 
