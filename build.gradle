@@ -33,6 +33,10 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	// 메일 전송 위한 라이브러리 추가
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+	// ✅ JJWT (JWT 발급 라이브러리)
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JSON 직렬화/역직렬화
 }
 
 tasks.named('test') {
