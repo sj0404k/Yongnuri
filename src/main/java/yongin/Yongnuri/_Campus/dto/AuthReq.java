@@ -47,7 +47,7 @@ public class AuthReq {
     @NoArgsConstructor
     public static class resetPasswordReqDto {
         private String email;
-        private String emailCheck;
+//        private String emailCheck;
         private String password;
         private String passwordCheck;
     }

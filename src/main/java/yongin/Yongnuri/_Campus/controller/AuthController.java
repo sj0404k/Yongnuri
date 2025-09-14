@@ -1,18 +1,13 @@
 package yongin.Yongnuri._Campus.controller;
 
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.dto.AuthReq;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.repository.VerificationRepository;
-import yongin.Yongnuri._Campus.servise.JoinService;
+import yongin.Yongnuri._Campus.servise.AuthService;
 import yongin.Yongnuri._Campus.servise.MailService;
-
-import java.util.Map;
-import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/auth")
@@ -21,7 +16,7 @@ public class AuthController {
     private final MailService mailService;
     private final UserRepository userRepository;
     private final VerificationRepository verificationRepository;
-    private final JoinService joinService;
+    private final AuthService authService;
     /*
     회원가입
     이메일 인증, 인증 요청 오면 인증번호 확인 -> 인증시 인증번호 db 저장
@@ -34,7 +29,7 @@ public class AuthController {
     // 1. 회원가입 1단 됬나?
     @PostMapping("/join")
     public ResponseEntity<String> join(@RequestBody AuthReq.joinReqDto req) {
-        joinService.join(req);
+        authService.join(req);
         return ResponseEntity.ok("회원가입 성공");
     }
 
@@ -42,7 +37,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthReq.loginReqDto req) {
 
-       return joinService.login(req.getEmail(),req.getPassword());
+       return authService.login(req.getEmail(),req.getPassword());
 //        return ResponseEntity.ok("로그인 성공");
     }
 
@@ -75,23 +70,9 @@ public class AuthController {
 
     // 5. 비밀번호 재설정 -- 아직 안함
     @PostMapping("/resetPassword")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, Object> request) {
-        String email = (String) request.get("email");
-        String newPassword = (String) request.get("newPassword");
-        String passwordConfirm = (String) request.get("passwordConfirm");
-        Boolean emailVerified = (Boolean) request.get("emailVerified");
+    public ResponseEntity<?> resetPassword(@RequestBody AuthReq.resetPasswordReqDto req) {
 
-        if (email == null || newPassword == null || passwordConfirm == null) {
-            return ResponseEntity.badRequest().body("데이터 미입력");
-        }
-        if (!newPassword.equals(passwordConfirm)) {
-            return ResponseEntity.status(401).body("비밀번호 불일치");
-        }
-        if (emailVerified == null || !emailVerified) {
-            return ResponseEntity.status(401).body("이메일 인증 필요");
-        }
-        // TODO: DB에서 비밀번호 업데이트
-
+//        authService.rePassword(req);
         return ResponseEntity.ok("비밀번호 재설정 성공");
     }
 }

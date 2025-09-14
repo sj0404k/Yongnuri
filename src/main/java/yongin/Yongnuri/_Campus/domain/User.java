@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Entity
@@ -20,8 +21,8 @@ public class User {
     @Column(name = "user_id")
     private Long id;
 
-    @Column(name = "student_id")
-    private Long studentId;
+    @Column(name = "student_id",unique = true)
+    private int studentId;
 
     @Column(name = "pass_word")
     private String password;
@@ -29,7 +30,7 @@ public class User {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "email")
+    @Column(name = "email", unique = true)
     private String email;
 
     @Column(name = "nick_name")
@@ -42,6 +43,6 @@ public class User {
     private String status;
 
     @Column(name = "creat_at")
-    private Date creatAt;
+    private LocalDateTime creatAt;
 
 }
