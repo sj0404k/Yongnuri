@@ -42,6 +42,9 @@ public class User {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "role")
+    private String role;
+
     @Column(name = "creat_at")
     private LocalDateTime creatAt;
 

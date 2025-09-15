@@ -34,7 +34,7 @@ dependencies {
 	// 메일 전송 위한 라이브러리 추가
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	//해시 -- 이걸 사용하면 이메일 인증이 안됨
-//	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
 	// ✅ JJWT (JWT 발급 라이브러리)
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'

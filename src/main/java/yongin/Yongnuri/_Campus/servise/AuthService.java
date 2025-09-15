@@ -2,7 +2,7 @@ package yongin.Yongnuri._Campus.servise;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import yongin.Yongnuri._Campus.domain.RefreshToken;
 import yongin.Yongnuri._Campus.domain.User;
@@ -22,7 +22,7 @@ public class AuthService {
     private final MailService mailService;
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
-//    private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     public void join(AuthReq.joinReqDto req) {
         // 1. 필수값 확인
         if (Stream.of(req.getEmail(), req.getPassword(), req.getPasswordCheck(),
@@ -65,11 +65,11 @@ public class AuthService {
             studentId = email.substring(0, atIndex);
         }
         // 6. 비밀번호 해시화
-//        String encodedPassword = passwordEncoder.encode(req.getPassword());
+        String encodedPassword = passwordEncoder.encode(req.getPassword());
         // 6. 회원 저장
         User newUser = User.builder()
                 .email(req.getEmail())
-                .password(req.getPassword())
+                .password(encodedPassword)
                 .studentId(Integer.parseInt(studentId))
                 .name(req.getName())
                 .major(req.getMajor())
@@ -148,6 +148,14 @@ public class AuthService {
         if (!PasswordValidator(req.getPassword())) {
             throw new IllegalArgumentException("비밀번호 형식 불일치");
         }
+        // 6. 비밀번호 해시화
+        String encodedPassword = passwordEncoder.encode(req.getPassword());
+        // 6. 회원 저장
+        User newUser = User.builder()
+                .password(encodedPassword)
+                .build();
+
+        userRepository.save(newUser);
     }
 
     //로그아웃
