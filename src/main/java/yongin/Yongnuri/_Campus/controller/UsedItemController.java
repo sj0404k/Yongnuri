@@ -1,21 +1,20 @@
-// controller/UsedItemController.java
 package yongin.Yongnuri._Campus.controller;
 
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal; // (추가)
+import org.springframework.security.core.annotation.AuthenticationPrincipal; 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable; // (추가)
+import org.springframework.web.bind.annotation.PathVariable; 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam; // (수정) PostMapping, RequestBody 임포트
+import org.springframework.web.bind.annotation.RequestParam; 
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid; // (추가)
+import jakarta.validation.Valid; 
 import lombok.RequiredArgsConstructor;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemResponseDto;
@@ -25,15 +24,15 @@ import yongin.Yongnuri._Campus.servise.UsedItemService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/used-items") // (선택) 공통 경로를 클래스 레벨로 올리는 것을 추천
+@RequestMapping("/used-items") 
 public class UsedItemController {
 
     private final UsedItemService usedItemService;
     private final UserRepository userRepository; 
 
-    /**
-     * GET /used-items (목록 조회)
-     */
+    /*
+      GET /used-items (중고게시판 목록 조회)
+    */
     @GetMapping
     public ResponseEntity<?> getUsedItems(
             @RequestParam(name = "type", defaultValue = "전체") String type,
@@ -43,9 +42,9 @@ public class UsedItemController {
         return ResponseEntity.ok(items);
     }
 
-    /**
-     * GET /used-items/{postId} (상세 조회)
-     */
+    /*
+      GET /used-items/{postId} (중고게시판 상세 조회)
+    */
     @GetMapping("/{postId}")
     public ResponseEntity<?> getUsedItemDetail(
             @PathVariable Long postId,
@@ -55,9 +54,9 @@ public class UsedItemController {
         return ResponseEntity.ok(item); 
     }
 
-    /**
-     * (추가) POST /used-items (중고거래 게시글 작성)
-     */
+    /*
+      POST /used-items (중고거래 게시글 작성)
+    */
     @PostMapping
     public ResponseEntity<?> createUsedItem(
             @AuthenticationPrincipal String email,
@@ -75,7 +74,7 @@ public class UsedItemController {
     public ResponseEntity<?> updateUsedItem(
             @PathVariable Long postId,
             @AuthenticationPrincipal String email,
-            @RequestBody UsedItemUpdateRequestDto requestDto // (수정 DTO)
+            @RequestBody UsedItemUpdateRequestDto requestDto 
     ) {
         Long updatedPostId = usedItemService.updateUsedItem(email, postId, requestDto);
 

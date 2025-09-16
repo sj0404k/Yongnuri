@@ -1,19 +1,19 @@
 package yongin.Yongnuri._Campus.servise;
 
 
-import java.security.SecureRandom;
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
-
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
 import yongin.Yongnuri._Campus.domain.Verification;
 import yongin.Yongnuri._Campus.repository.VerificationRepository;
+
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @Slf4j

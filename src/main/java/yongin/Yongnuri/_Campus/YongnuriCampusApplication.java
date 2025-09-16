@@ -9,9 +9,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 @SpringBootApplication
-@ComponentScan(basePackages = "yongin.Yongnuri._Campus") // <--- 2. 이 줄을 추가
-// (유지) Repository 스캔 경로
-@EnableJpaRepositories(basePackages = "yongin.Yongnuri._Campus.repository") // <--- 3. 이 줄은 유지
+@ComponentScan(basePackages = "yongin.Yongnuri._Campus") 
+
+@EnableJpaRepositories(basePackages = "yongin.Yongnuri._Campus.repository") 
 public class YongnuriCampusApplication {
 
     public static void main(String[] args) {
