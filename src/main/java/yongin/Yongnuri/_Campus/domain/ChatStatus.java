@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -18,7 +20,10 @@ public class ChatStatus {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String message;
-    private String status;
+    private Long chatRoomId;
+    private Long userId;
+    private LocalDateTime firstDate;    // 체팅방 처음 접속일 일단 넣어봤음
+    private LocalDateTime lastDate;     //마지막 체팅 본기록 체팅방 눌렀을때 최신화하기
+    private boolean chatStatus;         //true 채팅방 활성화 // false 비활성화
 
 }

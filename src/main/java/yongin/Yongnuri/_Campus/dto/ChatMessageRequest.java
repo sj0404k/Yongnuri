@@ -11,9 +11,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageRequest {
-    private String roomId;
+    private Long roomId;
     private String sender;
     private String type;
     private String content;
-    private LocalDateTime timestamp;
+    private Long timestamp;
 }

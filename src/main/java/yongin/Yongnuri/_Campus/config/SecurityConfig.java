@@ -32,9 +32,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용 안 함 (JWT)
                 .authorizeHttpRequests(authorize -> authorize
                         // 인증 없이 접근 허용할 API 경로들
-                        .requestMatchers("/auth/mail/**", "/auth/verify/**").permitAll()
-                        .requestMatchers("/auth/**", "/auth/login").permitAll()
-                        .requestMatchers("/mypage/**","/mypage/bookmarks").permitAll()
+                        .requestMatchers("/auth/**").permitAll() // 로그인 전에 사용 가능
+//                        .requestMatchers("/chat/**").authenticated() // 로그인한사람만
+                        .requestMatchers("/chat/**").permitAll() //채팅 테스트용
+                        .requestMatchers("/mypage/**","/mypage/bookmarks").authenticated()
+                        .requestMatchers("/ws-stomp/**").permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 );
 

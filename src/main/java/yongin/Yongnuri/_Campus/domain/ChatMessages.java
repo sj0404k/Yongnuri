@@ -30,7 +30,13 @@ public class ChatMessages {
     private Long id;
 
     private Long chatId;
+    private ChatType  chatType;
     private String message;
-    private String sender;
+    private Long senderId;
     private LocalDateTime createdAt;
+
+    public enum ChatType {
+        이미지,
+        텍스트
+    }
 }

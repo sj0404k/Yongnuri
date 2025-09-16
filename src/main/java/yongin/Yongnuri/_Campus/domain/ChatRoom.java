@@ -1,9 +1,6 @@
 package yongin.Yongnuri._Campus.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,13 +18,21 @@ public class ChatRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private int type;
+    @Enumerated(EnumType.STRING)
+    private ChatType type;
+
     private Long typeId;
     private Long toUserId;
     private Long fromUserId;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private String lastMessage;
-    private int status;
+    private int status;                 //뭐였더라...
 
+    public enum ChatType {
+        전체,
+        중고,
+        분실,
+        공동구매
+    }
 }
