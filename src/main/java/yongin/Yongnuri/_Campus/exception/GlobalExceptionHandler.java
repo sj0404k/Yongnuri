@@ -5,6 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import jakarta.persistence.EntityNotFoundException;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -27,5 +29,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleException(Exception e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("서버 내부 오류 발생: " + e.getMessage());
+    }
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<String> handleEntityNotFound(EntityNotFoundException e) {
+        // "404: 게시글 없음" 같은 메시지를 e.getMessage()로 받아서 클라이언트에 전달
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
     }
 }

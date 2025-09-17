@@ -41,6 +41,9 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // JSON 직렬화/역직렬화
 	// 웹 소켓 채팅 용
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    //만약 오류시 이게 원인
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 }
 
 tasks.named('test') {

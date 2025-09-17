@@ -37,6 +37,12 @@ public class SecurityConfig {
                         .requestMatchers("/chat/**").permitAll() //채팅 테스트용
                         .requestMatchers("/mypage/**","/mypage/bookmarks").authenticated()
                         .requestMatchers("/ws-stomp/**").permitAll()
+                        .requestMatchers("/auth/mail/**", "/auth/verify/**").permitAll()
+                        .requestMatchers("/auth/**", "/auth/login").permitAll()
+                        .requestMatchers("/mypage/**","/mypage/bookmarks").permitAll()
+                        .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
+                        .requestMatchers("/report/**").permitAll()          //마지 할때 권한 변경 필요4
+                        .requestMatchers("/ws-stomp").permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 );
 
