@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/mail/**", "/auth/verify/**").permitAll()
                         .requestMatchers("/auth/**", "/auth/login").permitAll()
                         .requestMatchers("/mypage/**","/mypage/bookmarks").permitAll()
+                        .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 );
 

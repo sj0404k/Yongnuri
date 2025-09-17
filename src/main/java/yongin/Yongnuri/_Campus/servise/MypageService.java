@@ -2,12 +2,14 @@ package yongin.Yongnuri._Campus.servise;
 
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.dto.MypageReq;
 import yongin.Yongnuri._Campus.dto.MypageRes;
 import yongin.Yongnuri._Campus.repository.UserRepository;
+import yongin.Yongnuri._Campus.security.CustomUserDetails;
 
 import java.lang.constant.Constable;
 import java.util.stream.Stream;
@@ -17,8 +19,9 @@ import java.util.stream.Stream;
 public class MypageService {
     private final UserRepository userRepository;
 
-    public MypageRes.getpage getMypageDetails(String token) {
-        User user = userRepository.findByEmail(token)
+    public MypageRes.getpage getMypageDetails(@AuthenticationPrincipal CustomUserDetails token) {
+        System.out.println(token.getUser().getRole());
+        User user = userRepository.findByEmail(token.getUser().getEmail())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "해당 사용자를 찾을 수 없습니다."));
         return new MypageRes.getpage(user.getId(), user.getName(), user.getEmail());
     }

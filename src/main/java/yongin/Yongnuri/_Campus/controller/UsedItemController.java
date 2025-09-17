@@ -20,6 +20,7 @@ import yongin.Yongnuri._Campus.dto.useditem.UsedItemCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemResponseDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemUpdateRequestDto;
 import yongin.Yongnuri._Campus.repository.UserRepository;
+import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.servise.UsedItemService;
 
 @RestController
@@ -36,9 +37,9 @@ public class UsedItemController {
     @GetMapping
     public ResponseEntity<?> getUsedItems(
             @RequestParam(name = "type", defaultValue = "전체") String type,
-            @AuthenticationPrincipal String email
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        List<UsedItemResponseDto> items = usedItemService.getUsedItems(email, type); 
+        List<UsedItemResponseDto> items = usedItemService.getUsedItems(user.getUser().getEmail(), type);
         return ResponseEntity.ok(items);
     }
 
@@ -48,9 +49,9 @@ public class UsedItemController {
     @GetMapping("/{postId}")
     public ResponseEntity<?> getUsedItemDetail(
             @PathVariable Long postId,
-            @AuthenticationPrincipal String email
+            @AuthenticationPrincipal CustomUserDetails user
     ) {
-        UsedItemResponseDto item = usedItemService.getUsedItemDetail(email, postId);
+        UsedItemResponseDto item = usedItemService.getUsedItemDetail(user.getUser().getEmail(), postId);
         return ResponseEntity.ok(item); 
     }
 
@@ -59,10 +60,10 @@ public class UsedItemController {
     */
     @PostMapping
     public ResponseEntity<?> createUsedItem(
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody UsedItemCreateRequestDto requestDto 
     ) {
-        Long newPostId = usedItemService.createUsedItem(email, requestDto);
+        Long newPostId = usedItemService.createUsedItem(user.getUser().getEmail(), requestDto);
 
         // 200: 성공 (생성된 게시글 ID 응답)
         return ResponseEntity.ok(Map.of(
@@ -73,10 +74,10 @@ public class UsedItemController {
     @PatchMapping("/{postId}")
     public ResponseEntity<?> updateUsedItem(
             @PathVariable Long postId,
-            @AuthenticationPrincipal String email,
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody UsedItemUpdateRequestDto requestDto 
     ) {
-        Long updatedPostId = usedItemService.updateUsedItem(email, postId, requestDto);
+        Long updatedPostId = usedItemService.updateUsedItem(user.getUser().getEmail(), postId, requestDto);
 
         // (200: 성공) 수정된 게시글 ID를 응답
         return ResponseEntity.ok(Map.of(

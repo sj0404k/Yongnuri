@@ -32,7 +32,7 @@ public class MypageController {
 //        String email = "202033008@yiu.ac.kr";
         String email = user.getUsername();
  //       String email = jwtProvider.getEmailFromToken(token);
-        MypageRes.getpage mypageInfo = mypageService.getMypageDetails(email);
+        MypageRes.getpage mypageInfo = mypageService.getMypageDetails(user);
         return ResponseEntity.ok(mypageInfo);
     }
     @PostMapping

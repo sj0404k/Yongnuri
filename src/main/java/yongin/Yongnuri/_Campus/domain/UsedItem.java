@@ -20,7 +20,7 @@ import lombok.Setter;
 @Builder 
 @NoArgsConstructor 
 @AllArgsConstructor 
-@Table(name = "중고거래") 
+@Table
 public class UsedItem {
 
     @Id

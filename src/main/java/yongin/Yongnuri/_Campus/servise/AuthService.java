@@ -75,6 +75,7 @@ public class AuthService {
                 .major(req.getMajor())
                 .nickName(req.getNickname())
                 .creatAt(LocalDateTime.now())
+                .role(User.role.유저)
                 .build();
 
         userRepository.save(newUser);
@@ -100,8 +101,8 @@ public class AuthService {
                 .orElseThrow(() -> new SecurityException("가입되지 않은 이메일"));
 
         // 3. 비밀번호 검증
-        // (비밀번호 암호화를 했다면 PasswordEncoder.matches()로 검증)
-        if (!user.getPassword().equals(password)) {
+
+        if (!passwordEncoder.matches(password, user.getPassword())) { // 수정된 부분
             throw new SecurityException("비밀번호 불일치");
         }
 

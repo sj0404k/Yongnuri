@@ -35,7 +35,7 @@ public class JoinService {
 //        }
 
         // 2. 이메일 인증 여부 확인
-        if (!mailService.isVerified(req.getEmail())) {
+        if (!mailService.isEmailVerified(req.getEmail())) {
             throw new SecurityException("이메일 인증 실패");
         }
 

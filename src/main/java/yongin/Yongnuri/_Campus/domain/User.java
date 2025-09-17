@@ -43,9 +43,14 @@ public class User {
     private String status;
 
     @Column(name = "role")
-    private String role;
+    private role role;
 
     @Column(name = "creat_at")
     private LocalDateTime creatAt;
+
+    public enum role {
+        유저,
+        관리자
+    }
 
 }
