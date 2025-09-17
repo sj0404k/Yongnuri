@@ -28,3 +28,25 @@ PATCH http://localhost:8080/used-items/1
     "price": 15000,
     "location": "용오름대학 정문"
 }
+
+분실물 글등록
+POST http://localhost:8080/lost-items
+{
+    "title": "테스트",
+    "content": "테스ㅡㅌ.",
+    "location": "용오름대학",
+    "purpose": "LOST",
+    "status": "REPORTED",
+    "imageUrls": []
+}
+
+분실물 글목록조회
+http://localhost:8080/lost-items
+
+분실물 상세조회
+Get http://localhost:8080/lost-items/2
+
+
+
+
+
