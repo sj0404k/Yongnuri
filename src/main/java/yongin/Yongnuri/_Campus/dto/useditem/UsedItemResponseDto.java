@@ -1,5 +1,7 @@
 package yongin.Yongnuri._Campus.dto.useditem;
 
+import java.time.LocalDateTime;
+
 import lombok.Getter;
 import yongin.Yongnuri._Campus.domain.UsedItem;
 import yongin.Yongnuri._Campus.domain.User;
@@ -14,6 +16,7 @@ public class UsedItemResponseDto {
     private String location;
     private String status;
     private String authorNickname; 
+    private final LocalDateTime createdAt;
 
     // 1. 리스트 조회용 생성자 
     // (중고거래 목록 조회 사용)
@@ -25,6 +28,7 @@ public class UsedItemResponseDto {
         this.status = item.getStatus();
         this.content = null; 
         this.authorNickname = null; 
+        this.createdAt = item.getCreatedAt();
     }
 
     // 2. 상세 조회용 생성자 
@@ -37,5 +41,6 @@ public class UsedItemResponseDto {
         this.location = item.getLocation();
         this.status = item.getStatus();
         this.authorNickname = (author != null) ? author.getNickName() : "(알 수 없음)";
+        this.createdAt = item.getCreatedAt(); //
     }
 }
