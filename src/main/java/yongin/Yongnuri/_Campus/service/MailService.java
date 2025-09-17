@@ -1,4 +1,4 @@
-package yongin.Yongnuri._Campus.servise;
+package yongin.Yongnuri._Campus.service;
 
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;

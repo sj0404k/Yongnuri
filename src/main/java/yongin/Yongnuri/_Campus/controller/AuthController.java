@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.AuthReq;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.repository.VerificationRepository;
-import yongin.Yongnuri._Campus.servise.AuthService;
-import yongin.Yongnuri._Campus.servise.MailService;
+import yongin.Yongnuri._Campus.service.AuthService;
+import yongin.Yongnuri._Campus.service.MailService;
 
 @RestController
 @RequestMapping("/auth")
@@ -26,8 +26,9 @@ public class AuthController {
     회원 정보 저장
     그냥 인증 된거 다 검증하고 db에 저장
      */
+
     // 1. 회원가입 1단 됬나?
-    @PostMapping("/join")
+    @PostMapping("/join")//  !!!!!!!!!!!!!블랙 당한 사람은 재 가입 막기
     public ResponseEntity<String> join(@RequestBody AuthReq.joinReqDto req) {
         authService.join(req);
         return ResponseEntity.ok("회원가입 성공");

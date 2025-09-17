@@ -1,4 +1,4 @@
-package yongin.Yongnuri._Campus.servise.specification;
+package yongin.Yongnuri._Campus.service.specification;
 
 import org.springframework.data.jpa.domain.Specification;
 import java.util.List;

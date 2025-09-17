@@ -36,7 +36,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**", "/auth/login").permitAll()
                         .requestMatchers("/mypage/**","/mypage/bookmarks").permitAll()
                         .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
-                        .requestMatchers("/reoprt/**").permitAll()          //마지 할때 권한 변경 필요
+                        .requestMatchers("/report/**").permitAll()          //마지 할때 권한 변경 필요4
+                        .requestMatchers("/ws-stomp").permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 );
 

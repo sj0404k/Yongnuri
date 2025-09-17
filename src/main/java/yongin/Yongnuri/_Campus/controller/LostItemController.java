@@ -6,7 +6,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemResponseDto;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
-import yongin.Yongnuri._Campus.servise.LostItemService;
+import yongin.Yongnuri._Campus.service.LostItemService;
 import java.util.List;
 import java.util.Map; 
 import jakarta.validation.Valid; 

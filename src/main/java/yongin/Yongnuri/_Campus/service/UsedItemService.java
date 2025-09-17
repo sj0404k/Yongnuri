@@ -1,4 +1,4 @@
-package yongin.Yongnuri._Campus.servise;
+package yongin.Yongnuri._Campus.service;
 
 import yongin.Yongnuri._Campus.domain.Image; 
 import yongin.Yongnuri._Campus.domain.User;
@@ -8,7 +8,7 @@ import yongin.Yongnuri._Campus.repository.ImageRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.repository.UsedItemRepository;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemResponseDto;
-import yongin.Yongnuri._Campus.servise.specification.BoardSpecification;
+import yongin.Yongnuri._Campus.service.specification.BoardSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional; 
 

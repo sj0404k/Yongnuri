@@ -21,7 +21,7 @@ import yongin.Yongnuri._Campus.dto.useditem.UsedItemResponseDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemUpdateRequestDto;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
-import yongin.Yongnuri._Campus.servise.UsedItemService;
+import yongin.Yongnuri._Campus.service.UsedItemService;
 
 @RestController
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package yongin.Yongnuri._Campus.servise;
+package yongin.Yongnuri._Campus.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
