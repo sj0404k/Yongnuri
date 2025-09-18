@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam; 
 import org.springframework.web.bind.annotation.RestController;
-
 import jakarta.validation.Valid; 
 import lombok.RequiredArgsConstructor;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemCreateRequestDto;
@@ -22,6 +21,7 @@ import yongin.Yongnuri._Campus.dto.useditem.UsedItemUpdateRequestDto;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.UsedItemService;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -61,21 +61,20 @@ public class UsedItemController {
     @PostMapping
     public ResponseEntity<?> createUsedItem(
             @AuthenticationPrincipal CustomUserDetails user,
-            @Valid @RequestBody UsedItemCreateRequestDto requestDto 
+            @Valid @RequestBody UsedItemCreateRequestDto requestDto
     ) {
         Long newPostId = usedItemService.createUsedItem(user.getUser().getEmail(), requestDto);
 
-        // 200: 성공 (생성된 게시글 ID 응답)
         return ResponseEntity.ok(Map.of(
-            "message", "게시글 작성 성공",
-            "postId", newPostId
+                "message", "게시글 작성 성공",
+                "postId", newPostId
         ));
     }
     @PatchMapping("/{postId}")
     public ResponseEntity<?> updateUsedItem(
             @PathVariable Long postId,
             @AuthenticationPrincipal CustomUserDetails user,
-            @RequestBody UsedItemUpdateRequestDto requestDto 
+            @RequestBody UsedItemUpdateRequestDto requestDto
     ) {
         Long updatedPostId = usedItemService.updateUsedItem(user.getUser().getEmail(), postId, requestDto);
 

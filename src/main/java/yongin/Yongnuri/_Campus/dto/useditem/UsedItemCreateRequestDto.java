@@ -33,9 +33,9 @@ public class UsedItemCreateRequestDto {
     private Integer price;
 
     
-    private List<String> imageUrls; 
+    private List<String> imageUrls;
 
-    
+
     public UsedItem toEntity(Long authorId) {
         return UsedItem.builder()
                 .userId(authorId)
@@ -45,8 +45,8 @@ public class UsedItemCreateRequestDto {
                 .method(this.method)
                 .status(this.status)
                 .price(this.price)
-                .isImages(this.imageUrls != null && !this.imageUrls.isEmpty()) 
-                .createdAt(LocalDateTime.now()) 
+                .isImages(this.imageUrls != null && !this.imageUrls.isEmpty()) // 내부에서 계산
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 }

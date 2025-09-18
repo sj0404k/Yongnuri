@@ -12,7 +12,8 @@ import java.util.Map;
 import jakarta.validation.Valid; 
 import org.springframework.web.bind.annotation.*; 
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemCreateRequestDto;
-import yongin.Yongnuri._Campus.dto.lostitem.LostItemUpdateRequestDto; 
+import yongin.Yongnuri._Campus.dto.lostitem.LostItemUpdateRequestDto;
+
 
 
 @RestController
@@ -54,8 +55,8 @@ public class LostItemController {
     ) {
         Long newPostId = lostItemService.createLostItem(user.getUser().getEmail(), requestDto);
         return ResponseEntity.ok(Map.of(
-            "message", "게시글 작성 성공",
-            "postId", newPostId
+                "message", "게시글 작성 성공",
+                "postId", newPostId
         ));
     }
     /*
