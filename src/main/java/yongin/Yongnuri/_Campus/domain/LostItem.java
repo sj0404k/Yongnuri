@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Setter // 간단한 예시를 위해 Setter 사용
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

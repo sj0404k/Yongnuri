@@ -21,6 +21,8 @@ public class LostItemResponseDto {
     private final List<ImageDto> images;
     @Setter
     private String thumbnailUrl;
+    @Setter
+    private boolean isBookmarked;
 
     public LostItemResponseDto(LostItem item) {
         this.id = item.getId();
@@ -33,6 +35,7 @@ public class LostItemResponseDto {
         this.createdAt = item.getCreatedAt();
         this.authorNickname = null;
         this.images = null;
+        this.isBookmarked = false;
     }
 
     public LostItemResponseDto(LostItem item, List<Image> images) {
@@ -45,5 +48,6 @@ public class LostItemResponseDto {
         this.createdAt = item.getCreatedAt();
         this.authorNickname = item.getUser().getNickName();
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());
+        this.isBookmarked = false;
     }
 }

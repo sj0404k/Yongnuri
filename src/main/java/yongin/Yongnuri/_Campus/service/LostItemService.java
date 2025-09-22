@@ -2,6 +2,7 @@ package yongin.Yongnuri._Campus.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,12 +12,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import yongin.Yongnuri._Campus.domain.Bookmark;
 import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.LostItem;
 import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemResponseDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemUpdateRequestDto;
+import yongin.Yongnuri._Campus.repository.BookmarkRepository;
 import yongin.Yongnuri._Campus.repository.ImageRepository;
 import yongin.Yongnuri._Campus.repository.LostItemRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
@@ -29,6 +32,7 @@ public class LostItemService {
     private final BlockService blockService; 
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
+    private final BookmarkRepository bookmarkRepository;
     @Value("${file.upload-dir}")
     private String uploadDir;
     private User getUserByEmail(String email) {
@@ -40,8 +44,9 @@ public class LostItemService {
      분실물 게시글 목록 조회 
     */
     public List<LostItemResponseDto> getLostItems(String email, String type) {
-        Long currentUserId = getUserByEmail(email).getId();
-        List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUserId);
+        User currentUser = getUserByEmail(email);
+        List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
+
         List<LostItem> allItems = lostItemRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
         Stream<LostItem> stream = allItems.stream()
                 .filter(item -> !blockedUserIds.contains(item.getUser().getId()));
@@ -54,31 +59,35 @@ public class LostItemService {
             return List.of();
         }
 
+        List<Long> postIds = items.stream().map(LostItem::getId).collect(Collectors.toList());
+
+        List<Bookmark> myBookmarks = bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(
+                currentUser.getId(), "LOST_ITEM", postIds);
+        Set<Long> myBookmarkedPostIds = myBookmarks.stream()
+                .map(Bookmark::getPostId).collect(Collectors.toSet());
+
         List<Long> postIdsWithImages = items.stream()
                 .filter(item -> Boolean.TRUE.equals(item.getIsImages()))
                 .map(LostItem::getId)
                 .collect(Collectors.toList());
-
-
         List<Image> thumbnails = imageRepository.findByTypeAndTypeIdInAndSequence("LOST_ITEM", postIdsWithImages, 1);
-
-
         Map<Long, String> thumbnailMap = thumbnails.stream()
                 .collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
-
 
         return items.stream()
                 .map(item -> {
                     LostItemResponseDto dto = new LostItemResponseDto(item);
                     dto.setThumbnailUrl(thumbnailMap.get(item.getId()));
+                    dto.setBookmarked(myBookmarkedPostIds.contains(item.getId()));
                     return dto;
                 })
                 .collect(Collectors.toList());
     }
     //상세조회
     public LostItemResponseDto getLostItemDetail(String email, Long postId) {
-        Long currentUserId = getUserByEmail(email).getId();
-        List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUserId);
+        User currentUser = getUserByEmail(email);
+        List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
+
         LostItem item = lostItemRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
 
@@ -91,7 +100,13 @@ public class LostItemService {
             images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("LOST_ITEM", postId);
         }
 
-        return new LostItemResponseDto(item, images);
+        LostItemResponseDto dto = new LostItemResponseDto(item, images);
+
+        boolean isBookmarked = bookmarkRepository.existsByUserIdAndPostTypeAndPostId(
+                currentUser.getId(), "LOST_ITEM", postId);
+        dto.setBookmarked(isBookmarked);
+
+        return dto;
     }
     /* 
      분실물 게시글 작성

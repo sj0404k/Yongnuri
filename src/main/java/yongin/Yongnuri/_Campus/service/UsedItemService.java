@@ -1,10 +1,13 @@
 package yongin.Yongnuri._Campus.service;
 
-import yongin.Yongnuri._Campus.domain.Image; 
+import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.domain.UsedItem;
-import yongin.Yongnuri._Campus.dto.useditem.UsedItemCreateRequestDto; 
-import yongin.Yongnuri._Campus.repository.ImageRepository; 
+import yongin.Yongnuri._Campus.domain.Bookmark;
+import yongin.Yongnuri._Campus.dto.useditem.UsedItemCreateRequestDto;
+import yongin.Yongnuri._Campus.repository.BookmarkRepository;
+import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
+import yongin.Yongnuri._Campus.repository.ImageRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.repository.UsedItemRepository;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemResponseDto;
@@ -16,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.security.access.AccessDeniedException; 
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemUpdateRequestDto;
@@ -30,6 +34,7 @@ public class UsedItemService {
     private final BlockService blockService;
     private final UserRepository userRepository; 
     private final ImageRepository imageRepository;
+    private final BookmarkRepository bookmarkRepository;
     @Value("${file.upload-dir}")
     private String uploadDir;
 
@@ -37,36 +42,38 @@ public class UsedItemService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("사용자 정보를 찾을 수 없습니다."));
     }
-
+    //게시글목록조회
     public List<UsedItemResponseDto> getUsedItems(String email, String type) {
-        Long currentUserId = getUserByEmail(email).getId();
-        List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUserId);
+        User currentUser = getUserByEmail(email);
+        List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
         Specification<UsedItem> spec = BoardSpecification.notBlocked(blockedUserIds);
         if (!"전체".equals(type)) {
             spec = spec.and(BoardSpecification.hasLocation(type));
         }
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
-
         List<UsedItem> items = usedItemRepository.findAll(spec, sort);
         if (items.isEmpty()) {
             return List.of();
         }
+        List<Long> postIds = items.stream().map(UsedItem::getId).collect(Collectors.toList());
 
-        List<Long> postIds = items.stream()
-                .filter(UsedItem::getIsImages)
-                .map(UsedItem::getId)
-                .collect(Collectors.toList());
+        List<Bookmark> myBookmarks = bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "USED_ITEM", postIds);
+        Set<Long> myBookmarkedPostIds = myBookmarks.stream().map(Bookmark::getPostId).collect(Collectors.toSet());
 
-        List<Image> thumbnails = imageRepository.findByTypeAndTypeIdInAndSequence("USED_ITEM", postIds, 1);
+        List<BookmarkCountDto> bookmarkCounts = bookmarkRepository.countByPostTypeAndPostIdIn("USED_ITEM", postIds);
+        Map<Long, Long> bookmarkCountMap = bookmarkCounts.stream()
+                .collect(Collectors.toMap(BookmarkCountDto::getPostId, BookmarkCountDto::getCount));
 
-
-        Map<Long, String> thumbnailMap = thumbnails.stream()
-                .collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
+        List<Long> postIdsWithImages = items.stream().filter(UsedItem::getIsImages).map(UsedItem::getId).collect(Collectors.toList());
+        List<Image> thumbnails = imageRepository.findByTypeAndTypeIdInAndSequence("USED_ITEM", postIdsWithImages, 1);
+        Map<Long, String> thumbnailMap = thumbnails.stream().collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
 
         return items.stream()
                 .map(item -> {
                     UsedItemResponseDto dto = new UsedItemResponseDto(item);
                     dto.setThumbnailUrl(thumbnailMap.get(item.getId()));
+                    dto.setBookmarked(myBookmarkedPostIds.contains(item.getId()));
+                    dto.setBookmarkCount(bookmarkCountMap.getOrDefault(item.getId(), 0L));
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -74,8 +81,8 @@ public class UsedItemService {
 
     // 게시글 상세 조회 
     public UsedItemResponseDto getUsedItemDetail(String email, Long postId) {
-        Long currentUserId = getUserByEmail(email).getId();
-        List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUserId);
+        User currentUser = getUserByEmail(email);
+        List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
         UsedItem item = usedItemRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
         Long authorId = item.getUserId();
@@ -88,7 +95,12 @@ public class UsedItemService {
         if (Boolean.TRUE.equals(item.getIsImages())) {
             images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("USED_ITEM", postId);
         }
-        return new UsedItemResponseDto(item, author,images);
+
+        UsedItemResponseDto dto = new UsedItemResponseDto(item, author, images);
+        boolean isBookmarked = bookmarkRepository.existsByUserIdAndPostTypeAndPostId(currentUser.getId(), "USED_ITEM", postId);
+        dto.setBookmarked(isBookmarked);
+
+        return dto;
     }
 
     /*
