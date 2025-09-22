@@ -75,7 +75,7 @@ public class AuthService {
                 .major(req.getMajor())
                 .nickName(req.getNickname())
                 .creatAt(LocalDateTime.now())
-                .role(User.role.유저)
+                .role(User.role.user)
                 .build();
 
         userRepository.save(newUser);

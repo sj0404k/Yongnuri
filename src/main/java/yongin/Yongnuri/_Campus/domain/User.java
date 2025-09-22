@@ -49,8 +49,8 @@ public class User {
     private LocalDateTime creatAt;
 
     public enum role {
-        유저,
-        관리자
+        user,
+        amdin
     }
 
 }
