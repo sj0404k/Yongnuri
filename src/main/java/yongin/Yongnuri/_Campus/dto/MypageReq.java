@@ -9,8 +9,15 @@ public class MypageReq {
     @Setter
     @AllArgsConstructor
     public static class setpage {
-        private int studentId;
+//        private int studentId;
         private String nickName;
-        private String email;
+//        private String email;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    public static class blocks {
+        private Long blockedId;
     }
 }

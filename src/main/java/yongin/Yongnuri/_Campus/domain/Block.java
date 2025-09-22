@@ -7,9 +7,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "blocks") 
+@Table(name = "blocks")
+@Builder
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Block {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,10 +27,7 @@ public class Block {
 
     @Column(name = "blocked_id") // 차단당한 유저
     private Long blockedId;
-    
-    public Long getBlockedId() {
-        return this.blockedId;
-    }
-    
-    protected Block() {}
+
+    @Column
+    private LocalDateTime createdDate;
 }
