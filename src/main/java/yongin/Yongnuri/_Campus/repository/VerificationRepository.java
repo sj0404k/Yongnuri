@@ -16,4 +16,6 @@ public interface VerificationRepository extends JpaRepository<Verification, Long
     List<Verification> findByCreatedAtBefore(LocalDateTime time);
 
     Optional<Verification> findTopByEmailOrderByCreatedAtDesc(String email);
+
+    void deleteByCreatedAtBefore(LocalDateTime expirationThreshold);
 }
