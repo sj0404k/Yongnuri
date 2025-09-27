@@ -1,10 +1,14 @@
 package yongin.Yongnuri._Campus.admin;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import yongin.Yongnuri._Campus.domain.Image;
+import yongin.Yongnuri._Campus.domain.Notice;
 import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.dto.admin.AdminReportIdRes;
@@ -13,7 +17,10 @@ import yongin.Yongnuri._Campus.dto.admin.AdminReq;
 import yongin.Yongnuri._Campus.dto.admin.UserInfoRes;
 import yongin.Yongnuri._Campus.repository.ReportRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
-
+import yongin.Yongnuri._Campus.repository.NoticeRepository;
+import yongin.Yongnuri._Campus.repository.ImageRepository;
+import yongin.Yongnuri._Campus.domain.Notice;
+import yongin.Yongnuri._Campus.repository.BookMarksRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +31,9 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
+    private final NoticeRepository noticeRepository;
+    private final ImageRepository imageRepository;
+    private final BookMarksRepository bookmarkRepository;
 
     public List<AdminReportRes2> getReportList1(String email) {
         // 1. 관리자 확인
@@ -211,5 +221,65 @@ public class AdminService {
                 .reason(report.getReason())
                 .content(report.getContent())                     // 신고 내용
                 .build();
+    }
+
+    // 공지사항 작성
+    @Transactional
+    private User getAdminUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
+
+        if (user.getRole() != User.Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
+        }
+        return user;
+    }
+    public Long createNotice(String adminEmail, AdminReq.NoticeCreateReqDto requestDto) { // <-- 타입을 NoticeCreateReqDto로 변경
+        User admin = getAdminUser(adminEmail);
+
+        Notice newNotice = Notice.builder()
+                .author(admin)
+                .title(requestDto.getTitle())
+                .content(requestDto.getContent())
+                .status(Notice.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()))
+                .link(requestDto.getLink())
+                .startDate(requestDto.getStartDate())
+                .endDate(requestDto.getEndDate())
+                .isImages(requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty())
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Notice savedNotice = noticeRepository.save(newNotice);
+        Long newPostId = savedNotice.getId();
+
+        if (savedNotice.getIsImages()) {
+            int sequence = 1;
+            for (String url : requestDto.getImageUrls()) {
+                imageRepository.save(Image.builder().type("NOTICE").typeId(newPostId).imageUrl(url).sequence(sequence++).build());
+            }
+        }
+        return newPostId;
+    }
+
+     //공지사항 수정
+     @Transactional
+     public void updateNotice(AdminReq.NoticeUpdateReqDto requestDto) {
+         Notice notice = noticeRepository.findById(requestDto.getNoticeId())
+                 .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
+         if(requestDto.getTitle() != null) notice.setTitle(requestDto.getTitle());
+         if(requestDto.getContent() != null) notice.setContent(requestDto.getContent());
+         if(requestDto.getStatus() != null) notice.setStatus(Notice.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()));
+         if(requestDto.getLink() != null) notice.setLink(requestDto.getLink());
+         if(requestDto.getStartDate() != null) notice.setStartDate(requestDto.getStartDate());
+         if(requestDto.getEndDate() != null) notice.setEndDate(requestDto.getEndDate());
+
+     }
+     //공지사항 삭제
+     @Transactional
+    public void deleteNotice(Long noticeId) {
+        Notice notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
+
+        notice.setStatus(Notice.NoticeStatus.DELETED);
     }
 }

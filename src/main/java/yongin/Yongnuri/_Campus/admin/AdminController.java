@@ -9,8 +9,9 @@ import yongin.Yongnuri._Campus.dto.admin.AdminReportIdRes;
 import yongin.Yongnuri._Campus.dto.admin.AdminReq;
 import yongin.Yongnuri._Campus.dto.admin.UserInfoRes;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
-
+import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/admin")
@@ -72,6 +73,40 @@ public class AdminController {
         }
     }
 
+     //공지홍보 게시글 작성
+
+    @PostMapping("/board")
+    public ResponseEntity<?> createNotice(
+            @AuthenticationPrincipal CustomUserDetails user,
+            // (수정) NoticeCreateReqDto를 사용합니다.
+            @Valid @RequestBody AdminReq.NoticeCreateReqDto requestDto) {
+        Long noticeId = adminService.createNotice(user.getUser().getEmail(), requestDto);
+        return ResponseEntity.ok(Map.of("message", "공지사항 작성 성공", "noticeId", noticeId));
+    }
+
+   //공지홍보 게시글 수정
+
+    @PatchMapping("/board/rectify")
+    public ResponseEntity<?> updateNotice(
+            @Valid @RequestBody AdminReq.NoticeUpdateReqDto requestDto) {
+        adminService.updateNotice(requestDto);
+        return ResponseEntity.ok("공지사항 수정 성공");
+    }
+
+
+     //공지홍보 게시글 삭제
+    @DeleteMapping("/board")
+    public ResponseEntity<?> deleteNotice(@RequestParam("id") Long noticeId) {
+        adminService.deleteNotice(noticeId);
+        return ResponseEntity.ok("공지사항 삭제 성공");
+    }
+
+
+//    /**신고 내역 자세히 보기 */
+//    @GetMapping("/report/{reportId}")
+//    public ResponseEntity<?> getReportDetail(@AuthenticationPrincipal CustomUserDetails user) {
+//        return ResponseEntity.ok(adminService.getReportDetail(reportId));
+//    }
     /**신고 내역 자세히 보기 */
     @GetMapping("/report/{reportId}")
     public ResponseEntity<AdminReportIdRes> getReportDetail(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long reportId) {
