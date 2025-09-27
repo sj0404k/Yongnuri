@@ -15,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Setter // 간단한 예시를 위해 Setter 사용
@@ -44,6 +46,7 @@ public class LostItem {
 
     private String location;
 
+    private LocalDateTime createdAt;
     // created_at, updated_at 등 타임스탬프 필드 (BaseEntity 등으로 분리하는 것이 좋음)
 
     public enum ItemPurpose {
