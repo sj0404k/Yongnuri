@@ -2,10 +2,8 @@ package yongin.Yongnuri._Campus.dto.bookmark;
 
 import lombok.Builder;
 import lombok.Getter;
-import yongin.Yongnuri._Campus.domain.Bookmark;
-import yongin.Yongnuri._Campus.domain.LostItem;
-import yongin.Yongnuri._Campus.domain.UsedItem;
-import yongin.Yongnuri._Campus.domain.GroupBuy;
+import yongin.Yongnuri._Campus.domain.*;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -44,6 +42,16 @@ public class BookmarkResponseDto {
                 .bookmarkId(bookmark.getId())
                 .postId(item.getId())
                 .postType("GROUP_BUY")
+                .title(item.getTitle())
+                .thumbnailUrl(thumbnailUrl)
+                .bookmarkedAt(bookmark.getCreatedAt())
+                .build();
+    }
+    public static BookmarkResponseDto from(Notice item, String thumbnailUrl, Bookmark bookmark) {
+        return BookmarkResponseDto.builder()
+                .bookmarkId(bookmark.getId())
+                .postId(item.getId())
+                .postType("NOTICE")
                 .title(item.getTitle())
                 .thumbnailUrl(thumbnailUrl)
                 .bookmarkedAt(bookmark.getCreatedAt())

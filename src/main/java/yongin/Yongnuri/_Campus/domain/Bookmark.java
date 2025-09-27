@@ -20,15 +20,15 @@ public class Bookmark {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column( nullable = false)
+    @Column
     private Long userId;
 
-    @Column( nullable = false)
+    @Column
     private String postType; // "USED_ITEM", "LOST_ITEM"
 
-    @Column(nullable = false)
+    @Column
     private Long postId;
     @CreationTimestamp
-    @Column(updatable = false)
+    @Column
     private LocalDateTime createdAt;
 }

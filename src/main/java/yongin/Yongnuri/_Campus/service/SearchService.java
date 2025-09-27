@@ -5,17 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.config.TimeUtils;
-import yongin.Yongnuri._Campus.domain.LostItem;
-import yongin.Yongnuri._Campus.domain.Search;
-import yongin.Yongnuri._Campus.domain.UsedItem;
-import yongin.Yongnuri._Campus.domain.User;
+import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.dto.SearchBoard;
 import yongin.Yongnuri._Campus.dto.SearchReq;
 import yongin.Yongnuri._Campus.dto.SearchRes;
-import yongin.Yongnuri._Campus.repository.LostItemRepository;
-import yongin.Yongnuri._Campus.repository.SearchRepository;
-import yongin.Yongnuri._Campus.repository.UsedItemRepository;
-import yongin.Yongnuri._Campus.repository.UserRepository;
+import yongin.Yongnuri._Campus.repository.*;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -31,6 +25,8 @@ public class SearchService {
     private final SearchRepository searchRepository;
     private final LostItemRepository lostItemRepository;
     private final UsedItemRepository usedItemRepository;
+    private final NoticeRepository noticeRepository;
+    private final GroupBuyRepository groupbuyRepository;
 
     public boolean deleteAllHistory(String email) {
         User user = userRepository.findByEmail(email)
@@ -81,7 +77,8 @@ public class SearchService {
         // 1차: 키워드 포함 검색
         List<LostItem> lostItems = lostItemRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
         List<UsedItem> usedItems = usedItemRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
-
+        List<Notice> notices = noticeRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
+        List<GroupBuy> groupBuys = groupbuyRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
         // 변환 및 결과 합치기
         List<SearchBoard> lostResults = lostItems.stream()
                 .map(item -> SearchBoard.builder()
@@ -107,10 +104,39 @@ public class SearchService {
                         .build())
                 .toList();
 
+        List<SearchBoard> noticeResults = notices.stream()
+                .map(item -> SearchBoard.builder()
+                        .id(item.getId())
+                        .title(item.getTitle())
+                        .location(null)
+                        .price(null)
+                        .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
+                        .boardType("공지홍보")
+                        .like(0)
+                        .build())
+                .toList();
 
-        return Stream.concat(lostResults.stream(), usedResults.stream())
+        List<SearchBoard> groupResults = groupBuys.stream()
+                .map(item -> SearchBoard.builder()
+                        .id(item.getId())
+                        .title(item.getTitle())
+                        .location(null)
+                        .price(null)
+                        .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
+                        .boardType("공동구매")
+                        .like(0)
+                        .build())
+                .toList();
+        return Stream.of(lostResults, usedResults, noticeResults, groupResults)
+                .flatMap(List::stream) // 각 리스트를 스트림으로 변환하여 하나의 스트림으로 연결
                 .sorted(Comparator.comparing(SearchBoard::getCreatedAt).reversed())
                 .toList();
+        /**
+         return Stream.concat(lostResults.stream(), usedResults.stream(),noticeResults.stream(), groupResults.stream())
+                .sorted(Comparator.comparing(SearchBoard::getCreatedAt).reversed())
+                .toList();
+         */
+
     }
 
 
