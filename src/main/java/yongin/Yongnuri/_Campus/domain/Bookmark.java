@@ -13,22 +13,22 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "bookmarks")
+@Table
 public class Bookmark {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column( nullable = false)
     private Long userId;
 
-    @Column(name = "post_type", nullable = false)
+    @Column( nullable = false)
     private String postType; // "USED_ITEM", "LOST_ITEM"
 
-    @Column(name = "post_id", nullable = false)
+    @Column(nullable = false)
     private Long postId;
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
+    @Column(updatable = false)
     private LocalDateTime createdAt;
 }

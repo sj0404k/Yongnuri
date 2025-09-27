@@ -26,21 +26,21 @@ public class NoticeResponseDto {
     private boolean isBookmarked;
 
     // 목록 조회
-    public NoticeResponseDto(Notice item) {
+    public NoticeResponseDto(Notice item, String nickName) {
         this.id = item.getId();
         this.title = item.getTitle();
         this.link = item.getLink();
         this.startDate = item.getStartDate();
         this.endDate = item.getEndDate();
         this.createdAt = item.getCreatedAt();
-        this.authorNickname = item.getAuthor().getNickName();
+        this.authorNickname = nickName;
         // 목록에서는 content와 images 제외
         this.content = null;
         this.images = null;
     }
 
     // 상세 조회
-    public NoticeResponseDto(Notice item, List<Image> images) {
+    public NoticeResponseDto(Notice item, List<Image> images, String nickName) {
         this.id = item.getId();
         this.title = item.getTitle();
         this.content = item.getContent();
@@ -48,7 +48,7 @@ public class NoticeResponseDto {
         this.startDate = item.getStartDate();
         this.endDate = item.getEndDate();
         this.createdAt = item.getCreatedAt();
-        this.authorNickname = item.getAuthor().getNickName();
+        this.authorNickname = nickName;
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());
     }
 }
