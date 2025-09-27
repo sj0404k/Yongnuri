@@ -6,17 +6,14 @@ import org.springframework.transaction.annotation.Transactional;
 import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkRequestDto;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkResponseDto;
-import yongin.Yongnuri._Campus.repository.BookmarkRepository;
-import yongin.Yongnuri._Campus.repository.UsedItemRepository;
-import yongin.Yongnuri._Campus.repository.LostItemRepository;
-import yongin.Yongnuri._Campus.repository.GroupBuyRepository;
+import yongin.Yongnuri._Campus.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import yongin.Yongnuri._Campus.repository.ImageRepository;
+
 @Service
 @RequiredArgsConstructor
 public class BookmarkService {
@@ -25,6 +22,7 @@ public class BookmarkService {
     private final UsedItemRepository usedItemRepository;
     private final LostItemRepository lostItemRepository;
     private final GroupBuyRepository groupBuyRepository;
+    private final NoticeRepository noticeRepository;
     private final ImageRepository imageRepository;
 //관심목록추가
     @Transactional
@@ -42,6 +40,9 @@ public class BookmarkService {
                 break;
             case "GROUP_BUY":
                 postExists = groupBuyRepository.existsById(postId);
+                break;
+            case "NOTICE":
+                postExists = noticeRepository.existsById(postId);
                 break;
 
         }
@@ -128,6 +129,20 @@ public class BookmarkService {
                     })
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+        }else if ("NOTICE".equals(postType)) {
+                Map<Long, Notice> itemMap = noticeRepository.findAllById(postIds).stream()
+                        .collect(Collectors.toMap(Notice::getId, item -> item));
+                Map<Long, String> thumbnailMap = imageRepository.findByTypeAndTypeIdInAndSequence("NOTICE", postIds, 1).stream()
+                        .collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
+                return bookmarks.stream()
+                        .map(bookmark -> {
+                            Notice item = itemMap.get(bookmark.getPostId());
+                            if (item == null) return null;
+                            String thumbnailUrl = thumbnailMap.get(item.getId());
+                            return BookmarkResponseDto.from(item, thumbnailUrl, bookmark);
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
         }
 
         return List.of();
