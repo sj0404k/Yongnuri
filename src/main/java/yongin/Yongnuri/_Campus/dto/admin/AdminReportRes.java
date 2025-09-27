@@ -22,10 +22,10 @@ public class AdminReportRes {
     private String major;
     private Long reportId;
     private Long reportedId;
-    private Reports.ChatType postType;
-    private Long postId;
+
     private String reason;
     private String content;
     private LocalDateTime processedAt;
     private Reports.ReportStatus status;
+
 }

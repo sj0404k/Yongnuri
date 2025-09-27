@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.domain.User;
+import yongin.Yongnuri._Campus.dto.admin.AdminReportIdRes;
 import yongin.Yongnuri._Campus.dto.admin.AdminReportRes;
 import yongin.Yongnuri._Campus.dto.admin.AdminReq;
 import yongin.Yongnuri._Campus.dto.admin.UserInfoRes;
@@ -24,6 +25,39 @@ public class AdminService {
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
 
+    public List<AdminReportRes2> getReportList1(String email) {
+        // 1. 관리자 확인
+        User admin = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
+
+        if (!User.Role.ADMIN.equals(admin.getRole())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
+        }
+
+        // 2. 모든 신고 조회
+        List<Reports> reports = reportRepository.findAll();
+
+        // 3. DTO 변환
+        return reports.stream()
+                .map(report -> {
+                    User reportedUser = userRepository.findById(report.getReportedId())
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
+
+                    String truncatedContent = report.getContent();
+                    if (truncatedContent != null && truncatedContent.length() > 30) {
+                        truncatedContent = truncatedContent.substring(0, 30) + "..."; // 잘린 표시
+                    }
+
+                    return AdminReportRes2.builder()
+                            .id(report.getId())
+                            .reportedStudentId(reportedUser.getStudentId())
+                            .reportedStudentName(reportedUser.getName())
+                            .content(truncatedContent)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+    }
     public List<AdminReportRes> getReportList(String email) {
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
@@ -158,5 +192,24 @@ public class AdminService {
         reportRepository.saveAll(reports);
 
         return true; // 성공적으로 처리됨
+    }
+
+    public AdminReportIdRes getReportDetail(Long reportId) {
+        // 1. 신고 조회
+        Reports report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."));
+
+        // 2. 피신고 유저 조회
+        User reportedUser = userRepository.findById(report.getReportedId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
+
+        // 3. DTO 변환
+        return AdminReportIdRes.builder()
+                .id(report.getId())
+                .reportedStudentId(reportedUser.getStudentId())   // User 엔티티의 학번
+                .reportedStudentName(reportedUser.getName())      // User 엔티티의 이름
+                .reason(report.getReason())
+                .content(report.getContent())                     // 신고 내용
+                .build();
     }
 }

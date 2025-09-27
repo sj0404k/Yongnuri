@@ -13,7 +13,7 @@ public class ReportReq {
         private Long reportedId;
         private Reports.ChatType postType;
         private Long postId;
-        private String reason;
+        private Reports.ReportType reason;
         private String content;
         private boolean isImages;
     }
