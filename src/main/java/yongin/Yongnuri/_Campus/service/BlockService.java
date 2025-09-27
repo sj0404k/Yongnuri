@@ -21,10 +21,8 @@ public class BlockService {
      * @return 
      */
     public List<Long> getBlockedUserIds(Long currentUserId) {
-        // 1. DB에서 차단 목록 조회
         List<Block> blocks = blockRepository.findByBlockerId(currentUserId);
-        
-        // 2. ID 리스트로 변환 [10, 25, 42]
+
         return blocks.stream()
                 .map(Block::getBlockedId)
                 .collect(Collectors.toList());

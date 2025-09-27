@@ -39,4 +39,5 @@ out/
 # Spring Boot
 /src/main/resources/application.properties
 /src/main/resources/application.yml
+/src/main/resources/
 /src/main/resources/yongnuri-34969-firebase-adminsdk-fbsvc-e174d04349.json

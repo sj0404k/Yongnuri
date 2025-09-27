@@ -2,12 +2,7 @@ package yongin.Yongnuri._Campus.domain;
 
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity; 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType; 
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,7 +15,7 @@ import lombok.Setter;
 @Builder 
 @NoArgsConstructor 
 @AllArgsConstructor 
-@Table
+@Table(name="used_item")
 public class UsedItem {
 
     @Id
@@ -42,8 +37,8 @@ public class UsedItem {
     @Column(name = "method") 
     private String method;
 
-    @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private UsedItemStatus status;
 
     @Column(name = "location") 
     private String location; 
@@ -53,6 +48,11 @@ public class UsedItem {
 
     @Column(name = "created_at") 
     private LocalDateTime createdAt;
-    
+    public enum UsedItemStatus {
+        SELLING,
+        RESERVED,
+        SOLD,
+        DELETED
+    }
 
 }
