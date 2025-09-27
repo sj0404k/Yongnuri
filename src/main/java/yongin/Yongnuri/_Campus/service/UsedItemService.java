@@ -1,9 +1,7 @@
 package yongin.Yongnuri._Campus.service;
 
-import yongin.Yongnuri._Campus.domain.Image;
-import yongin.Yongnuri._Campus.domain.User;
-import yongin.Yongnuri._Campus.domain.UsedItem;
-import yongin.Yongnuri._Campus.domain.Bookmark;
+import yongin.Yongnuri._Campus.domain.*;
+import yongin.Yongnuri._Campus.dto.useditem.UpdateStatusRequestDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemCreateRequestDto;
 import yongin.Yongnuri._Campus.repository.BookmarkRepository;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
@@ -19,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import yongin.Yongnuri._Campus.repository.AppointmentRepository;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.security.access.AccessDeniedException; 
@@ -35,6 +34,7 @@ public class UsedItemService {
     private final UserRepository userRepository; 
     private final ImageRepository imageRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final AppointmentRepository appointmentRepository;
     @Value("${file.upload-dir}")
     private String uploadDir;
 
@@ -46,7 +46,9 @@ public class UsedItemService {
     public List<UsedItemResponseDto> getUsedItems(String email, String type) {
         User currentUser = getUserByEmail(email);
         List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
-        Specification<UsedItem> spec = BoardSpecification.notBlocked(blockedUserIds);
+        Specification<UsedItem> spec = (root, query, cb) ->
+                cb.notEqual(root.get("status"), UsedItem.UsedItemStatus.DELETED);
+        spec = spec.and(BoardSpecification.notBlocked(blockedUserIds));
         if (!"전체".equals(type)) {
             spec = spec.and(BoardSpecification.hasLocation(type));
         }
@@ -85,6 +87,9 @@ public class UsedItemService {
         List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
         UsedItem item = usedItemRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
+        if (item.getStatus() == UsedItem.UsedItemStatus.DELETED) {
+            throw new EntityNotFoundException("삭제된 게시글입니다.");
+        }
         Long authorId = item.getUserId();
         if (blockedUserIds.contains(authorId)) {
             throw new EntityNotFoundException("404: 게시글 없음 (차단됨)"); 
@@ -130,17 +135,13 @@ public class UsedItemService {
         }
         return newPostId;
     }
+    //게시글수정
     @Transactional 
     public Long updateUsedItem(String email, Long postId, UsedItemUpdateRequestDto requestDto) {
-        
-      
         Long currentUserId = getUserByEmail(email).getId();
-
-       
         UsedItem item = usedItemRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
 
-       
         if (!item.getUserId().equals(currentUserId)) {
             throw new AccessDeniedException("403: 이 게시글을 수정할 권한이 없습니다.");
         }
@@ -173,12 +174,32 @@ public class UsedItemService {
             item.setMethod(requestDto.getMethod());
         }
         if (requestDto.getStatus() != null) {
-            item.setStatus(requestDto.getStatus());
+            item.setStatus(UsedItem.UsedItemStatus.valueOf(requestDto.getStatus().toUpperCase()));
         }
         if (requestDto.getPrice() != null) {
             item.setPrice(requestDto.getPrice());
         }
         return item.getId();
+    }
+
+    //중고거래 게시글 상태 변경
+
+    @Transactional
+    public void updateUsedItemStatus(String email, Long postId, UpdateStatusRequestDto requestDto) {
+        User currentUser = getUserByEmail(email);
+        UsedItem item = usedItemRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
+        if (!item.getUserId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("403: 상태를 변경할 권한이 없습니다.");
+        }
+        UsedItem.UsedItemStatus newStatus = UsedItem.UsedItemStatus.valueOf(requestDto.getStatus().toUpperCase());
+        item.setStatus(newStatus);
+        if (newStatus == UsedItem.UsedItemStatus.SOLD) {
+            List<Appointment> appointments = appointmentRepository.findByPostTypeAndPostId("USED_ITEM", postId);
+            for (Appointment appointment : appointments) {
+                appointment.setStatus("COMPLETED");
+            }
+        }
     }
 }
 

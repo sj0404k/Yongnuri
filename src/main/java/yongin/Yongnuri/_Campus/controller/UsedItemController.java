@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid; 
 import lombok.RequiredArgsConstructor;
+import yongin.Yongnuri._Campus.dto.useditem.UpdateStatusRequestDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemResponseDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemUpdateRequestDto;
@@ -25,15 +26,15 @@ import yongin.Yongnuri._Campus.service.UsedItemService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/used-items") 
+@RequestMapping("/board/market")
 public class UsedItemController {
 
     private final UsedItemService usedItemService;
     private final UserRepository userRepository; 
 
-    /*
-      GET /used-items (중고게시판 목록 조회)
-    */
+
+     // 중고게시판 목록 조회
+
     @GetMapping
     public ResponseEntity<?> getUsedItems(
             @RequestParam(name = "type", defaultValue = "전체") String type,
@@ -43,9 +44,9 @@ public class UsedItemController {
         return ResponseEntity.ok(items);
     }
 
-    /*
-      GET /used-items/{postId} (중고게시판 상세 조회)
-    */
+
+     // 중고게시판 상세 조회
+
     @GetMapping("/{postId}")
     public ResponseEntity<?> getUsedItemDetail(
             @PathVariable Long postId,
@@ -55,9 +56,8 @@ public class UsedItemController {
         return ResponseEntity.ok(item); 
     }
 
-    /*
-      POST /used-items (중고거래 게시글 작성)
-    */
+      // 중고거래 게시글 작성
+
     @PostMapping
     public ResponseEntity<?> createUsedItem(
             @AuthenticationPrincipal CustomUserDetails user,
@@ -70,6 +70,7 @@ public class UsedItemController {
                 "postId", newPostId
         ));
     }
+    //게시글수정
     @PatchMapping("/{postId}")
     public ResponseEntity<?> updateUsedItem(
             @PathVariable Long postId,
@@ -78,10 +79,21 @@ public class UsedItemController {
     ) {
         Long updatedPostId = usedItemService.updateUsedItem(user.getUser().getEmail(), postId, requestDto);
 
-        // (200: 성공) 수정된 게시글 ID를 응답
         return ResponseEntity.ok(Map.of(
             "message", "게시글 수정 성공",
             "postId", updatedPostId
         ));
+    }
+
+    //중고거래 게시글 상태 변경
+
+    @PatchMapping("/{postId}/status")
+    public ResponseEntity<String> updateUsedItemStatus(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Valid @RequestBody UpdateStatusRequestDto requestDto
+    ) {
+        usedItemService.updateUsedItemStatus(user.getUser().getEmail(), postId, requestDto);
+        return ResponseEntity.ok("게시글 상태가 변경되었습니다.");
     }
 }

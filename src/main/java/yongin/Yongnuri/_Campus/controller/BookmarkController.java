@@ -12,7 +12,7 @@ import yongin.Yongnuri._Campus.service.BookmarkService;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/bookmarks")
+@RequestMapping("/board/bookmarks")
 public class BookmarkController {
 
     private final BookmarkService bookmarkService;
@@ -50,7 +50,7 @@ public class BookmarkController {
      관심목록조회
     */
 
-    @GetMapping("/me")
+    @GetMapping
     public ResponseEntity<List<BookmarkResponseDto>> getMyBookmarks(
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam("postType") String postType

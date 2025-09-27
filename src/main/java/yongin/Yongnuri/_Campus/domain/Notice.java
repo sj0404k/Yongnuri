@@ -1,39 +1,42 @@
 package yongin.Yongnuri._Campus.domain;
 
 import jakarta.persistence.*;
-import lombok.*;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import jakarta.persistence.Column;
+
 @Entity
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "group_buy")
-public class GroupBuy {
+@Table(name = "notice")
+public class Notice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "user_id")
-    private Long userId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User author;
+
     private String title;
+
     @Column(columnDefinition = "TEXT")
     private String content;
+
     private Boolean isImages;
-    @Enumerated(EnumType.STRING)
-    private GroupBuyStatus status;
+
+    private String status;
+
     private String link;
-    @Column(name = "`limit`")
-    private Integer limit;
+
+    private LocalDateTime startDate;
+
+    private LocalDateTime endDate;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-    @Builder.Default
-    private Integer currentCount = 0;
-    public enum GroupBuyStatus {
-        RECRUITING,
-        COMPLETED,
-        DELETED
-    }
 }

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.appointment.AppointmentRequestDto;
+import yongin.Yongnuri._Campus.dto.appointment.AppointmentUpdateRequestDto;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.AppointmentService;
 
@@ -12,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/makedeal")
+@RequestMapping("/board/makedeal")
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
@@ -24,5 +25,17 @@ public class AppointmentController {
     ) {
         Long appointmentId = appointmentService.createAppointment(user.getUser().getEmail(), requestDto);
         return ResponseEntity.ok(Map.of("message", "약속이 생성되었습니다.", "appointmentId", appointmentId));
+    }
+
+  //약속 수정
+
+    @PatchMapping("/{appointmentId}")
+    public ResponseEntity<String> updateAppointment(
+            @PathVariable Long appointmentId,
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody AppointmentUpdateRequestDto requestDto
+    ) {
+        appointmentService.updateAppointment(appointmentId, user.getUser().getEmail(), requestDto);
+        return ResponseEntity.ok("약속이 수정되었습니다.");
     }
 }

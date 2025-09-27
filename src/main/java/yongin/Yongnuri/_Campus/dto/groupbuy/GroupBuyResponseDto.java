@@ -35,7 +35,7 @@ public class GroupBuyResponseDto {
     public GroupBuyResponseDto(GroupBuy item) {
         this.id = item.getId();
         this.title = item.getTitle();
-        this.status = item.getStatus();
+        this.status = item.getStatus().name();
         this.limit = item.getLimit();
         this.createdAt = item.getCreatedAt();
         this.content = null;
@@ -48,7 +48,7 @@ public class GroupBuyResponseDto {
     public GroupBuyResponseDto(GroupBuy item, User author, List<Image> images) {
         this.id = item.getId();
         this.title = item.getTitle();
-        this.status = item.getStatus();
+        this.status = item.getStatus().name();
         this.limit = item.getLimit();
         this.createdAt = item.getCreatedAt();
         this.content = item.getContent();

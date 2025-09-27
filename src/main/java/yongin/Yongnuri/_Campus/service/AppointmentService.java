@@ -8,11 +8,12 @@ import yongin.Yongnuri._Campus.domain.LostItem;
 import yongin.Yongnuri._Campus.domain.UsedItem;
 import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.dto.appointment.AppointmentRequestDto;
+import yongin.Yongnuri._Campus.dto.appointment.AppointmentUpdateRequestDto;
 import yongin.Yongnuri._Campus.repository.AppointmentRepository;
 import yongin.Yongnuri._Campus.repository.LostItemRepository;
 import yongin.Yongnuri._Campus.repository.UsedItemRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
-
+import org.springframework.security.access.AccessDeniedException;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,6 +26,10 @@ public class AppointmentService {
     private final UserRepository userRepository;
     private final UsedItemRepository usedItemRepository;
     private final LostItemRepository lostItemRepository;
+    private User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("사용자 정보를 찾을 수 없습니다."));
+    }
 
     @Transactional
     public Long createAppointment(String email, AppointmentRequestDto requestDto) {
@@ -75,9 +80,34 @@ public class AppointmentService {
                 .location(requestDto.getLocation())
                 .status("SCHEDULED")
                 .createdAt(LocalDateTime.now())
+                .postType(requestDto.getPostType())
+                .postId(requestDto.getPostId())
                 .build();
 
         Appointment savedAppointment = appointmentRepository.save(newAppointment);
         return savedAppointment.getId();
+    }
+
+   //약속 수정
+
+    @Transactional
+    public void updateAppointment(Long appointmentId, String email, AppointmentUpdateRequestDto requestDto) {
+        User currentUser = getUserByEmail(email);
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 약속입니다."));
+        if (!appointment.getSellerId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("이 약속을 수정할 권한이 없습니다.");
+        }
+        if (requestDto.getDate() != null && requestDto.getTime() != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            LocalDateTime newAppointmentAt = LocalDateTime.parse(requestDto.getDate() + " " + requestDto.getTime(), formatter);
+            appointment.setAppointmentAt(newAppointmentAt);
+        }
+        if (requestDto.getLocation() != null) {
+            appointment.setLocation(requestDto.getLocation());
+        }
+        if (requestDto.getStatus() != null) {
+            appointment.setStatus(requestDto.getStatus());
+        }
     }
 }

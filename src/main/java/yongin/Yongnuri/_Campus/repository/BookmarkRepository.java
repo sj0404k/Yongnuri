@@ -18,6 +18,6 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
             "WHERE b.postType = :postType AND b.postId IN :postIds GROUP BY b.postId")
     List<BookmarkCountDto> countByPostTypeAndPostIdIn(@Param("postType") String postType, @Param("postIds") List<Long> postIds);
     long countByPostTypeAndPostId(String postType, Long postId);
-
+    void deleteAllByPostTypeAndPostId(String postType, Long postId);
     List<Bookmark> findByUserIdAndPostTypeOrderByCreatedAtDesc(Long userId, String postType);
 }

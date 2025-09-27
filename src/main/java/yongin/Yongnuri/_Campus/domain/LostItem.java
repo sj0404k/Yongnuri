@@ -27,35 +27,25 @@ public class LostItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user; // 게시자
-
     @Enumerated(EnumType.STRING)
-    private ItemPurpose purpose; // 게시 목적 (LOST, FOUND)
-
+    private ItemPurpose purpose; // LOST,FOUND
     @Enumerated(EnumType.STRING)
-    private ItemStatus status; // 처리 상태 (REPORTED, RETURNED)
-
+    private ItemStatus status; // REPORTED, RETURNED,DELETED
     private String title;
-
     @Column(columnDefinition = "TEXT")
     private String content;
-
     private String location;
-
     @Column(name = "is_images")
     private Boolean isImages;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
     public enum ItemPurpose {
         LOST, FOUND
     }
-
     public enum ItemStatus {
-        REPORTED, RETURNED
+        REPORTED, RETURNED, DELETED
     }
 }

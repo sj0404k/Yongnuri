@@ -2,10 +2,14 @@ package yongin.Yongnuri._Campus.domain;
 
 import jakarta.persistence.*;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor; // <--- 추가
+import lombok.Builder;
 import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
+@Builder
+@AllArgsConstructor
 @Table(name = "group_buy_applicant")
 public class GroupBuyApplicant {
     @Id

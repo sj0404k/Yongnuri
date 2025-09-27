@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.groupbuy.GroupBuyCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.groupbuy.GroupBuyResponseDto;
 import yongin.Yongnuri._Campus.dto.groupbuy.GroupBuyUpdateRequestDto;
+import yongin.Yongnuri._Campus.dto.groupbuy.UpdateCountRequestDto;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.GroupBuyService;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/group-buys")
+@RequestMapping("/board/group-buys")
 public class GroupBuyController {
 
     private final GroupBuyService groupBuyService;
@@ -56,5 +57,26 @@ public class GroupBuyController {
     ) {
         Long updatedPostId = groupBuyService.updateGroupBuy(user.getUser().getEmail(), postId, requestDto);
         return ResponseEntity.ok(Map.of("message", "게시글 수정 성공", "postId", updatedPostId));
+    }
+
+     //공동구매 신청
+    @PostMapping("/{postId}/apply")
+    public ResponseEntity<String> applyToGroupBuy(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails user
+    ) {
+        groupBuyService.applyForGroupBuy(user.getUser().getEmail(), postId);
+        return ResponseEntity.ok("공동구매 신청이 완료되었습니다.");
+    }
+
+     //현재 모집 인원 수정
+    @PatchMapping("/{postId}/current-count")
+    public ResponseEntity<String> updateCurrentCount(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestBody UpdateCountRequestDto requestDto
+    ) {
+        groupBuyService.updateCurrentCount(user.getUser().getEmail(), postId, requestDto);
+        return ResponseEntity.ok("현재 인원이 수정되었습니다.");
     }
 }

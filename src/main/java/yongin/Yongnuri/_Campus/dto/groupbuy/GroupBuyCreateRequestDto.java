@@ -25,7 +25,7 @@ public class GroupBuyCreateRequestDto {
                 .userId(userId)
                 .title(this.title)
                 .content(this.content)
-                .status(this.status)
+                .status(GroupBuy.GroupBuyStatus.valueOf(this.status.toUpperCase()))
                 .link(this.link)
                 .limit(this.limit)
                 .isImages(this.imageUrls != null && !this.imageUrls.isEmpty())

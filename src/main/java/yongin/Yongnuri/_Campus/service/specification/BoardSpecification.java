@@ -5,9 +5,7 @@ import java.util.List;
 
 public class BoardSpecification {
 
-    /*
-      차단한 유저 게시글 제외 
-     */
+    //차단한 유저 게시글 제외
     public static <T> Specification<T> notBlocked(List<Long> blockedUserIds) {
         return (root, query, cb) -> {
             if (blockedUserIds == null || blockedUserIds.isEmpty()) {
@@ -17,12 +15,12 @@ public class BoardSpecification {
         };
     }
 
-    /*
-      장소 필터 
-     */
+    //  장소 필터
+
     public static <T> Specification<T> hasLocation(String location) {
         return (root, query, cb) -> {
             return cb.equal(root.get("location"), location);
         };
     }
+
 }

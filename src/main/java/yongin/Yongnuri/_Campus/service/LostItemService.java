@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,17 +48,18 @@ public class LostItemService {
         User currentUser = getUserByEmail(email);
         List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
 
-        List<LostItem> allItems = lostItemRepository.findAll(Sort.by(Sort.Direction.DESC, "id"));
-        Stream<LostItem> stream = allItems.stream()
-                .filter(item -> !blockedUserIds.contains(item.getUser().getId()));
+        Specification<LostItem> spec = (root, query, cb) -> {
+            return cb.not(root.get("user").get("id").in(blockedUserIds));
+        };
+        spec = spec.and((root, query, cb) -> cb.notEqual(root.get("status"), LostItem.ItemStatus.DELETED));
         if (!"전체".equals(type)) {
-            stream = stream.filter(item -> type.equals(item.getLocation()));
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("location"), type));
         }
-        List<LostItem> items = stream.collect(Collectors.toList());
-
+        List<LostItem> items = lostItemRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "id"));
         if (items.isEmpty()) {
             return List.of();
         }
+
 
         List<Long> postIds = items.stream().map(LostItem::getId).collect(Collectors.toList());
 
@@ -90,11 +92,12 @@ public class LostItemService {
 
         LostItem item = lostItemRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
-
+        if (item.getStatus() == LostItem.ItemStatus.DELETED) {
+            throw new EntityNotFoundException("삭제된 게시글입니다.");
+        }
         if (blockedUserIds.contains(item.getUser().getId())) {
             throw new EntityNotFoundException("404: 게시글 없음 (차단됨)");
         }
-
         List<Image> images = List.of();
         if (Boolean.TRUE.equals(item.getIsImages())) {
             images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("LOST_ITEM", postId);

@@ -1,15 +1,14 @@
 package yongin.Yongnuri._Campus.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Builder
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "makedeal") // 테이블 이름 가정
@@ -39,4 +38,9 @@ public class Appointment {
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private String postType;
+    @Column(nullable = false)
+    private Long postId;
 }

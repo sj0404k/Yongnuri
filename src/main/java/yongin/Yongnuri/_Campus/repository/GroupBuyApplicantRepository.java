@@ -14,4 +14,6 @@ public interface GroupBuyApplicantRepository extends JpaRepository<GroupBuyAppli
             "WHERE ga.postId IN :postIds GROUP BY ga.postId")
     List<BookmarkCountDto> countByPostIdIn(@Param("postIds") List<Long> postIds);
     long countByPostId(Long postId);
+    void deleteAllByPostId(Long postId);
+    boolean existsByPostIdAndUserId(Long postId, Long userId);
 }

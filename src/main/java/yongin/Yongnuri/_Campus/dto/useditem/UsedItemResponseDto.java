@@ -33,7 +33,7 @@ public class UsedItemResponseDto {
         this.title = item.getTitle();
         this.price = item.getPrice();
         this.location = item.getLocation();
-        this.status = item.getStatus();
+        this.status = item.getStatus().name();
         this.content = null; 
         this.authorNickname = null;
         this.createdAt = item.getCreatedAt();
@@ -50,7 +50,7 @@ public class UsedItemResponseDto {
         this.content = item.getContent();
         this.price = item.getPrice();
         this.location = item.getLocation();
-        this.status = item.getStatus();
+        this.status = item.getStatus().name();
         this.authorNickname = (author != null) ? author.getNickName() : "(알 수 없음)";
         this.createdAt = item.getCreatedAt();
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());

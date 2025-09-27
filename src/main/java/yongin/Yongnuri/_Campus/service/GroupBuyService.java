@@ -10,8 +10,12 @@ import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
 import yongin.Yongnuri._Campus.dto.groupbuy.GroupBuyCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.groupbuy.GroupBuyResponseDto;
 import yongin.Yongnuri._Campus.dto.groupbuy.GroupBuyUpdateRequestDto;
+import yongin.Yongnuri._Campus.dto.groupbuy.UpdateCountRequestDto;
+import yongin.Yongnuri._Campus.exception.ConflictException;
 import yongin.Yongnuri._Campus.repository.*;
 import yongin.Yongnuri._Campus.service.specification.BoardSpecification;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.security.access.AccessDeniedException;
 import java.util.Map;
@@ -44,12 +48,9 @@ public class GroupBuyService {
     public List<GroupBuyResponseDto> getGroupBuys(String email, String type) {
         User currentUser = getUserByEmail(email);
         List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
-        Specification<GroupBuy> spec = BoardSpecification.notBlocked(blockedUserIds);
 
-        if (!"전체".equals(type)) {
-            spec = spec.and(BoardSpecification.hasLocation(type));
-        }
-
+        Specification<GroupBuy> spec = (root, query, cb) -> cb.notEqual(root.get("status"), GroupBuy.GroupBuyStatus.DELETED);
+        spec = spec.and(BoardSpecification.notBlocked(blockedUserIds));
         List<GroupBuy> items = groupBuyRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "createdAt"));
         if (items.isEmpty()) return List.of();
 
@@ -78,6 +79,9 @@ public class GroupBuyService {
 
         GroupBuy item = groupBuyRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
+        if (item.getStatus() == GroupBuy.GroupBuyStatus.DELETED) {
+            throw new EntityNotFoundException("삭제된 게시글입니다.");
+        }
         if (blockService.getBlockedUserIds(currentUser.getId()).contains(item.getUserId())) {
             throw new EntityNotFoundException("404: 게시글 없음 (차단됨)");
         }
@@ -134,9 +138,60 @@ public class GroupBuyService {
 
         if (requestDto.getTitle() != null) item.setTitle(requestDto.getTitle());
         if (requestDto.getContent() != null) item.setContent(requestDto.getContent());
-        if (requestDto.getStatus() != null) item.setStatus(requestDto.getStatus());
+        if (requestDto.getStatus() != null) {item.setStatus(GroupBuy.GroupBuyStatus.valueOf(requestDto.getStatus().toUpperCase()));}
         if (requestDto.getLink() != null) item.setLink(requestDto.getLink());
         if (requestDto.getLimit() != null) item.setLimit(requestDto.getLimit());
         return item.getId();
+    }
+     //공동구매 신청하기
+    @Transactional
+    public void applyForGroupBuy(String email, Long postId) {
+        User currentUser = getUserByEmail(email);
+        GroupBuy item = groupBuyRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 공동구매 게시글입니다."));
+
+        if (item.getUserId().equals(currentUser.getId())) {
+            throw new IllegalArgumentException("자신이 작성한 게시글에는 신청할 수 없습니다.");
+        }
+        boolean alreadyApplied = applicantRepository.existsByPostIdAndUserId(postId, currentUser.getId());
+        if (alreadyApplied) {
+            throw new ConflictException("이미 신청한 공동구매입니다.");
+        }
+
+        Integer limit = item.getLimit();
+        if (limit != null && limit > 0) {
+            long currentCount = applicantRepository.countByPostId(postId);
+            if (currentCount >= limit) {
+                throw new ConflictException("모집 인원이 마감되었습니다.");
+            }
+        }
+        GroupBuyApplicant newApplicant = GroupBuyApplicant.builder()
+                .postId(postId)
+                .userId(currentUser.getId())
+                .status("APPLIED")
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        applicantRepository.save(newApplicant);
+    }
+
+      //현재 모집 인원 수정
+    @Transactional
+    public void updateCurrentCount(String email, Long postId, UpdateCountRequestDto requestDto) {
+        User currentUser = getUserByEmail(email);
+        GroupBuy item = groupBuyRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
+        if (!item.getUserId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("403: 인원을 수정할 권한이 없습니다.");
+        }
+        Integer newCount = requestDto.getCount();
+        Integer limit = item.getLimit();
+        if (limit != null && limit > 0 && newCount > limit) {
+            throw new IllegalArgumentException("현재 인원은 전체 인원 제한(" + limit + "명)을 초과할 수 없습니다.");
+        }
+        if (newCount < 0) {
+            throw new IllegalArgumentException("현재 인원은 0명 미만이 될 수 없습니다.");
+        }
+        item.setCurrentCount(newCount);
     }
 }
