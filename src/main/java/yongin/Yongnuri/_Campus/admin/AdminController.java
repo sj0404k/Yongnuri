@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import yongin.Yongnuri._Campus.dto.admin.AdminReportIdRes;
 import yongin.Yongnuri._Campus.dto.admin.AdminReq;
 import yongin.Yongnuri._Campus.dto.admin.UserInfoRes;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
@@ -18,10 +19,15 @@ public class AdminController {
 
     private final AdminService adminService;
 
-    /**신고 목록 가져오기 */
+    /**신고 관리목록 가져오기 */
     @GetMapping("/reportList")
     public ResponseEntity<?> getReportList(@AuthenticationPrincipal CustomUserDetails user) {
         return ResponseEntity.ok(adminService.getReportList(user.getUser().getEmail()));
+    }
+    /**신고 관리목록 가져오기 */
+    @GetMapping("/reportManagement")
+    public ResponseEntity<?> getReportList1(@AuthenticationPrincipal CustomUserDetails user) {
+        return ResponseEntity.ok(adminService.getReportList1(user.getUser().getEmail()));
     }
     @GetMapping("/reportList/{userId}")
     public ResponseEntity<?> getReportListDetail(@AuthenticationPrincipal CustomUserDetails user, @PathVariable("userId") Long reporedId) {
@@ -66,11 +72,11 @@ public class AdminController {
         }
     }
 
-//    /**신고 내역 자세히 보기 */
-//    @GetMapping("/report/{reportId}")
-//    public ResponseEntity<?> getReportDetail(@AuthenticationPrincipal CustomUserDetails user) {
-//        return ResponseEntity.ok(adminService.getReportDetail(reportId));
-//    }
+    /**신고 내역 자세히 보기 */
+    @GetMapping("/report/{reportId}")
+    public ResponseEntity<AdminReportIdRes> getReportDetail(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long reportId) {
+        return ResponseEntity.ok(adminService.getReportDetail(reportId));
+    }
 //
 //    /** 공지·홍보 게시글 작성 */
 //    @PostMapping("/board")
