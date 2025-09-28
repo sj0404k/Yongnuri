@@ -4,5 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import yongin.Yongnuri._Campus.domain.GroupBuy;
 
+import java.util.List;
+
 public interface GroupBuyRepository extends JpaRepository<GroupBuy, Long>, JpaSpecificationExecutor<GroupBuy> {
+    List<GroupBuy> findByTitleContainingIgnoreCase(String title);
 }

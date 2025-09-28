@@ -21,12 +21,25 @@ import java.util.Map;
 @AllArgsConstructor
 public class SearchController {
     private final SearchService searchService;
+/**
 
     @GetMapping
     public ResponseEntity<List<?>> searchBoard(@AuthenticationPrincipal CustomUserDetails user, @RequestBody SearchReq.SearchDto searchReq) {
         List<SearchBoard> searchDto = searchService.getBoard(user.getUser().getEmail(),searchReq);
         return ResponseEntity.ok(searchDto);
     }
+ */
+//Get으로 requestbody받는 오류 발생해서 수정
+@GetMapping
+public ResponseEntity<List<SearchBoard>> searchBoard(
+        @AuthenticationPrincipal CustomUserDetails user,
+        @RequestParam("q") String query
+) {
+    SearchReq.SearchDto searchReq = new SearchReq.SearchDto();
+    searchReq.setQuery(query);
+    List<SearchBoard> searchResult = searchService.getBoard(user.getUser().getEmail(), searchReq);
+    return ResponseEntity.ok(searchResult);
+}
     @GetMapping("/test")
     public ResponseEntity<List<SearchRes>> search(@AuthenticationPrincipal CustomUserDetails user) {
         List<SearchRes> searchDto = searchService.getHistory(user.getUser().getEmail());

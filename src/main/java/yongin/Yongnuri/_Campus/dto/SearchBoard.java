@@ -20,5 +20,5 @@ public class SearchBoard {
     private Integer like;
     private String boardType;
     //이미지 필요
-
+    private String thumbnailUrl;
 }

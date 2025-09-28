@@ -5,22 +5,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.config.TimeUtils;
-import yongin.Yongnuri._Campus.domain.LostItem;
-import yongin.Yongnuri._Campus.domain.Search;
-import yongin.Yongnuri._Campus.domain.UsedItem;
-import yongin.Yongnuri._Campus.domain.User;
+import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.dto.SearchBoard;
 import yongin.Yongnuri._Campus.dto.SearchReq;
 import yongin.Yongnuri._Campus.dto.SearchRes;
-import yongin.Yongnuri._Campus.repository.LostItemRepository;
-import yongin.Yongnuri._Campus.repository.SearchRepository;
-import yongin.Yongnuri._Campus.repository.UsedItemRepository;
-import yongin.Yongnuri._Campus.repository.UserRepository;
+import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
+import yongin.Yongnuri._Campus.repository.*;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -31,7 +28,10 @@ public class SearchService {
     private final SearchRepository searchRepository;
     private final LostItemRepository lostItemRepository;
     private final UsedItemRepository usedItemRepository;
-
+    private final NoticeRepository noticeRepository;
+    private final GroupBuyRepository groupbuyRepository;
+    private final BookmarkRepository bookmarkRepository;
+    private final ImageRepository imageRepository;
     public boolean deleteAllHistory(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "해당 사용자를 찾을 수 없습니다."));
@@ -81,36 +81,96 @@ public class SearchService {
         // 1차: 키워드 포함 검색
         List<LostItem> lostItems = lostItemRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
         List<UsedItem> usedItems = usedItemRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
+        List<Notice> notices = noticeRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
+        List<GroupBuy> groupBuys = groupbuyRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
 
-        // 변환 및 결과 합치기
+        List<Long> lostItemIds = lostItems.stream().map(LostItem::getId).collect(Collectors.toList());
+        List<Long> usedItemIds = usedItems.stream().map(UsedItem::getId).collect(Collectors.toList());
+        List<Long> noticeIds = notices.stream().map(Notice::getId).collect(Collectors.toList());
+        List<Long> groupBuyIds = groupBuys.stream().map(GroupBuy::getId).collect(Collectors.toList());
+
+        Map<Long, String> usedItemThumbnailMap = imageRepository.findByTypeAndTypeIdInAndSequence("USED_ITEM", usedItemIds, 1)
+                .stream().collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
+        Map<Long, String> lostItemThumbnailMap = imageRepository.findByTypeAndTypeIdInAndSequence("LOST_ITEM", lostItemIds, 1)
+                .stream().collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
+        Map<Long, String> noticeThumbnailMap = imageRepository.findByTypeAndTypeIdInAndSequence("NOTICE", noticeIds, 1)
+                .stream().collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
+        Map<Long, String> groupBuyThumbnailMap = imageRepository.findByTypeAndTypeIdInAndSequence("GROUP_BUY", groupBuyIds, 1)
+                .stream().collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
+
         List<SearchBoard> lostResults = lostItems.stream()
-                .map(item -> SearchBoard.builder()
-                        .id(item.getId())
-                        .title(item.getTitle())
-                        .location(item.getLocation())
-                        .price(null)
-                        .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
-                        .boardType("분실물")
-                        .like(0)
-                        .build())
+                .map(item -> {
+                    Integer likeCount = bookmarkRepository.countByPostTypeAndPostId("LOST_ITEM", item.getId());
+                    String thumbnailUrl = lostItemThumbnailMap.get(item.getId());
+
+                    return SearchBoard.builder()
+                            .id(item.getId())
+                            .title(item.getTitle())
+                            .location(item.getLocation())
+                            .price(null)
+                            .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
+                            .boardType("분실물")
+                            .like(likeCount)
+                            .thumbnailUrl(thumbnailUrl)
+                            .build();
+                })
                 .toList();
 
         List<SearchBoard> usedResults = usedItems.stream()
-                .map(item -> SearchBoard.builder()
-                        .id(item.getId())
-                        .title(item.getTitle())
-                        .location(item.getLocation())
-                        .price(item.getPrice())
-                        .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
-                        .boardType("중고거래")
-                        .like(0)
-                        .build())
+                .map(item -> {
+                    Integer likeCount = bookmarkRepository.countByPostTypeAndPostId("USED_ITEM", item.getId());
+                    String thumbnailUrl = usedItemThumbnailMap.get(item.getId());
+                    return SearchBoard.builder()
+                            .id(item.getId())
+                            .title(item.getTitle())
+                            .location(item.getLocation())
+                            .price(item.getPrice())
+                            .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt())).boardType("중고거래")
+                            .like(likeCount)
+                            .thumbnailUrl(thumbnailUrl)
+                            .build();
+                })
+                .toList();
+        List<SearchBoard> groupResults = groupBuys.stream()
+                .map(item -> {
+                    Integer likeCount = bookmarkRepository.countByPostTypeAndPostId("GROUP_BUY", item.getId());
+                    String thumbnailUrl = groupBuyThumbnailMap.get(item.getId());
+                    return SearchBoard.builder()
+                            .id(item.getId())
+                            .title(item.getTitle())
+                            .location(null)
+                            .price(null)
+                            .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
+                            .boardType("공동구매")
+                            .like(likeCount)
+                            .thumbnailUrl(thumbnailUrl)
+                            .build();
+                })
                 .toList();
 
+        List<SearchBoard> noticeResults = notices.stream()
+                .map(item -> {
+                    Integer likeCount = bookmarkRepository.countByPostTypeAndPostId("NOTICE", item.getId());
+                    String thumbnailUrl = noticeThumbnailMap.get(item.getId());
+                    return SearchBoard.builder()
+                            .id(item.getId())
+                            .title(item.getTitle())
+                            .location(null)
+                            .price(null)
+                            .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
+                            .boardType("공지홍보")
+                            .like(likeCount)
+                            .thumbnailUrl(thumbnailUrl)
+                            .build();
+                })
+                .toList();
 
-        return Stream.concat(lostResults.stream(), usedResults.stream())
+        return Stream.of(lostResults, usedResults, noticeResults, groupResults)
+                .flatMap(List::stream) // 각 리스트를 스트림으로 변환하여 하나의 스트림으로 연결
                 .sorted(Comparator.comparing(SearchBoard::getCreatedAt).reversed())
                 .toList();
+
+
     }
 
 
