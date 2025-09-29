@@ -43,8 +43,28 @@ public class UsedItemController {
         List<UsedItemResponseDto> items = usedItemService.getUsedItems(user.getUser().getEmail(), type);
         return ResponseEntity.ok(items);
     }
+/**
+//   이미지 테스트용 중고거래목록조회
+@GetMapping
+public ResponseEntity<?> getUsedItems(
+        @RequestParam(name = "type", defaultValue = "전체") String type,
+        @AuthenticationPrincipal CustomUserDetails user // 로그인 안 하면 null이 됨
+) {
+    String email;
+    if (user == null) {
+        // 핸드폰 브라우저처럼 토큰 없이 접근한 경우, 임시 사용자 이메일 사용
+        email = "admin@example.com"; // DB에 있는 테스트 유저 이메일
+    } else {
+        // 로그인한 사용자의 실제 이메일 사용
+        email = user.getUser().getEmail();
+    }
 
+    // (수정) user.getUser().getEmail() 대신, 위에서 만든 'email' 변수를 사용합니다.
+    List<UsedItemResponseDto> items = usedItemService.getUsedItems(email, type);
 
+    return ResponseEntity.ok(items);
+}
+*/
      // 중고게시판 상세 조회
 
     @GetMapping("/{postId}")

@@ -48,3 +48,67 @@ public class SecurityConfig {
         return http.build();
     }
 }
+
+/**
+ //이미지  테스트용 인증 없는 코드
+ package yongin.Yongnuri._Campus.config;
+
+ import lombok.RequiredArgsConstructor;
+ import org.springframework.context.annotation.Bean;
+ import org.springframework.context.annotation.Configuration;
+ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+ import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+ import org.springframework.security.config.http.SessionCreationPolicy;
+ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+ import org.springframework.security.crypto.password.PasswordEncoder;
+ import org.springframework.security.web.SecurityFilterChain;
+ import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+ import yongin.Yongnuri._Campus.security.JwtAuthenticationFilter;
+ import org.springframework.web.cors.CorsConfiguration;
+ import org.springframework.web.cors.CorsConfigurationSource;
+ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+ @Configuration
+ @EnableWebSecurity
+ @RequiredArgsConstructor
+ public class SecurityConfig {
+
+ // JwtAuthenticationFilter를 생성자 주입으로 받도록 필드 추가
+ private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+ @Bean
+ public PasswordEncoder passwordEncoder() {
+ return new BCryptPasswordEncoder();
+ }
+
+ @Bean
+ public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+ http
+ .csrf(csrf -> csrf.disable())
+ .cors(cors -> cors.configurationSource(corsConfigurationSource())) // <--- 1. CORS 설정 추가
+ .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+ // (수정) 모든 요청("/**")을 인증 없이 허용하도록 변경
+ .authorizeHttpRequests(authorize -> authorize
+ .requestMatchers("/**").permitAll()
+ );
+
+ http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+ return http.build();
+ }
+ @Bean
+ public CorsConfigurationSource corsConfigurationSource() {
+ CorsConfiguration configuration = new CorsConfiguration();
+
+ configuration.addAllowedOriginPattern("*"); // 모든 출처를 허용 (개발용)
+ configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
+ configuration.addAllowedHeader("*"); // 모든 헤더 허용
+ configuration.setAllowCredentials(true); // 인증 정보 허용
+
+ UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+ source.registerCorsConfiguration("/**", configuration); // 모든 경로에 대해 위 설정 적용
+ return source;
+ }
+ }
+ */
