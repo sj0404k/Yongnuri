@@ -7,7 +7,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.*;
@@ -20,7 +19,7 @@ import java.time.LocalDateTime;
 @Builder
 @Setter
 @NoArgsConstructor
-@Data
+
 @AllArgsConstructor
 @Table(name = "notice")
 public class Notice {
@@ -39,16 +38,16 @@ public class Notice {
 
     private Boolean isImages;
 
-    // (수정) String -> NoticeStatus 타입으로 변경하고 @Enumerated 추가
+
     @Enumerated(EnumType.STRING)
-    private NoticeStatus status;
+    @Builder.Default
+    private NoticeStatus status = NoticeStatus.RECRUITING;
 
     private String link;
     private LocalDateTime startDate; // 신청 시작일
     private LocalDateTime endDate;   // 신청 종료일
     private LocalDateTime createdAt;
 
-    // (추가) 상태 값을 정의하는 Enum
     public enum NoticeStatus {
         RECRUITING, // 모집중/진행중
         COMPLETED,  // 완료/마감

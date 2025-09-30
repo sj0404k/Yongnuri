@@ -56,7 +56,7 @@ public class BoardService {
 
 
         boolean isAuthor = authorId.equals(currentUser.getId());
-        boolean isAdmin = currentUser.getRole() == User.role.관리자;
+        boolean isAdmin = currentUser.getRole() == User.Role.ADMIN;
 
         if (!isAuthor && !isAdmin) {
             throw new AccessDeniedException("이 게시글을 삭제할 권한이 없습니다.");

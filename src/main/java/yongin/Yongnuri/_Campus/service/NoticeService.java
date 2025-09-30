@@ -45,7 +45,7 @@ public class NoticeService {
                 .stream().map(Bookmark::getPostId).collect(Collectors.toSet());
 
         return items.stream().map(item -> {
-            NoticeResponseDto dto = new NoticeResponseDto(item,currentUser.getNickName());
+            NoticeResponseDto dto = new NoticeResponseDto(item);
             dto.setThumbnailUrl(thumbnailMap.get(item.getId()));
             dto.setBookmarked(myBookmarkedPostIds.contains(item.getId()));
             return dto;
@@ -57,7 +57,7 @@ public class NoticeService {
         Notice item = noticeRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
         List<Image> images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("NOTICE", postId);
         boolean isBookmarked = bookmarkRepository.existsByUserIdAndPostTypeAndPostId(currentUser.getId(), "NOTICE", postId);
-        NoticeResponseDto dto = new NoticeResponseDto(item, images,currentUser.getNickName());
+        NoticeResponseDto dto = new NoticeResponseDto(item, images);
         dto.setBookmarked(isBookmarked);
         return dto;
     }

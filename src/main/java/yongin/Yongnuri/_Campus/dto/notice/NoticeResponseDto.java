@@ -15,6 +15,7 @@ public class NoticeResponseDto {
     private final String title;
     private final String content;
     private final String link;
+    private final String status;
     private final LocalDateTime startDate;
     private final LocalDateTime endDate;
     private final LocalDateTime createdAt;
@@ -27,15 +28,16 @@ public class NoticeResponseDto {
     private boolean isBookmarked;
 
     // 목록 조회
-    public NoticeResponseDto(Notice item, String nickName) {
+    public NoticeResponseDto(Notice item) {
 
         this.id = item.getId();
         this.title = item.getTitle();
-        this.link = item.getLink();
+        this.link = null;
         this.startDate = item.getStartDate();
         this.endDate = item.getEndDate();
         this.createdAt = item.getCreatedAt();
-        this.authorNickname = item.getAuthor().getNickName();
+        this.authorNickname = null;
+        this.status = item.getStatus().name();
         // 목록에서는 content와 images 제외
         this.content = null;
         this.images = null;
@@ -50,6 +52,7 @@ public class NoticeResponseDto {
         this.startDate = item.getStartDate();
         this.endDate = item.getEndDate();
         this.createdAt = item.getCreatedAt();
+        this.status = item.getStatus().name();
         this.authorNickname = item.getAuthor().getNickName();
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());
     }
