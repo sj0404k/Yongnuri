@@ -7,7 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
-import yongin.Yongnuri._Campus.domain.UsedItem; 
+import yongin.Yongnuri._Campus.domain.GroupBuy;
+import yongin.Yongnuri._Campus.domain.UsedItem;
 
 @Getter
 public class UsedItemCreateRequestDto {
@@ -33,9 +34,9 @@ public class UsedItemCreateRequestDto {
     private Integer price;
 
     
-    private List<String> imageUrls; 
+    private List<String> imageUrls;
 
-    
+
     public UsedItem toEntity(Long authorId) {
         return UsedItem.builder()
                 .userId(authorId)
@@ -43,10 +44,10 @@ public class UsedItemCreateRequestDto {
                 .content(this.content)
                 .location(this.location)
                 .method(this.method)
-                .status(this.status)
+                .status(UsedItem.UsedItemStatus.valueOf(this.status.toUpperCase()))
                 .price(this.price)
-                .isImages(this.imageUrls != null && !this.imageUrls.isEmpty()) 
-                .createdAt(LocalDateTime.now()) 
+                .isImages(this.imageUrls != null && !this.imageUrls.isEmpty()) // 내부에서 계산
+                .createdAt(LocalDateTime.now())
                 .build();
     }
 }

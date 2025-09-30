@@ -1,31 +1,32 @@
 package yongin.Yongnuri._Campus.service;
 
+import lombok.AllArgsConstructor;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import yongin.Yongnuri._Campus.domain.BookMarks;
-import yongin.Yongnuri._Campus.domain.Image;
-import yongin.Yongnuri._Campus.domain.Notice;
-import yongin.Yongnuri._Campus.domain.User;
+import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.dto.notice.NoticeResponseDto;
-import yongin.Yongnuri._Campus.repository.BookMarksRepository;
-import yongin.Yongnuri._Campus.repository.ImageRepository;
-import yongin.Yongnuri._Campus.repository.NoticeRepository;
-import yongin.Yongnuri._Campus.repository.UserRepository;
-
+import yongin.Yongnuri._Campus.repository.*;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import yongin.Yongnuri._Campus.domain.Notice;
+import yongin.Yongnuri._Campus.repository.NoticeRepository;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class NoticeService {
+
     private final NoticeRepository noticeRepository;
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
-    private final BookMarksRepository bookmarkRepository;
+    private final BookmarkRepository bookmarkRepository;
 
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("사용자 정보를 찾을 수 없습니다."));
@@ -41,10 +42,10 @@ public class NoticeService {
                 .stream().collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
 
         Set<Long> myBookmarkedPostIds = bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "NOTICE", postIds)
-                .stream().map(BookMarks::getPostId).collect(Collectors.toSet());
+                .stream().map(Bookmark::getPostId).collect(Collectors.toSet());
 
         return items.stream().map(item -> {
-            NoticeResponseDto dto = new NoticeResponseDto(item);
+            NoticeResponseDto dto = new NoticeResponseDto(item,currentUser.getNickName());
             dto.setThumbnailUrl(thumbnailMap.get(item.getId()));
             dto.setBookmarked(myBookmarkedPostIds.contains(item.getId()));
             return dto;
@@ -56,7 +57,7 @@ public class NoticeService {
         Notice item = noticeRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
         List<Image> images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("NOTICE", postId);
         boolean isBookmarked = bookmarkRepository.existsByUserIdAndPostTypeAndPostId(currentUser.getId(), "NOTICE", postId);
-        NoticeResponseDto dto = new NoticeResponseDto(item, images);
+        NoticeResponseDto dto = new NoticeResponseDto(item, images,currentUser.getNickName());
         dto.setBookmarked(isBookmarked);
         return dto;
     }

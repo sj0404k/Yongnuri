@@ -1,53 +1,61 @@
-package yongin.Yongnuri._Campus.dto.lostitem;
+package yongin.Yongnuri._Campus.dto.groupbuy;
 
+import lombok.Getter;
+import lombok.Setter;
+import yongin.Yongnuri._Campus.domain.GroupBuy;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.Setter;
-import lombok.Getter;
-import yongin.Yongnuri._Campus.domain.LostItem;
 import yongin.Yongnuri._Campus.domain.Image;
+import yongin.Yongnuri._Campus.domain.User;
 
 @Getter
-public class LostItemResponseDto {
+public class GroupBuyResponseDto {
+
     private final Long id;
     private final String title;
-    private final String location;
-    private final String purpose;
     private final String status;
-    private final String content;
+    private final Integer limit;
     private final LocalDateTime createdAt;
+
+    private final String content;
+    private final String link;
     private final String authorNickname;
     private final List<ImageDto> images;
+
+
+    @Setter
+    private Long currentCount;
     @Setter
     private String thumbnailUrl;
     @Setter
     private boolean isBookmarked;
 
-    public LostItemResponseDto(LostItem item) {
+    // 공동구매목록 조회
+    public GroupBuyResponseDto(GroupBuy item) {
         this.id = item.getId();
         this.title = item.getTitle();
-        this.content = null;
-        this.location = item.getLocation();
-        this.purpose = item.getPurpose().name();
         this.status = item.getStatus().name();
-
+        this.limit = item.getLimit();
         this.createdAt = item.getCreatedAt();
+        this.content = null;
+        this.link = null;
         this.authorNickname = null;
         this.images = null;
-        this.isBookmarked = false;
     }
 
-    public LostItemResponseDto(LostItem item, List<Image> images) {
+    // 공동구매상세 조회
+    public GroupBuyResponseDto(GroupBuy item, User author, List<Image> images) {
         this.id = item.getId();
         this.title = item.getTitle();
-        this.content = item.getContent();
-        this.location = item.getLocation();
-        this.purpose = item.getPurpose().name();
         this.status = item.getStatus().name();
+        this.limit = item.getLimit();
         this.createdAt = item.getCreatedAt();
-        this.authorNickname = item.getUser().getNickName();
+        this.content = item.getContent();
+        this.link = item.getLink();
+        this.authorNickname = author.getNickName();
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());
-        this.isBookmarked = false;
     }
+
+
 }

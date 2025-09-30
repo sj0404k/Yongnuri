@@ -1,8 +1,18 @@
 package yongin.Yongnuri._Campus.domain;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -10,39 +20,10 @@ import java.time.LocalDateTime;
 @Builder
 @Setter
 @NoArgsConstructor
+@Data
 @AllArgsConstructor
 @Table(name = "notice")
 public class Notice {
-    /**@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User author;
-
-    private String title;
-
-    @Column(columnDefinition = "TEXT")
-    private String content;
-
-    private Boolean isImages;
-
-    @Enumerated(EnumType.STRING)
-    private NoticeStatus status;
-
-    private String link;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    // 상태 값을 정의하는 Enum
-    public enum NoticeStatus {
-        RECRUITING, // 모집중
-        COMPLETED,  // 모집완료
-        DELETED     // 삭제됨
-    }*/
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -63,12 +44,8 @@ public class Notice {
     private NoticeStatus status;
 
     private String link;
-
-    private LocalDateTime startDate;
-
-    private LocalDateTime endDate;
-
-    @Column(name = "created_at")
+    private LocalDateTime startDate; // 신청 시작일
+    private LocalDateTime endDate;   // 신청 종료일
     private LocalDateTime createdAt;
 
     // (추가) 상태 값을 정의하는 Enum
@@ -78,3 +55,4 @@ public class Notice {
         DELETED     // 삭제됨
     }
 }
+

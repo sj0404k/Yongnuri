@@ -27,7 +27,8 @@ public class NoticeResponseDto {
     private boolean isBookmarked;
 
     // 목록 조회
-    public NoticeResponseDto(Notice item) {
+    public NoticeResponseDto(Notice item, String nickName) {
+
         this.id = item.getId();
         this.title = item.getTitle();
         this.link = item.getLink();

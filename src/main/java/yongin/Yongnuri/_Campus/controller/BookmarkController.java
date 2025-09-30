@@ -4,12 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkRequestDto;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkResponseDto;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.BookmarkService;
-
-import java.util.List;
 
 @RestController
 @RequiredArgsConstructor

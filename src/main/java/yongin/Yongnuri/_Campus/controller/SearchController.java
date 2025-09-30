@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.BlocksRes;
+import yongin.Yongnuri._Campus.dto.SearchBoard;
 import yongin.Yongnuri._Campus.dto.SearchReq;
 import yongin.Yongnuri._Campus.dto.SearchRes;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
@@ -22,6 +23,11 @@ public class SearchController {
     private final SearchService searchService;
 
     @GetMapping
+    public ResponseEntity<List<?>> searchBoard(@AuthenticationPrincipal CustomUserDetails user, @RequestBody SearchReq.SearchDto searchReq) {
+        List<SearchBoard> searchDto = searchService.getBoard(user.getUser().getEmail(),searchReq);
+        return ResponseEntity.ok(searchDto);
+    }
+    @GetMapping("/test")
     public ResponseEntity<List<SearchRes>> search(@AuthenticationPrincipal CustomUserDetails user) {
         List<SearchRes> searchDto = searchService.getHistory(user.getUser().getEmail());
         return ResponseEntity.ok(searchDto);

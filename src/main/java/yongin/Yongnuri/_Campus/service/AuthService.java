@@ -23,6 +23,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
+    //회원가입
     public void join(AuthReq.joinReqDto req) {
         // 1. 필수값 확인
         if (Stream.of(req.getEmail(), req.getPassword(), req.getPasswordCheck(),
@@ -79,6 +80,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(newUser);
+        mailService.deleteVerifiedCode(req.getEmail());
     }
 
     // 비밀번호 유효성 검사 // 조건 추가 필욯함!!!!!!!!!!
@@ -149,14 +151,18 @@ public class AuthService {
         if (!PasswordValidator(req.getPassword())) {
             throw new IllegalArgumentException("비밀번호 형식 불일치");
         }
-        // 6. 비밀번호 해시화
-        String encodedPassword = passwordEncoder.encode(req.getPassword());
-        // 6. 회원 저장
-        User newUser = User.builder()
-                .password(encodedPassword)
-                .build();
 
-        userRepository.save(newUser);
+        // 5. 기존 회원 조회
+        User user = userRepository.findByEmail(req.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("해당 이메일의 사용자를 찾을 수 없습니다."));
+
+        // 6. 비밀번호 해시화 후 업데이트
+        String encodedPassword = passwordEncoder.encode(req.getPassword());
+        user.setPassword(encodedPassword);
+
+        userRepository.save(user);
+        mailService.deleteVerifiedCode(req.getEmail());
+
     }
 
     //로그아웃

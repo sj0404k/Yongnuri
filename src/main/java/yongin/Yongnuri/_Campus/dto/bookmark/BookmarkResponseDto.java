@@ -2,8 +2,8 @@ package yongin.Yongnuri._Campus.dto.bookmark;
 
 import lombok.Builder;
 import lombok.Getter;
-import yongin.Yongnuri._Campus.domain.BookMarks;
-import yongin.Yongnuri._Campus.domain.Notice;
+import yongin.Yongnuri._Campus.domain.*;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -16,17 +16,45 @@ public class BookmarkResponseDto {
     private String thumbnailUrl;
     private LocalDateTime bookmarkedAt;
 
-
-    public static BookmarkResponseDto from(Notice item, String thumbnailUrl, BookMarks bookmark) {
+    public static BookmarkResponseDto from(UsedItem item, String thumbnailUrl, Bookmark bookmark) {
         return BookmarkResponseDto.builder()
                 .bookmarkId(bookmark.getId())
                 .postId(item.getId())
-                .postType("NOTICE") // postType을 "NOTICE"로 설정
+                .postType("USED_ITEM")
                 .title(item.getTitle())
                 .thumbnailUrl(thumbnailUrl)
                 .bookmarkedAt(bookmark.getCreatedAt())
                 .build();
     }
 
-
+    public static BookmarkResponseDto from(LostItem item, String thumbnailUrl, Bookmark bookmark) {
+        return BookmarkResponseDto.builder()
+                .bookmarkId(bookmark.getId())
+                .postId(item.getId())
+                .postType("LOST_ITEM")
+                .title(item.getTitle())
+                .thumbnailUrl(thumbnailUrl)
+                .bookmarkedAt(bookmark.getCreatedAt())
+                .build();
+    }
+    public static BookmarkResponseDto from(GroupBuy item, String thumbnailUrl, Bookmark bookmark) {
+        return BookmarkResponseDto.builder()
+                .bookmarkId(bookmark.getId())
+                .postId(item.getId())
+                .postType("GROUP_BUY")
+                .title(item.getTitle())
+                .thumbnailUrl(thumbnailUrl)
+                .bookmarkedAt(bookmark.getCreatedAt())
+                .build();
+    }
+    public static BookmarkResponseDto from(Notice item, String thumbnailUrl, Bookmark bookmark) {
+        return BookmarkResponseDto.builder()
+                .bookmarkId(bookmark.getId())
+                .postId(item.getId())
+                .postType("NOTICE")
+                .title(item.getTitle())
+                .thumbnailUrl(thumbnailUrl)
+                .bookmarkedAt(bookmark.getCreatedAt())
+                .build();
+    }
 }

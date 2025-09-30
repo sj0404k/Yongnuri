@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
                         .requestMatchers("/report/**").permitAll()          //마지 할때 권한 변경 필요4
                         .requestMatchers("/ws-stomp").permitAll()
+                        .requestMatchers("/notice/**").permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 );
 
