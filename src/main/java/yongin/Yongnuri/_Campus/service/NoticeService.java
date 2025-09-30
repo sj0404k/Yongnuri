@@ -1,5 +1,7 @@
 package yongin.Yongnuri._Campus.service;
 
+import lombok.AllArgsConstructor;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -11,10 +13,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import yongin.Yongnuri._Campus.domain.Notice;
+import yongin.Yongnuri._Campus.repository.NoticeRepository;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
 public class NoticeService {
+
     private final NoticeRepository noticeRepository;
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;

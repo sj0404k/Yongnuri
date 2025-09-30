@@ -9,7 +9,6 @@ import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.dto.SearchBoard;
 import yongin.Yongnuri._Campus.dto.SearchReq;
 import yongin.Yongnuri._Campus.dto.SearchRes;
-import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
 import yongin.Yongnuri._Campus.repository.*;
 
 import java.time.LocalDateTime;

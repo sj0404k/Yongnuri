@@ -31,9 +31,12 @@ public class SecurityConfig {
                 // .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 필요 시 CORS 설정
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용 안 함 (JWT)
                 .authorizeHttpRequests(authorize -> authorize
+                        //관리자
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         // 인증 없이 접근 허용할 API 경로들
                         .requestMatchers("/auth/mail/**", "/auth/verify/**").permitAll()
                         .requestMatchers("/auth/**", "/auth/login").permitAll()
+                        //인증 필요? 나중에 작성 지금은 모두 허용중
                         .requestMatchers("/mypage/**","/mypage/bookmarks").permitAll()
                         .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
                         .requestMatchers("/report/**").permitAll()          //마지 할때 권한 변경 필요4

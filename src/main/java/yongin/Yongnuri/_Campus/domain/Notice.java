@@ -1,16 +1,25 @@
 package yongin.Yongnuri._Campus.domain;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Builder
+@Setter
 @NoArgsConstructor
+
 @AllArgsConstructor
 @Table(name = "notice")
 public class Notice {
@@ -29,14 +38,20 @@ public class Notice {
 
     private Boolean isImages;
 
-    private String status;
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private NoticeStatus status = NoticeStatus.RECRUITING;
 
     private String link;
-
-    private LocalDateTime startDate;
-
-    private LocalDateTime endDate;
-
-    @Column(name = "created_at")
+    private LocalDateTime startDate; // 신청 시작일
+    private LocalDateTime endDate;   // 신청 종료일
     private LocalDateTime createdAt;
+
+    public enum NoticeStatus {
+        RECRUITING, // 모집중/진행중
+        COMPLETED,  // 완료/마감
+        DELETED     // 삭제됨
+    }
 }
+

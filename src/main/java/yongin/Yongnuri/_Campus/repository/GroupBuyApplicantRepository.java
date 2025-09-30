@@ -3,7 +3,9 @@ package yongin.Yongnuri._Campus.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import yongin.Yongnuri._Campus.domain.GroupBuy;
 import yongin.Yongnuri._Campus.domain.GroupBuyApplicant;
+import yongin.Yongnuri._Campus.domain.LostItem;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
 
 import java.util.List;
@@ -16,4 +18,5 @@ public interface GroupBuyApplicantRepository extends JpaRepository<GroupBuyAppli
     long countByPostId(Long postId);
     void deleteAllByPostId(Long postId);
     boolean existsByPostIdAndUserId(Long postId, Long userId);
+
 }
