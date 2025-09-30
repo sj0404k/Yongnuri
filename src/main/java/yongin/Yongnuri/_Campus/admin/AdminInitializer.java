@@ -1,0 +1,44 @@
+package yongin.Yongnuri._Campus.admin;
+
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+import yongin.Yongnuri._Campus.domain.User;
+import yongin.Yongnuri._Campus.repository.UserRepository;
+
+import java.time.LocalDateTime;
+
+@Component
+public class AdminInitializer implements ApplicationRunner {
+
+    private final UserRepository userRepository;
+    private final AdminConfig adminConfig;
+    private final PasswordEncoder passwordEncoder;
+
+    public AdminInitializer(UserRepository userRepository,
+                            AdminConfig adminConfig,
+                            PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.adminConfig = adminConfig;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    public void run(ApplicationArguments args) {
+        userRepository.findByEmail(adminConfig.getEmail()).ifPresentOrElse(
+                user -> System.out.println("Admin 계정 이미 존재함: " + user.getEmail()),
+                () -> {
+                    User admin = User.builder()
+                            .email(adminConfig.getEmail())
+                            .nickName(adminConfig.getNickName())
+                            .password(passwordEncoder.encode(adminConfig.getPassword()))
+                            .creatAt(LocalDateTime.now())
+                            .role(adminConfig.getRole())
+                            .build();
+                    userRepository.save(admin);
+                    System.out.println("Admin 계정 생성 완료: " + admin.getEmail());
+                }
+        );
+    }
+}

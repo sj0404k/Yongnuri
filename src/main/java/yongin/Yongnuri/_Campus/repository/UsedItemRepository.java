@@ -5,6 +5,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import yongin.Yongnuri._Campus.domain.UsedItem;
 
+import java.util.List;
+
 public interface UsedItemRepository extends JpaRepository<UsedItem, Long>, JpaSpecificationExecutor<UsedItem> {
-    
+
+    List<UsedItem> findByTitleContainingIgnoreCase(String title);
 }

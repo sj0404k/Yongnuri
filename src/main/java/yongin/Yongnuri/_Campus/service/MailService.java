@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // 트랜잭션 처리를 위해 추가
 import yongin.Yongnuri._Campus.domain.Verification;
@@ -180,4 +181,15 @@ public class MailService {
                 .ifPresent(verificationRepository::delete);
         log.info("이메일({})에 대한 인증 코드가 삭제되었습니다.", email);
     }
+    /**
+     * 주기적으로 만료된 인증 코드 삭제
+     * fixedRate = 5분마다 실행 (밀리초 단위)
+     */
+//    @Scheduled(fixedRate = 5 * 60 * 1000)
+//    @Transactional
+//    public void deleteExpiredCodes() {
+//        LocalDateTime expirationThreshold = LocalDateTime.now().minusMinutes(VERIFICATION_CODE_EXPIRATION_MINUTES);
+//        verificationRepository.deleteByCreatedAtBefore(expirationThreshold);
+//        log.info("만료된 이메일 인증 코드들을 삭제했습니다. 기준 시각: {}", expirationThreshold);
+//    }
 }

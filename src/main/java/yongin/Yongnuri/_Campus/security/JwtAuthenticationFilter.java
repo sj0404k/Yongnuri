@@ -26,36 +26,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
-
         String token = null;
         String email = null;
 
-        // "Bearer {token}" 형태인지 확인
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7);
-            email = jwtProvider.getEmailFromToken(token);
+
+            try {
+                email = jwtProvider.getEmailFromToken(token);
+            } catch (io.jsonwebtoken.ExpiredJwtException e) {
+                // 토큰 만료 처리
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"error\":\"토큰이 만료되었습니다. 다시 로그인 해주세요.\"}");
+                return; // 필터 체인 진행 중단
+            } catch (Exception e) {
+                // 기타 토큰 오류 처리
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"error\":\"유효하지 않은 토큰입니다.\"}");
+                return;
+            }
         }
 
-        // SecurityContext에 인증 정보가 없고, 토큰이 유효하다면
+        // 토큰이 정상이고, 인증 정보가 없으면 SecurityContext에 저장
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             if (jwtProvider.validateToken(token)) {
-                // ✅ CustomUserDetails 반환
                 CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails, // principal = CustomUserDetails
+                                userDetails,
                                 null,
                                 userDetails.getAuthorities()
                         );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // SecurityContext에 인증 정보 저장
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
 
         filterChain.doFilter(request, response);
     }
+
 }

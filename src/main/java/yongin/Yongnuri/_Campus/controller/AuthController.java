@@ -72,8 +72,7 @@ public class AuthController {
     // 5. 비밀번호 재설정 -- 아직 안함 오류가 좀 있어서 후순위로 만들 예정
     @PostMapping("/resetPassword")
     public ResponseEntity<?> resetPassword(@RequestBody AuthReq.resetPasswordReqDto req) {
-
-//        authService.rePassword(req);
+        authService.rePassword(req);
         return ResponseEntity.ok("비밀번호 재설정 성공");
     }
 }

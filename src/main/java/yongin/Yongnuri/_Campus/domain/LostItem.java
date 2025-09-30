@@ -14,13 +14,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.time.LocalDateTime;
+
+
 
 @Entity
 @Getter
-@Setter // 간단한 예시를 위해 Setter 사용
-@Builder 
-@NoArgsConstructor 
-@AllArgsConstructor 
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LostItem {
 
     @Id
@@ -32,11 +35,9 @@ public class LostItem {
     private User user; // 게시자
 
     @Enumerated(EnumType.STRING)
-    private ItemPurpose purpose; // 게시 목적 (LOST, FOUND)
-
+    private ItemPurpose purpose; // LOST,FOUND
     @Enumerated(EnumType.STRING)
-    private ItemStatus status; // 처리 상태 (REPORTED, RETURNED)
-
+    private ItemStatus status; // REPORTED, RETURNED,DELETED
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -44,13 +45,15 @@ public class LostItem {
 
     private String location;
 
-    // created_at, updated_at 등 타임스탬프 필드 (BaseEntity 등으로 분리하는 것이 좋음)
-
+    @Column(name = "is_images")
+    private Boolean isImages;
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
     public enum ItemPurpose {
         LOST, FOUND
     }
 
     public enum ItemStatus {
-        REPORTED, RETURNED
+        REPORTED, RETURNED, DELETED
     }
 }
