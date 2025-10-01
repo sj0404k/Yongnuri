@@ -6,4 +6,5 @@ import yongin.Yongnuri._Campus.domain.ChatStatus;
 
 @Repository
 public interface ChatStatusRepository extends JpaRepository<ChatStatus,Long> {
+    ChatStatus findByUserIdAndChatRoomId(Long userId, Long chatRoomId);
 }

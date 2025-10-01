@@ -1,6 +1,7 @@
-package yongin.Yongnuri._Campus.dto;
+package yongin.Yongnuri._Campus.dto.chat;
 
 import lombok.*;
+import yongin.Yongnuri._Campus.config.TimeUtils;
 import yongin.Yongnuri._Campus.domain.ChatRoom;
 
 import java.time.LocalDateTime;
@@ -16,8 +17,8 @@ public class ChatRoomDto {
     private String lastMessage;
     private Long fromUserId;
     private Long toUserId;
-    private String type;
-    private LocalDateTime updateTime;
+    private ChatRoom.ChatType type;
+    private String updateTime;
 
     // 엔티티 → DTO 변환
     public static ChatRoomDto fromEntity(ChatRoom room) {
@@ -26,8 +27,8 @@ public class ChatRoomDto {
                 .lastMessage(room.getLastMessage())
                 .fromUserId(room.getFromUserId())
                 .toUserId(room.getToUserId())
-                .type(String.valueOf(room.getType()))
-                .updateTime(room.getUpdateTime())
+                .type(room.getType())
+                .updateTime(TimeUtils.toRelativeTime(room.getUpdateTime()))
                 .build();
     }
 }

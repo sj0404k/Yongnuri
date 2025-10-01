@@ -6,12 +6,14 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import yongin.Yongnuri._Campus.domain.ChatMessages;
-import yongin.Yongnuri._Campus.dto.ChatMessageRequest;
-import yongin.Yongnuri._Campus.dto.ChatRoomDto;
-import yongin.Yongnuri._Campus.dto.ChatRoomReq;
+import yongin.Yongnuri._Campus.domain.ChatRoom;
+import yongin.Yongnuri._Campus.dto.chat.ChatMessageRequest;
+import yongin.Yongnuri._Campus.dto.chat.ChatMessagesRes;
+import yongin.Yongnuri._Campus.dto.chat.ChatRoomDto;
+import yongin.Yongnuri._Campus.dto.chat.ChatRoomReq;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
-import yongin.Yongnuri._Campus.servise.ChatService;
+import yongin.Yongnuri._Campus.service.ChatService;
+
 
 import java.util.List;
 
@@ -19,24 +21,39 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/chat")
 public class ChatController {
-
+    /*
+        우선 기능별 컨드롤만 작성
+     */
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
-
+/**
+ * 필요 기능들
+ * 채팅방 목록 조회 (닉네임 시간 마지막 내용) ----  완료
+ * 채팅방 세부 조회
+ * 메시지 조회 -- 세부조화랑 갇을듯?
+ * 읽음처리- 이건 세부 조회할때 처리하면 될듯
+ * 채팅방 내 중고거래 판매상태 변경(판매자만 가능하게)
+ * 메시지 보내기
+ * 메시지 보내기 (택스트, 이미지)
+ *
+ * 채칭방 신고
+ * 사용자 차단
+ * 사용자 차단해제
+ */
 
     /** 채팅방 목록 조회 */
-    @GetMapping
-    public ResponseEntity<List<ChatRoomDto>> getChatRooms(@AuthenticationPrincipal CustomUserDetails user, @RequestBody String type) {
+    @GetMapping("/rooms")
+    public ResponseEntity<List<ChatRoomDto>> getChatRooms(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ChatRoom.ChatType type) {
         List<ChatRoomDto> rooms = chatService.getChatRooms(user, type);
         return ResponseEntity.ok(rooms);
     }
 
-    /** 채팅방 세부 조회 */
-//    @GetMapping("/{chatRoomId}")
-//    public ResponseEntity<ChatRoomDto> getChatRoom(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long chatRoomId) {
-//        ChatRoomDto room = chatService.getChatRoom(user, chatRoomId);
-//        return ResponseEntity.ok(room);
-//    }
+    /** 채팅방 세부 조회 (채팅방 입장하기) */
+    @GetMapping("/rooms/{RoomId}")
+    public ResponseEntity<List<ChatMessagesRes>> getChatRoom(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long RoomId) {
+        List<ChatMessagesRes> room = chatService.getEnterChatRoom(user, RoomId);
+        return ResponseEntity.ok(room);
+    }
 
     /** 채팅방 생성 */
     @PostMapping

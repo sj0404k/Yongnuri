@@ -25,17 +25,20 @@ ChatMessageRequest
 @NoArgsConstructor
 @Builder
 public class ChatMessages {
+    /**
+     *주고 받은 매시지들이 보관되는 장소
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long chatId;
-    private ChatType  chatType;
-    private String message;
-    private Long senderId;
-    private LocalDateTime createdAt;
+    private Long chatRoomId;    //채팅방의 방 번호
+    private messageType chatType;  //채팅 타입
+    private String message;     //메시지 타입에 따른 결과 다름 택스트 or url
+    private Long senderId;      //보낸 사람
+    private LocalDateTime createdAt;    //생성일 이걸로 유저의 채팅 확인했는지 알아봄 비교 대상임
 
-    public enum ChatType {
+    public enum messageType {
         이미지,
         텍스트
     }

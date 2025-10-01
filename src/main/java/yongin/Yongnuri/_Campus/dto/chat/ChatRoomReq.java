@@ -1,10 +1,9 @@
-package yongin.Yongnuri._Campus.dto;
+package yongin.Yongnuri._Campus.dto.chat;
 
 import lombok.Getter;
 import yongin.Yongnuri._Campus.domain.ChatMessages;
 import yongin.Yongnuri._Campus.domain.ChatRoom;
 
-import java.time.LocalDateTime;
 @Getter
 
 public class ChatRoomReq {
@@ -13,5 +12,5 @@ public class ChatRoomReq {
     private Long userId;
     private Long fromUserId;
     private String message;
-    private ChatMessages.ChatType chatType;
+    private ChatMessages.messageType messageType;
 }
