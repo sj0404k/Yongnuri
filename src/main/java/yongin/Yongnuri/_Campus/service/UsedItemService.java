@@ -104,7 +104,8 @@ public class UsedItemService {
         UsedItemResponseDto dto = new UsedItemResponseDto(item, author, images);
         boolean isBookmarked = bookmarkRepository.existsByUserIdAndPostTypeAndPostId(currentUser.getId(), "USED_ITEM", postId);
         dto.setBookmarked(isBookmarked);
-
+        long bookmarkCount = bookmarkRepository.countByPostTypeAndPostId("USED_ITEM", postId);
+        dto.setBookmarkCount(bookmarkCount);
         return dto;
     }
 
