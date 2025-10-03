@@ -24,7 +24,7 @@ import yongin.Yongnuri._Campus.repository.BookmarkRepository;
 import yongin.Yongnuri._Campus.repository.ImageRepository;
 import yongin.Yongnuri._Campus.repository.LostItemRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 @Service
 @RequiredArgsConstructor
 public class LostItemService {
@@ -51,7 +51,7 @@ public class LostItemService {
         Specification<LostItem> spec = (root, query, cb) -> {
             return cb.not(root.get("user").get("id").in(blockedUserIds));
         };
-        spec = spec.and((root, query, cb) -> cb.notEqual(root.get("status"), LostItem.ItemStatus.DELETED));
+        spec = spec.and((root, query, cb) -> cb.notEqual(root.get("status"), Enum.LostItemStatus.DELETED));
         if (!"전체".equals(type)) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("location"), type));
         }
@@ -92,7 +92,7 @@ public class LostItemService {
 
         LostItem item = lostItemRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
-        if (item.getStatus() == LostItem.ItemStatus.DELETED) {
+        if (item.getStatus() == Enum.LostItemStatus.DELETED) {
             throw new EntityNotFoundException("삭제된 게시글입니다.");
         }
         if (blockedUserIds.contains(item.getUser().getId())) {
@@ -174,10 +174,10 @@ public class LostItemService {
              item.setLocation(requestDto.getLocation());
          }
          if (requestDto.getPurpose() != null) {
-             item.setPurpose(LostItem.ItemPurpose.valueOf(requestDto.getPurpose().toUpperCase()));
+             item.setPurpose(Enum.LostItemPurpose.valueOf(requestDto.getPurpose().toUpperCase()));
          }
          if (requestDto.getStatus() != null) {
-             item.setStatus(LostItem.ItemStatus.valueOf(requestDto.getStatus().toUpperCase()));
+             item.setStatus(Enum.LostItemStatus.valueOf(requestDto.getStatus().toUpperCase()));
          }
          return item.getId();
      }

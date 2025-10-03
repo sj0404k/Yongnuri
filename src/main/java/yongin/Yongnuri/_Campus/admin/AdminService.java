@@ -24,7 +24,7 @@ import yongin.Yongnuri._Campus.repository.BookMarksRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 @Service
 @AllArgsConstructor
 public class AdminService {
@@ -33,6 +33,7 @@ public class AdminService {
     private final ReportRepository reportRepository;
     private final NoticeRepository noticeRepository;
     private final ImageRepository imageRepository;
+
     private final BookMarksRepository bookmarkRepository;
 
     public List<AdminReportRes2> getReportList1(String email) {
@@ -40,7 +41,7 @@ public class AdminService {
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
 
-        if (!User.Role.ADMIN.equals(admin.getRole())) {
+        if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
@@ -71,7 +72,7 @@ public class AdminService {
     public List<AdminReportRes> getReportList(String email) {
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
-        if (!User.Role.ADMIN.equals(admin.getRole())) {
+        if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
@@ -98,7 +99,7 @@ public class AdminService {
         // 1. 관리자 확인
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
-        if (!User.Role.ADMIN.equals(admin.getRole())) {
+        if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
@@ -132,7 +133,7 @@ public class AdminService {
         User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
 
-        if (!User.Role.ADMIN.equals(admin.getRole())) {
+        if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
@@ -160,7 +161,7 @@ public class AdminService {
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
 
-        if (!User.Role.ADMIN.equals(admin.getRole())) {
+        if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
@@ -182,7 +183,7 @@ public class AdminService {
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
 
-        if (!User.Role.ADMIN.equals(admin.getRole())) {
+        if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
@@ -229,7 +230,7 @@ public class AdminService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
 
-        if (user.getRole() != User.Role.ADMIN) {
+        if (user.getRole() != Enum.UserRole.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
         return user;
@@ -241,7 +242,7 @@ public class AdminService {
                 .author(admin)
                 .title(requestDto.getTitle())
                 .content(requestDto.getContent())
-                .status(Notice.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()))
+                .status(Enum.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()))
                 .link(requestDto.getLink())
                 .startDate(requestDto.getStartDate())
                 .endDate(requestDto.getEndDate())
@@ -268,7 +269,7 @@ public class AdminService {
                  .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
          if(requestDto.getTitle() != null) notice.setTitle(requestDto.getTitle());
          if(requestDto.getContent() != null) notice.setContent(requestDto.getContent());
-         if(requestDto.getStatus() != null) notice.setStatus(Notice.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()));
+         if(requestDto.getStatus() != null) notice.setStatus(Enum.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()));
          if(requestDto.getLink() != null) notice.setLink(requestDto.getLink());
          if(requestDto.getStartDate() != null) notice.setStartDate(requestDto.getStartDate());
          if(requestDto.getEndDate() != null) notice.setEndDate(requestDto.getEndDate());
@@ -280,6 +281,6 @@ public class AdminService {
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
 
-        notice.setStatus(Notice.NoticeStatus.DELETED);
+        notice.setStatus(Enum.NoticeStatus.DELETED);
     }
 }

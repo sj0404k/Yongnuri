@@ -1,14 +1,13 @@
 package yongin.Yongnuri._Campus.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import yongin.Yongnuri._Campus.domain.Enum.ChatType;
+import yongin.Yongnuri._Campus.domain.Enum.ReportStatus;
+import yongin.Yongnuri._Campus.domain.Enum.ReportType;
 import java.time.LocalDateTime;
 
 @Entity
@@ -23,16 +22,18 @@ public class Reports {
 
     private Long reportId;      // 신고자
     private Long reportedId;        //당한자
-    private ChatType postType;  //게시글 타입
     private Long postId;        //게시글 id
-    private ReportType reason;      //이유
     private String content;     //신고내용
-    private boolean isImages;
+    private Boolean isImages;
     private LocalDateTime createdAt;
     private LocalDateTime processedAt;
+    @Enumerated(EnumType.STRING)
+    private ChatType postType;  //게시글 타입
+    @Enumerated(EnumType.STRING)
+    private ReportType reason;      //이유
+    @Enumerated(EnumType.STRING)
     private ReportStatus status;
-
-
+/**
     public enum ReportType{
         도배,
         홍보_광고행위,
@@ -54,6 +55,6 @@ public class Reports {
         처리반려,
         처리승인,
     }
-
+*/
 
 }

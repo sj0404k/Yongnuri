@@ -17,7 +17,7 @@ import org.springframework.security.access.AccessDeniedException;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {
@@ -38,6 +38,7 @@ public class AppointmentService {
         Long party1_Id;
         Long party2_Id = currentUser.getId();
         String postType = requestDto.getPostType();
+
         if ("USED_ITEM".equals(postType)) {
             UsedItem item = usedItemRepository.findById(requestDto.getPostId())
                     .orElseThrow(() -> new EntityNotFoundException("중고거래 게시글을 찾을 수 없습니다."));
@@ -57,7 +58,7 @@ public class AppointmentService {
             if (party1_Id.equals(party2_Id)) {
                 throw new IllegalArgumentException("자신의 게시글에 대해 약속을 잡을 수 없습니다.");
             }
-            if (item.getPurpose() == LostItem.ItemPurpose.FOUND) {
+            if (item.getPurpose() == Enum.LostItemPurpose.FOUND) {
                 return saveAppointment(requestDto, party1_Id, party2_Id);
             }
             else {
@@ -78,7 +79,7 @@ public class AppointmentService {
                 .buyerId(buyerId)
                 .appointmentAt(appointmentAt)
                 .location(requestDto.getLocation())
-                .status("SCHEDULED")
+                .status(Enum.AppointmentStatus.SCHEDULED)
                 .createdAt(LocalDateTime.now())
                 .postType(requestDto.getPostType())
                 .postId(requestDto.getPostId())
@@ -107,7 +108,7 @@ public class AppointmentService {
             appointment.setLocation(requestDto.getLocation());
         }
         if (requestDto.getStatus() != null) {
-            appointment.setStatus(requestDto.getStatus());
+            appointment.setStatus(Enum.AppointmentStatus.valueOf(requestDto.getStatus().trim().toUpperCase()));
         }
     }
 }

@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.*;
-
+import yongin.Yongnuri._Campus.domain.Enum.NoticeStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -39,19 +39,22 @@ public class Notice {
     private Boolean isImages;
 
 
-    @Enumerated(EnumType.STRING)
-    @Builder.Default
-    private NoticeStatus status = NoticeStatus.RECRUITING;
+
 
     private String link;
     private LocalDateTime startDate; // 신청 시작일
     private LocalDateTime endDate;   // 신청 종료일
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private NoticeStatus status = NoticeStatus.RECRUITING;
+/**
     public enum NoticeStatus {
         RECRUITING, // 모집중/진행중
         COMPLETED,  // 완료/마감
         DELETED     // 삭제됨
     }
+*/
 }
 

@@ -6,7 +6,7 @@ import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.dto.ReportReq;
 import yongin.Yongnuri._Campus.repository.ReportRepository;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 import java.time.LocalDateTime;
 
 @Service
@@ -24,7 +24,7 @@ public class ReportService {
                 .content(reportReq.getContent())
 //                .isImages(false)  // 아직 처리 미정 병합후 처리 해야됨
                 .createdAt(LocalDateTime.now())
-                .status(Reports.ReportStatus.처리대기)
+                .status(Enum.ReportStatus.PENDING)
                 .build();
         reportRepository.save(reports);
     }

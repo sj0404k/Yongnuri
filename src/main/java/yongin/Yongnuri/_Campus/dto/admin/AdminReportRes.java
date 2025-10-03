@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import yongin.Yongnuri._Campus.domain.Reports;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 import java.time.LocalDateTime;
 
 @Getter
@@ -17,7 +17,7 @@ public class AdminReportRes {
     private int reportStudentId;
     private String reportStudentName;
     private Long reportCount;
-    private Reports.ChatType reportType;
+    private Enum.ChatType reportType;
     private Long typeId;
     private String major;
     private Long reportId;
@@ -26,6 +26,6 @@ public class AdminReportRes {
     private String reason;
     private String content;
     private LocalDateTime processedAt;
-    private Reports.ReportStatus status;
+    private Enum.ReportStatus status;
 
 }

@@ -9,7 +9,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Getter;
 import yongin.Yongnuri._Campus.domain.GroupBuy;
 import yongin.Yongnuri._Campus.domain.UsedItem;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 @Getter
 public class UsedItemCreateRequestDto {
 
@@ -44,7 +44,7 @@ public class UsedItemCreateRequestDto {
                 .content(this.content)
                 .location(this.location)
                 .method(this.method)
-                .status(UsedItem.UsedItemStatus.valueOf(this.status.toUpperCase()))
+                .status(Enum.UsedItemStatus.valueOf(this.status.toUpperCase()))
                 .price(this.price)
                 .isImages(this.imageUrls != null && !this.imageUrls.isEmpty()) // 내부에서 계산
                 .createdAt(LocalDateTime.now())
