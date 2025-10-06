@@ -23,6 +23,8 @@ public class GroupBuyResponseDto {
     private final String authorNickname;
     private final List<ImageDto> images;
 
+    private String authorDepartment;
+    private String authorEmail;
 
     @Setter
     private Long currentCount;
@@ -46,6 +48,8 @@ public class GroupBuyResponseDto {
 
     // 공동구매상세 조회
     public GroupBuyResponseDto(GroupBuy item, User author, List<Image> images) {
+        this.authorEmail = author.getEmail();
+        this.authorDepartment = author.getName();
         this.id = item.getId();
         this.title = item.getTitle();
         this.status = item.getStatus().name();
