@@ -13,10 +13,11 @@ public class MypageRes {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class getpage {
-        private String studentId; // ✅ 학번은 문자열로 내려서 선행 0 손실 방지
+        private String studentId; // 학번은 문자열로 내려서 선행 0 손실 방지
         private String name;
         private String email;
-        private String nickName;  // ✅ 닉네임 추가
+        private String nickName;  //닉네임 추가
+        private String major;
         // 필요 시 major 등 필드 확장 가능
     }
 }

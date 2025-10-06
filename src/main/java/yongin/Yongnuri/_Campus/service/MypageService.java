@@ -28,7 +28,7 @@ public class MypageService {
     private final BookMarksRepository bookMarksRepository;
     private final BlockRepository blockRepository;
 
-    /** ✅ 내 정보 조회: 실제 학번 + 닉네임까지 내려줌 */
+
     public MypageRes.getpage getMypageDetails(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "해당 사용자를 찾을 수 없습니다."));
@@ -45,7 +45,8 @@ public class MypageService {
                 studentId,
                 safe(user.getName()),
                 safe(user.getEmail()),
-                nickName
+                nickName,
+                user.getMajor()
         );
     }
 
