@@ -31,6 +31,12 @@ public class Enum {
         DELETED     // 삭제됨
     }
 
+    public enum authStatus {
+        ACTIVE,          // 정상 가입 상태
+        WITHDRAWN,       // 탈퇴한 사용자
+        SUSPENDED;       // 정지된 사용자
+    }
+
     public static enum ReportType {
         SPAM,                   // 도배
         PROMOTION_ADVERTISING, // 홍보_광고행위

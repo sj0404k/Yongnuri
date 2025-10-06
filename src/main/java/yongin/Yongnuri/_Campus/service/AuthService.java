@@ -77,6 +77,7 @@ public class AuthService {
                 .nickName(req.getNickname())
                 .creatAt(LocalDateTime.now())
                 .role(Enum.UserRole.USER)
+                .status(Enum.authStatus.ACTIVE)
                 .build();
 
         userRepository.save(newUser);

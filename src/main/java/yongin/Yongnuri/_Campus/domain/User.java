@@ -40,9 +40,7 @@ public class User {
     private String major;
 
     @Column(name = "status")
-    private String status;
-
-
+    private Enum.authStatus status;
 
     @Column(name = "creat_at")
     private LocalDateTime creatAt;
