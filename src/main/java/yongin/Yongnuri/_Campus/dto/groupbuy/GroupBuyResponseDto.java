@@ -50,7 +50,7 @@ public class GroupBuyResponseDto {
     // 공동구매상세 조회
     public GroupBuyResponseDto(GroupBuy item, User author, List<Image> images) {
         this.authorEmail = author.getEmail();
-        this.authorDepartment = author.getName();
+        this.authorDepartment = author.getMajor();
         this.id = item.getId();
         this.title = item.getTitle();
         this.status = item.getStatus().name();
