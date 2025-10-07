@@ -62,14 +62,11 @@ public class GroupBuyService {
         Set<Long> myBookmarkedPostIds = bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "GROUP_BUY", postIds)
                 .stream().map(Bookmark::getPostId).collect(Collectors.toSet());
 
-        Map<Long, Long> participantCountMap = applicantRepository.countByPostIdIn(postIds)
-                .stream().collect(Collectors.toMap(BookmarkCountDto::getPostId, BookmarkCountDto::getCount));
-
         return items.stream().map(item -> {
             GroupBuyResponseDto dto = new GroupBuyResponseDto(item);
             dto.setThumbnailUrl(thumbnailMap.get(item.getId()));
             dto.setBookmarked(myBookmarkedPostIds.contains(item.getId()));
-            dto.setCurrentCount(participantCountMap.getOrDefault(item.getId(), 0L));
+
             return dto;
         }).collect(Collectors.toList());
     }
@@ -93,7 +90,7 @@ public class GroupBuyService {
 
         GroupBuyResponseDto dto = new GroupBuyResponseDto(item, author, images);
         dto.setBookmarked(isBookmarked);
-        dto.setCurrentCount(applicantRepository.countByPostId(postId));
+
         return dto;
     }
     //공동구매글작성
@@ -176,9 +173,9 @@ public class GroupBuyService {
     }
 
       //현재 모집 인원 수정
-    @Transactional
-    public void updateCurrentCount(String email, Long postId, UpdateCountRequestDto requestDto) {
-        User currentUser = getUserByEmail(email);
+      @Transactional
+      public GroupBuyResponseDto updateCurrentCount(String email, Long postId, UpdateCountRequestDto requestDto) {
+          User currentUser = getUserByEmail(email);
         GroupBuy item = groupBuyRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
         if (!item.getUserId().equals(currentUser.getId())) {
@@ -192,6 +189,13 @@ public class GroupBuyService {
         if (newCount < 0) {
             throw new IllegalArgumentException("현재 인원은 0명 미만이 될 수 없습니다.");
         }
-        item.setCurrentCount(newCount);
+        item.setCurrentCount(requestDto.getCount());
+
+        groupBuyRepository.flush();
+
+        GroupBuy updatedItem = groupBuyRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
+
+        return new GroupBuyResponseDto(updatedItem);
     }
 }
