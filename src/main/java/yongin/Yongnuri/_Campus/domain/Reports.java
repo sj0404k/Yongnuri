@@ -33,6 +33,8 @@ public class Reports {
     private ReportType reason;      //이유
     @Enumerated(EnumType.STRING)
     private ReportStatus status;
+}
+
 /**
     public enum ReportType{
         도배,
@@ -57,4 +59,4 @@ public class Reports {
     }
 */
 
-}
+

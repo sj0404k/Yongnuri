@@ -39,6 +39,7 @@ public class User {
     @Column(name = "major")
     private String major;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private Enum.authStatus status;
 
