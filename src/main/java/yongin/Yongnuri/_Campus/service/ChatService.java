@@ -27,7 +27,8 @@ public class ChatService {
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessagesRepository chatMessagesRepository;
     private final ChatStatusRepository chatStatusRepository;
-    private static final int MESSAGE_PAGE_SIZE = 20;
+    private static final int MESSAGE_PAGE_SIZE = 20;// 채팅 20개 씩 보여주기
+
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, ChatRoom.ChatType type) {
 
         ChatRoom.ChatType chatType;

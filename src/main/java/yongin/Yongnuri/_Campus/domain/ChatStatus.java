@@ -25,8 +25,8 @@ public class ChatStatus {
     private Long id;
     private Long chatRoomId;
     private Long userId;                //해당 본인 유저 id값
-    private LocalDateTime firstDate;    // 체팅방 처음 접속일 일단 넣어봤음
-    private LocalDateTime lastDate;     //마지막 체팅 본기록 체팅방 눌렀을때 최신화하기
+    private LocalDateTime firstDate;    // 채팅방 처음 접속일 일단 넣어봤음
+    private LocalDateTime lastDate;     //마지막 채팅 본기록 체팅방 눌렀을때 최신화하기
     private boolean chatStatus;         //true 채팅방 활성화 // false 비활성화
 
 }

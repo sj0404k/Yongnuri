@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class ChatRoomDto {
-    private Long id;
-    private String lastMessage;
-    private Long fromUserId;
-    private Long toUserId;
-    private ChatRoom.ChatType type;
-    private String updateTime;
+    private Long id;                    //방 id
+    private String lastMessage;         //마지막 메시지
+    private Long fromUserId;            //user1
+    private Long toUserId;              //user2
+    private ChatRoom.ChatType type;     //채팅의 타입
+    private String updateTime;          //마지막 채팅 보낸 시간
 
     // 엔티티 → DTO 변환
     public static ChatRoomDto fromEntity(ChatRoom room) {
