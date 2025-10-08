@@ -5,6 +5,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yongin.Yongnuri._Campus.domain.*;
+import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -56,18 +57,18 @@ public class BoardService {
 
 
         boolean isAuthor = authorId.equals(currentUser.getId());
-        boolean isAdmin = currentUser.getRole() == User.Role.ADMIN;
+        boolean isAdmin = currentUser.getRole() == Enum.UserRole.ADMIN;
 
         if (!isAuthor && !isAdmin) {
             throw new AccessDeniedException("이 게시글을 삭제할 권한이 없습니다.");
         }
 
         if (itemToUpdate instanceof UsedItem) {
-            ((UsedItem) itemToUpdate).setStatus(UsedItem.UsedItemStatus.DELETED);
+            ((UsedItem) itemToUpdate).setStatus(Enum.UsedItemStatus.DELETED);
         } else if (itemToUpdate instanceof LostItem) {
-            ((LostItem) itemToUpdate).setStatus(LostItem.ItemStatus.DELETED);
+            ((LostItem) itemToUpdate).setStatus(Enum.LostItemStatus.DELETED);
         } else if (itemToUpdate instanceof GroupBuy) {
-            ((GroupBuy) itemToUpdate).setStatus(GroupBuy.GroupBuyStatus.DELETED);
+            ((GroupBuy) itemToUpdate).setStatus(Enum.GroupBuyStatus.DELETED);
         }
     }
 }

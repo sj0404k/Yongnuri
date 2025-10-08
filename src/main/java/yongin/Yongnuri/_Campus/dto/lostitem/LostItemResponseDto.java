@@ -19,6 +19,9 @@ public class LostItemResponseDto {
     private final LocalDateTime createdAt;
     private final String authorNickname;
     private final List<ImageDto> images;
+
+    private String authorDepartment;        // 작성자 학과(=User.major)
+    private String authorEmail;             // ✅ 오너 판정용
     @Setter
     private String thumbnailUrl;
     @Setter
@@ -39,6 +42,8 @@ public class LostItemResponseDto {
     }
 
     public LostItemResponseDto(LostItem item, List<Image> images) {
+        this.authorEmail = item.getUser().getEmail();
+        this.authorDepartment = item.getUser().getMajor();
         this.id = item.getId();
         this.title = item.getTitle();
         this.content = item.getContent();

@@ -23,6 +23,8 @@ public class GroupBuyResponseDto {
     private final String authorNickname;
     private final List<ImageDto> images;
 
+    private String authorDepartment;
+    private String authorEmail;
 
     @Setter
     private Long currentCount;
@@ -42,10 +44,13 @@ public class GroupBuyResponseDto {
         this.link = null;
         this.authorNickname = null;
         this.images = null;
+        this.currentCount = (item.getCurrentCount() == null) ? 0L : item.getCurrentCount().longValue();
     }
 
     // 공동구매상세 조회
     public GroupBuyResponseDto(GroupBuy item, User author, List<Image> images) {
+        this.authorEmail = author.getEmail();
+        this.authorDepartment = author.getMajor();
         this.id = item.getId();
         this.title = item.getTitle();
         this.status = item.getStatus().name();
@@ -53,6 +58,7 @@ public class GroupBuyResponseDto {
         this.createdAt = item.getCreatedAt();
         this.content = item.getContent();
         this.link = item.getLink();
+        this.currentCount = (item.getCurrentCount() == null) ? 0L : item.getCurrentCount().longValue();
         this.authorNickname = author.getNickName();
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());
     }

@@ -16,6 +16,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.LocalDateTime;
 
+import yongin.Yongnuri._Campus.domain.Enum.LostItemPurpose;
+import yongin.Yongnuri._Campus.domain.Enum.LostItemStatus;
 
 
 @Entity
@@ -34,10 +36,7 @@ public class LostItem {
     @JoinColumn(name = "user_id")
     private User user; // 게시자
 
-    @Enumerated(EnumType.STRING)
-    private ItemPurpose purpose; // LOST,FOUND
-    @Enumerated(EnumType.STRING)
-    private ItemStatus status; // REPORTED, RETURNED,DELETED
+
     private String title;
 
     @Column(columnDefinition = "TEXT")
@@ -49,11 +48,24 @@ public class LostItem {
     private Boolean isImages;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private Enum.LostItemStatus status;
+    @Enumerated(EnumType.STRING)
+    private Enum.LostItemPurpose purpose;
+    /**
+    @Enumerated(EnumType.STRING)
+    private ItemPurpose purpose; // LOST,FOUND
     public enum ItemPurpose {
         LOST, FOUND
     }
 
+
+    @Enumerated(EnumType.STRING)
+    private ItemStatus status; // REPORTED, RETURNED,DELETED
     public enum ItemStatus {
         REPORTED, RETURNED, DELETED
     }
+*/
+
 }

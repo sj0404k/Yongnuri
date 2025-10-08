@@ -7,7 +7,7 @@ import yongin.Yongnuri._Campus.domain.GroupBuy;
 import yongin.Yongnuri._Campus.domain.User;
 import java.time.LocalDateTime;
 import java.util.List;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 @Getter
 public class GroupBuyCreateRequestDto {
     @NotBlank(message = "제목은 필수입니다.")
@@ -25,7 +25,7 @@ public class GroupBuyCreateRequestDto {
                 .userId(userId)
                 .title(this.title)
                 .content(this.content)
-                .status(GroupBuy.GroupBuyStatus.valueOf(this.status.toUpperCase()))
+                .status(Enum.GroupBuyStatus.valueOf(this.status.toUpperCase()))
                 .link(this.link)
                 .limit(this.limit)
                 .isImages(this.imageUrls != null && !this.imageUrls.isEmpty())

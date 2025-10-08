@@ -19,17 +19,25 @@ public class ImageService {
     private String uploadDir;
     public List<String> uploadImages(List<MultipartFile> imageFiles) {
         List<String> generatedUrls = new ArrayList<>();
+
         for (MultipartFile file : imageFiles) {
             String originalName = file.getOriginalFilename();
-            String extension = originalName.substring(originalName.lastIndexOf("."));
+            String extension = "";
+            if (originalName != null && originalName.contains(".")) {
+                extension = originalName.substring(originalName.lastIndexOf(".")).toLowerCase();
+            }
+            if (".jfif".equals(extension)) {
+                extension = ".jpg";
+            }
             String savedName = UUID.randomUUID().toString() + extension;
             String savedPath = uploadDir + savedName;
+
             try {
                 file.transferTo(new File(savedPath));
-                generatedUrls.add("/uploads/" + savedName);
             } catch (IOException e) {
                 throw new RuntimeException("파일 저장에 실패했습니다.", e);
             }
+            generatedUrls.add("/uploads/" + savedName);
         }
         return generatedUrls;
     }

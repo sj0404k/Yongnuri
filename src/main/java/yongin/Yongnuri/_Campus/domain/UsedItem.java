@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import yongin.Yongnuri._Campus.domain.Enum.UsedItemStatus;
 
 @Entity
 @Getter
@@ -37,22 +38,26 @@ public class UsedItem {
     @Column(name = "method") 
     private String method;
 
-    @Enumerated(EnumType.STRING)
-    private UsedItemStatus status;
+
 
     @Column(name = "location") 
     private String location; 
 
     @Column(name = "price")
     private Integer price;
-
-    @Column(name = "created_at") 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Enumerated(EnumType.STRING)
+    private UsedItemStatus status;
+/**
+     @Enumerated(EnumType.STRING)
+     private UsedItemStatus status;
     public enum UsedItemStatus {
         SELLING,
         RESERVED,
         SOLD,
         DELETED
     }
-
+*/
 }

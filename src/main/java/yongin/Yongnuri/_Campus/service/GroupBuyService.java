@@ -14,7 +14,7 @@ import yongin.Yongnuri._Campus.dto.groupbuy.UpdateCountRequestDto;
 import yongin.Yongnuri._Campus.exception.ConflictException;
 import yongin.Yongnuri._Campus.repository.*;
 import yongin.Yongnuri._Campus.service.specification.BoardSpecification;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.security.access.AccessDeniedException;
@@ -49,7 +49,7 @@ public class GroupBuyService {
         User currentUser = getUserByEmail(email);
         List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
 
-        Specification<GroupBuy> spec = (root, query, cb) -> cb.notEqual(root.get("status"), GroupBuy.GroupBuyStatus.DELETED);
+        Specification<GroupBuy> spec = (root, query, cb) -> cb.notEqual(root.get("status"), Enum.GroupBuyStatus.DELETED);
         spec = spec.and(BoardSpecification.notBlocked(blockedUserIds));
         List<GroupBuy> items = groupBuyRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "createdAt"));
         if (items.isEmpty()) return List.of();
@@ -62,14 +62,11 @@ public class GroupBuyService {
         Set<Long> myBookmarkedPostIds = bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "GROUP_BUY", postIds)
                 .stream().map(Bookmark::getPostId).collect(Collectors.toSet());
 
-        Map<Long, Long> participantCountMap = applicantRepository.countByPostIdIn(postIds)
-                .stream().collect(Collectors.toMap(BookmarkCountDto::getPostId, BookmarkCountDto::getCount));
-
         return items.stream().map(item -> {
             GroupBuyResponseDto dto = new GroupBuyResponseDto(item);
             dto.setThumbnailUrl(thumbnailMap.get(item.getId()));
             dto.setBookmarked(myBookmarkedPostIds.contains(item.getId()));
-            dto.setCurrentCount(participantCountMap.getOrDefault(item.getId(), 0L));
+
             return dto;
         }).collect(Collectors.toList());
     }
@@ -79,7 +76,7 @@ public class GroupBuyService {
 
         GroupBuy item = groupBuyRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
-        if (item.getStatus() == GroupBuy.GroupBuyStatus.DELETED) {
+        if (item.getStatus() == Enum.GroupBuyStatus.DELETED) {
             throw new EntityNotFoundException("삭제된 게시글입니다.");
         }
         if (blockService.getBlockedUserIds(currentUser.getId()).contains(item.getUserId())) {
@@ -93,7 +90,7 @@ public class GroupBuyService {
 
         GroupBuyResponseDto dto = new GroupBuyResponseDto(item, author, images);
         dto.setBookmarked(isBookmarked);
-        dto.setCurrentCount(applicantRepository.countByPostId(postId));
+
         return dto;
     }
     //공동구매글작성
@@ -138,7 +135,7 @@ public class GroupBuyService {
 
         if (requestDto.getTitle() != null) item.setTitle(requestDto.getTitle());
         if (requestDto.getContent() != null) item.setContent(requestDto.getContent());
-        if (requestDto.getStatus() != null) {item.setStatus(GroupBuy.GroupBuyStatus.valueOf(requestDto.getStatus().toUpperCase()));}
+        if (requestDto.getStatus() != null) {item.setStatus(Enum.GroupBuyStatus.valueOf(requestDto.getStatus().toUpperCase()));}
         if (requestDto.getLink() != null) item.setLink(requestDto.getLink());
         if (requestDto.getLimit() != null) item.setLimit(requestDto.getLimit());
         return item.getId();
@@ -176,9 +173,9 @@ public class GroupBuyService {
     }
 
       //현재 모집 인원 수정
-    @Transactional
-    public void updateCurrentCount(String email, Long postId, UpdateCountRequestDto requestDto) {
-        User currentUser = getUserByEmail(email);
+      @Transactional
+      public GroupBuyResponseDto updateCurrentCount(String email, Long postId, UpdateCountRequestDto requestDto) {
+          User currentUser = getUserByEmail(email);
         GroupBuy item = groupBuyRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
         if (!item.getUserId().equals(currentUser.getId())) {
@@ -192,6 +189,13 @@ public class GroupBuyService {
         if (newCount < 0) {
             throw new IllegalArgumentException("현재 인원은 0명 미만이 될 수 없습니다.");
         }
-        item.setCurrentCount(newCount);
+        item.setCurrentCount(requestDto.getCount());
+
+        groupBuyRepository.flush();
+
+        GroupBuy updatedItem = groupBuyRepository.findById(postId)
+                .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
+
+        return new GroupBuyResponseDto(updatedItem);
     }
 }

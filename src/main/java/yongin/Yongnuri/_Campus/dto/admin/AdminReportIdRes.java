@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import yongin.Yongnuri._Campus.domain.Reports;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 import java.time.LocalDateTime;
 
 @Getter
@@ -17,10 +17,10 @@ public class AdminReportIdRes {
 
     private int reportedStudentId;
     private String reportedStudentName;
-    private Reports.ReportType reason;
+    private Enum.ReportType reason;
     private String content;
     //게시판 관련 id?
-    private Reports.ChatType reportType;
+    private Enum.ChatType reportType;
     private Long typeId;
 
 }

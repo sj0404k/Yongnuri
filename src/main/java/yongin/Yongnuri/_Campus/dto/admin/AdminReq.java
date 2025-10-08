@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import yongin.Yongnuri._Campus.domain.Reports;
+import yongin.Yongnuri._Campus.domain.Enum;
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -13,14 +14,14 @@ public class AdminReq {
     public static class reportProcessReq {
         private Long id;
 //        private Long userId;
-        private Reports.ReportStatus reportStatus;
+        private Enum.ReportStatus reportStatus;
     }
     @Setter
     @Getter
     public static class reportProcessUserReq {
 //        private Long id;
         private Long userId;
-        private Reports.ReportStatus reportStatus;
+        private Enum.ReportStatus reportStatus;
     }
 
     // 공지사항 작성

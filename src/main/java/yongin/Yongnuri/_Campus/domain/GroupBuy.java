@@ -22,8 +22,6 @@ public class GroupBuy {
     @Column(columnDefinition = "TEXT")
     private String content;
     private Boolean isImages;
-    @Enumerated(EnumType.STRING)
-    private GroupBuyStatus status;
     private String link;
     @Column(name = "`limit`")
     private Integer limit;
@@ -31,9 +29,16 @@ public class GroupBuy {
     private LocalDateTime createdAt;
     @Builder.Default
     private Integer currentCount = 0;
+
+    @Enumerated(EnumType.STRING)
+    private Enum.GroupBuyStatus status;
+/**
+    @Enumerated(EnumType.STRING)
+    private GroupBuyStatus status;
     public enum GroupBuyStatus {
         RECRUITING,
         COMPLETED,
         DELETED
     }
+    */
 }

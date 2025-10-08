@@ -11,7 +11,7 @@ import yongin.Yongnuri._Campus.exception.ConflictException;
 import yongin.Yongnuri._Campus.repository.RefreshTokenRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.security.JwtProvider;
-
+import yongin.Yongnuri._Campus.domain.Enum;
 import java.time.LocalDateTime;
 import java.util.stream.Stream;
 
@@ -76,7 +76,8 @@ public class AuthService {
                 .major(req.getMajor())
                 .nickName(req.getNickname())
                 .creatAt(LocalDateTime.now())
-                .role(User.Role.USER)
+                .role(Enum.UserRole.USER)
+                .status(Enum.authStatus.ACTIVE)
                 .build();
 
         userRepository.save(newUser);

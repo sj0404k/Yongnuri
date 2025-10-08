@@ -6,6 +6,7 @@ import yongin.Yongnuri._Campus.domain.LostItem;
 import yongin.Yongnuri._Campus.domain.User;
 import java.util.List;
 import java.time.LocalDateTime;
+import yongin.Yongnuri._Campus.domain.Enum;
 @Getter
 public class LostItemCreateRequestDto {
 
@@ -32,8 +33,8 @@ public class LostItemCreateRequestDto {
                 .title(this.title)
                 .content(this.content)
                 .location(this.location)
-                .purpose(LostItem.ItemPurpose.valueOf(this.purpose.trim().toUpperCase()))
-                .status(LostItem.ItemStatus.valueOf(this.status.trim().toUpperCase()))
+                .purpose(Enum.LostItemPurpose.valueOf(this.purpose.trim().toUpperCase()))
+                .status(Enum.LostItemStatus.valueOf(this.status.trim().toUpperCase()))
                 .isImages(this.imageUrls != null && !this.imageUrls.isEmpty())
                 .createdAt(LocalDateTime.now())
                 .build();

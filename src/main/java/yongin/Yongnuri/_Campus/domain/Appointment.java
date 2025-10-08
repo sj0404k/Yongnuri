@@ -2,7 +2,7 @@ package yongin.Yongnuri._Campus.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-
+import yongin.Yongnuri._Campus.domain.Enum.AppointmentStatus;
 import java.time.LocalDateTime;
 
 @Entity
@@ -33,9 +33,6 @@ public class Appointment {
     @Column(nullable = false)
     private String location;
 
-    @Column(nullable = false)
-    private String status; // "SCHEDULED", "COMPLETED", "CANCELED"
-
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -43,4 +40,13 @@ public class Appointment {
     private String postType;
     @Column(nullable = false)
     private Long postId;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private AppointmentStatus status;
+
+    /**
+    @Column(nullable = false)
+    private String status; // "SCHEDULED", "COMPLETED", "CANCELED"
+    */
 }

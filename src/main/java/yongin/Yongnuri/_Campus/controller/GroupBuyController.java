@@ -70,13 +70,15 @@ public class GroupBuyController {
     }
 
      //현재 모집 인원 수정
-    @PatchMapping("/{postId}/current-count")
-    public ResponseEntity<String> updateCurrentCount(
-            @PathVariable Long postId,
-            @AuthenticationPrincipal CustomUserDetails user,
-            @RequestBody UpdateCountRequestDto requestDto
-    ) {
-        groupBuyService.updateCurrentCount(user.getUser().getEmail(), postId, requestDto);
-        return ResponseEntity.ok("현재 인원이 수정되었습니다.");
-    }
+     @PatchMapping("/{postId}/current-count")
+     public ResponseEntity<GroupBuyResponseDto> updateCurrentCount(
+             @PathVariable Long postId,
+             @AuthenticationPrincipal CustomUserDetails user,
+             @RequestBody UpdateCountRequestDto requestDto
+     ) {
+         GroupBuyResponseDto updatedDto = groupBuyService.updateCurrentCount(user.getUser().getEmail(), postId, requestDto);
+
+         return ResponseEntity.ok(updatedDto);
+     }
+
 }

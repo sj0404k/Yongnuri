@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import yongin.Yongnuri._Campus.domain.Enum.UserRole;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -40,17 +40,19 @@ public class User {
     private String major;
 
     @Column(name = "status")
-    private String status;
-
-    @Column(name = "role")
-    private Role role;
+    private Enum.authStatus status;
 
     @Column(name = "creat_at")
     private LocalDateTime creatAt;
 
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+/**
+    @Column(name = "role")
+    private Role role;
     public enum Role {
         USER,
         ADMIN
     }
-
+*/
 }
