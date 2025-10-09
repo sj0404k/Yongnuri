@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.domain.ChatRoom;
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.dto.MypageReq;
+import yongin.Yongnuri._Campus.dto.ReportReq;
 import yongin.Yongnuri._Campus.dto.chat.ChatMessageRequest;
 import yongin.Yongnuri._Campus.dto.chat.ChatMessagesRes;
 import yongin.Yongnuri._Campus.dto.chat.ChatRoomDto;
@@ -17,6 +18,7 @@ import yongin.Yongnuri._Campus.dto.chat.ChatRoomReq;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.ChatService;
 import yongin.Yongnuri._Campus.service.MypageService;
+import yongin.Yongnuri._Campus.service.ReportService;
 
 
 import java.util.HashMap;
@@ -33,6 +35,7 @@ public class ChatController {
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
     private final MypageService mypageService;
+    private final ReportService reportService;
 /**
  * 필요 기능들
  * 채팅방 목록 조회 (닉네임 시간 마지막 내용) ----  완료
@@ -102,12 +105,17 @@ public class ChatController {
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
     }
 
-    @PostMapping("/rooms/{roomId}/report")
-    public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long roomId) {
-
-        return ResponseEntity.ok("채팅신고 완료");
-
+    @PostMapping("/rooms/report")
+    public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq) {
+        reportReq.setPostType(Enum.ChatType.Chat);
+        boolean reoprtChat = reportService.reports(user, reportReq);
+        if (reoprtChat) {
+            return ResponseEntity.ok("채팅신고 완료");
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 차단한 유저입니다.");
+        }
     }
+
     @PostMapping("/blocks")
     public ResponseEntity<?> blockChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody MypageReq.blocks mypageReq) {
         boolean blocked = mypageService.postBlocks(user.getUser().getEmail(), mypageReq);

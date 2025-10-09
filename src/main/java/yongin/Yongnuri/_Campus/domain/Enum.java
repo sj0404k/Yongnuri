@@ -51,7 +51,8 @@ public class Enum {
         USED_ITEM,  // 중고
         LOST_ITEM,  // 분실
         GROUP_BUY,  // 공동구매
-        ADMIN       // 관리자와 채팅
+        ADMIN,      // 관리자와 채팅
+        Chat        // 채팅
     }
 
     public static enum ReportStatus {

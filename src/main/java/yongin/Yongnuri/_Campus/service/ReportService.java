@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class ReportService {
     private final ReportRepository reportRepository;
 
-    public void reports(CustomUserDetails user, ReportReq.reportDto reportReq) {
+    public boolean reports(CustomUserDetails user, ReportReq.reportDto reportReq) {
         Reports reports = Reports.builder()
                 .reportId(user.getUser().getId())
                 .reportedId(reportReq.getReportedId())
@@ -27,6 +27,7 @@ public class ReportService {
                 .status(Enum.ReportStatus.PENDING)
                 .build();
         reportRepository.save(reports);
+        return false;
     }
 
 }

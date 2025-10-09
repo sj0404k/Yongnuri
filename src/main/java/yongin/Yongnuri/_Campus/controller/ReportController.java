@@ -1,6 +1,7 @@
 package yongin.Yongnuri._Campus.controller;
 
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,12 @@ public class ReportController {
 
     @PostMapping
     public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq){
-        reportService.reports(user, reportReq);
-         return ResponseEntity.ok("Reports 성공");
+        boolean reoprt = reportService.reports(user, reportReq);
+        if (reoprt) {
+            return ResponseEntity.ok("Reports 성공");
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 신고한 게시글입니다.");
+        }
+         
     }
 }
