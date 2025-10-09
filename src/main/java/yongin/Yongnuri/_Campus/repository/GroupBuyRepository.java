@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface GroupBuyRepository extends JpaRepository<GroupBuy, Long>, JpaSpecificationExecutor<GroupBuy> {
     List<GroupBuy> findByTitleContainingIgnoreCase(String title);
+    List<GroupBuy> findByUserIdOrderByCreatedAtDesc(Long userId);
 }
