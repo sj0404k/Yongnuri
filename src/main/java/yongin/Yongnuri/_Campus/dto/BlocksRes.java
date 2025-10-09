@@ -10,6 +10,7 @@ import yongin.Yongnuri._Campus.domain.BookMarks;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BlocksRes {
+    private Long id;
     private Long blockedId;
     private String blockedNickName;
 }

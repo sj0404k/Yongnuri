@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import yongin.Yongnuri._Campus.domain.ChatMessages;
 import yongin.Yongnuri._Campus.domain.ChatRoom;
 import yongin.Yongnuri._Campus.domain.ChatStatus;
+import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.dto.chat.ChatMessagesRes;
 import yongin.Yongnuri._Campus.dto.chat.ChatRoomDto;
 import yongin.Yongnuri._Campus.dto.chat.ChatRoomReq;
@@ -29,17 +30,17 @@ public class ChatService {
     private final ChatStatusRepository chatStatusRepository;
     private static final int MESSAGE_PAGE_SIZE = 20;// 채팅 20개 씩 보여주기
 
-    public List<ChatRoomDto> getChatRooms(CustomUserDetails user, ChatRoom.ChatType type) {
+    public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
 
-        ChatRoom.ChatType chatType;
+       Enum.ChatType chatType;
         try {
             chatType = type;
         } catch (IllegalArgumentException e) {
-            chatType = ChatRoom.ChatType.전체; // 잘못된 값이면 전체로 처리
+            chatType = Enum.ChatType.ALL; // 잘못된 값이면 전체로 처리
         }
 
         List<ChatRoom> rooms;
-        if (chatType == ChatRoom.ChatType.전체) {
+        if (chatType == Enum.ChatType.ALL) {
             rooms = chatRoomRepository.findByFromUserIdOrToUserId(user.getUser().getId(), user.getUser().getId());
         } else {
             rooms = chatRoomRepository.findByFromUserIdOrToUserIdAndType(user.getUser().getId(), user.getUser().getId(), chatType);

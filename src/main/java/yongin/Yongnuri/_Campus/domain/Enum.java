@@ -22,8 +22,8 @@ public class Enum {
     }
     public enum GroupBuyStatus {
         RECRUITING, // 모집중
-        COMPLETED, //모집완료
-        DELETED //삭제됨
+        COMPLETED,  //모집완료
+        DELETED     //삭제됨
     }
     public enum NoticeStatus {
         RECRUITING, // 진행중
@@ -38,19 +38,20 @@ public class Enum {
     }
 
     public static enum ReportType {
-        SPAM,                   // 도배
-        PROMOTION_ADVERTISING, // 홍보_광고행위
-        OBSCENE_CONTENT,        // 음란성게시물
-        DEFAMATION_HATE,        // 상대방비방및혐오
-        IMPERSONATION_FAKE_INFO,// 사칭및거짓정보
-        ETC                     // 기타
+        SPAM,                       // 도배
+        PROMOTION_ADVERTISING,      // 홍보_광고행위
+        OBSCENE_CONTENT,            // 음란성게시물
+        DEFAMATION_HATE,            // 상대방비방및혐오
+        IMPERSONATION_FAKE_INFO ,   // 사칭및거짓정보
+        ETC                         // 기타
     }
 
     public static enum ChatType {
         ALL,        // 전체
         USED_ITEM,  // 중고
         LOST_ITEM,  // 분실
-        GROUP_BUY   // 공동구매
+        GROUP_BUY,  // 공동구매
+        ADMIN       // 관리자와 채팅
     }
 
     public static enum ReportStatus {

@@ -23,7 +23,7 @@ public class ChatRoom {
     private Long id;                    //해당 부분으로 채팅방 메시지등 조회
 
     @Enumerated(EnumType.STRING)
-    private ChatType type;
+    private Enum.ChatType type;
     private Long typeId;
 
     private Long toUserId;
@@ -34,10 +34,11 @@ public class ChatRoom {
     private String lastMessage;
     private int status;                 //뭐였더라... 아마 채팅방 삭제 유무 같았는데.....
 
-    public enum ChatType {
-        전체,
-        중고,
-        분실,
-        공동구매
-    }
+//    public enum ChatType {
+//        전체,
+//        중고,
+//        분실,
+//        공동구매,
+    //    관리자
+//    }
 }

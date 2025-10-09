@@ -1,21 +1,27 @@
 package yongin.Yongnuri._Campus.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.domain.ChatRoom;
+import yongin.Yongnuri._Campus.domain.Enum;
+import yongin.Yongnuri._Campus.dto.MypageReq;
 import yongin.Yongnuri._Campus.dto.chat.ChatMessageRequest;
 import yongin.Yongnuri._Campus.dto.chat.ChatMessagesRes;
 import yongin.Yongnuri._Campus.dto.chat.ChatRoomDto;
 import yongin.Yongnuri._Campus.dto.chat.ChatRoomReq;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.ChatService;
+import yongin.Yongnuri._Campus.service.MypageService;
 
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,6 +32,7 @@ public class ChatController {
      */
     private final SimpMessagingTemplate messagingTemplate;
     private final ChatService chatService;
+    private final MypageService mypageService;
 /**
  * 필요 기능들
  * 채팅방 목록 조회 (닉네임 시간 마지막 내용) ----  완료
@@ -41,25 +48,35 @@ public class ChatController {
  * 사용자 차단해제
  */
 
-    /** 채팅방 목록 조회 */
+    /**
+     * 채팅방 목록 조회
+     */
     @GetMapping("/rooms")
-    public ResponseEntity<List<ChatRoomDto>> getChatRooms(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ChatRoom.ChatType type) {
+    public ResponseEntity<List<ChatRoomDto>> getChatRooms(@AuthenticationPrincipal CustomUserDetails user, @RequestBody Enum.ChatType type) {
         List<ChatRoomDto> rooms = chatService.getChatRooms(user, type);
         return ResponseEntity.ok(rooms);
     }
 
-    /** 채팅방 세부 조회 (채팅방 입장하기) */
+    /**
+     * 채팅방 세부 조회 (채팅방 입장하기)
+     */
     @GetMapping("/rooms/{RoomId}")
     public ResponseEntity<List<ChatMessagesRes>> getChatRoom(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long RoomId) {
         List<ChatMessagesRes> room = chatService.getEnterChatRoom(user, RoomId);
         return ResponseEntity.ok(room);
     }
 
-    /** 채팅방 생성 */
+    /**
+     * 채팅방 생성
+     */
     @PostMapping
     public ResponseEntity<?> createChatRoom(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ChatRoomReq request) {
-         chatService.createChatRoom(user, request);
+        chatService.createChatRoom(user, request);
         return ResponseEntity.ok("채팅방 활성화");
+    }
+    @DeleteMapping
+    public ResponseEntity<?> deleteRoom(@AuthenticationPrincipal CustomUserDetails user, @RequestBody Enum.ChatType type) {
+        return ResponseEntity.ok("방 삭제 완료");
     }
 //
 //    /** 메시지 보내기 */
@@ -85,4 +102,34 @@ public class ChatController {
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
     }
 
+    @PostMapping("/rooms/{roomId}/report")
+    public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long roomId) {
+
+        return ResponseEntity.ok("채팅신고 완료");
+
+    }
+    @PostMapping("/blocks")
+    public ResponseEntity<?> blockChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody MypageReq.blocks mypageReq) {
+        boolean blocked = mypageService.postBlocks(user.getUser().getEmail(), mypageReq);
+        if (blocked) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("blockedUserId", mypageReq.getBlockedId());
+            response.put("blocked", true);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 차단한 유저입니다.");
+        }
+    }
+    @DeleteMapping("/blocks/{blockedUserId}")
+    public ResponseEntity<?> unblockChat(@AuthenticationPrincipal CustomUserDetails user, @PathVariable("blockedUserId") Long blockedUserId) {
+        boolean deleted = mypageService.deleteBlocks(user.getUser().getEmail(), blockedUserId);
+
+        if (deleted) {
+            return ResponseEntity.ok("차단한 유저 취소 완료");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("차단 내역을 찾을 수 없습니다.");
+        }
+    }
 }

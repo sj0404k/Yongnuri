@@ -122,6 +122,7 @@ public class MypageService {
                     User blockedUser = userRepository.findById(block.getBlockedId())
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "차단된 유저를 찾을 수 없습니다."));
                     return BlocksRes.builder()
+                            .id(block.getId())
                             .blockedId(block.getBlockedId())
                             .blockedNickName(blockedUser.getNickName())
                             .build();
