@@ -37,18 +37,15 @@ public class AppointmentService {
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
         Long sellerId = currentUserAsSeller.getId();
 
-        // 2. (변경) DTO로부터 '구매자' ID를 받습니다.
         Long buyerId = requestDto.getBuyerId();
         if (buyerId == null) {
             throw new IllegalArgumentException("구매자 ID는 필수입니다.");
         }
-
         String postType = requestDto.getPostType();
         if (postType == null || postType.trim().isEmpty()) {
             postType = "USED_ITEM";
         }
 
-        // 3. (변경) 권한 확인: 현재 유저가 해당 게시글의 '작성자'인지 확인
         if ("USED_ITEM".equals(postType)) {
             UsedItem item = usedItemRepository.findById(requestDto.getPostId())
                     .orElseThrow(() -> new EntityNotFoundException("중고거래 게시글을 찾을 수 없습니다."));
@@ -79,7 +76,6 @@ public class AppointmentService {
             throw new IllegalArgumentException("자기 자신과 약속을 잡을 수 없습니다.");
         }
 
-        // 5. 약속 저장 (헬퍼 메서드 호출은 그대로)
         return saveAppointment(requestDto, postType, sellerId, buyerId);
     }
 

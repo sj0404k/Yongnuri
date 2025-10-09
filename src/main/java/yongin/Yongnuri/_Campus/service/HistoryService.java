@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class HistoryService { // <-- 클래스 이름 변경
+public class HistoryService {
 
     private final UserRepository userRepository;
     private final UsedItemRepository usedItemRepository;
