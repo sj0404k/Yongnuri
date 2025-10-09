@@ -7,7 +7,7 @@ import lombok.Setter;
 import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.domain.Enum;
 import java.time.LocalDateTime;
-
+import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
@@ -22,5 +22,6 @@ public class AdminReportIdRes {
     //게시판 관련 id?
     private Enum.ChatType reportType;
     private Long typeId;
+    private List<ImageDto> images;
 
 }

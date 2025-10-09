@@ -20,8 +20,8 @@ public class ReportController {
 
     @PostMapping
     public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq){
-        boolean reoprt = reportService.reports(user, reportReq);
-        if (reoprt) {
+        boolean report = reportService.reports(user, reportReq);
+        if (report) {
             return ResponseEntity.ok("Reports 성공");
         } else {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 신고한 게시글입니다.");

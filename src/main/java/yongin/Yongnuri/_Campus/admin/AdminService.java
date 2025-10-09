@@ -11,10 +11,7 @@ import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.Notice;
 import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.domain.User;
-import yongin.Yongnuri._Campus.dto.admin.AdminReportIdRes;
-import yongin.Yongnuri._Campus.dto.admin.AdminReportRes;
-import yongin.Yongnuri._Campus.dto.admin.AdminReq;
-import yongin.Yongnuri._Campus.dto.admin.UserInfoRes;
+import yongin.Yongnuri._Campus.dto.admin.*;
 import yongin.Yongnuri._Campus.repository.ReportRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.repository.NoticeRepository;
@@ -214,6 +211,13 @@ public class AdminService {
         User reportedUser = userRepository.findById(report.getReportedId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
 
+        //이미지리수트
+        List<Image> images = List.of();
+        if (Boolean.TRUE.equals(report.getIsImages())) {
+            images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("REPORT", reportId);
+        }
+        List<ImageDto> imageDtos = images.stream().map(ImageDto::new).collect(Collectors.toList());
+
         // 3. DTO 변환
         return AdminReportIdRes.builder()
                 .id(report.getId())
@@ -221,6 +225,7 @@ public class AdminService {
                 .reportedStudentName(reportedUser.getName())      // User 엔티티의 이름
                 .reason(report.getReason())
                 .content(report.getContent())                     // 신고 내용
+                .images(imageDtos)
                 .build();
     }
 

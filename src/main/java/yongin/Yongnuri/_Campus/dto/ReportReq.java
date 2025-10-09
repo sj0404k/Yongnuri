@@ -5,7 +5,7 @@ import lombok.Setter;
 import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.domain.Enum;
 import java.time.LocalDateTime;
-
+import java.util.List;
 public class ReportReq {
     @Setter
     @Getter
@@ -15,7 +15,7 @@ public class ReportReq {
         private Long postId;
         private Enum.ReportType reason;
         private String content;
-        private boolean isImages;
+        private List<String> imageUrls;
     }
     @Setter
     @Getter
@@ -24,3 +24,4 @@ public class ReportReq {
         private Enum.ReportStatus status;
     }
 }
+
