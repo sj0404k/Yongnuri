@@ -3,13 +3,14 @@ package yongin.Yongnuri._Campus.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // 임포트 추가
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import yongin.Yongnuri._Campus.security.JwtAuthenticationFilter;
 
 
@@ -33,6 +34,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         //관리자
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/notices").hasRole("ADMIN") //GET이외의 메소드는 관리자만 가능
+                        .requestMatchers(HttpMethod.PATCH, "/notices/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/notices/**").hasRole("ADMIN")
                         // 인증 없이 접근 허용할 API 경로들
                         .requestMatchers("/auth/**").permitAll() // 로그인 전에 사용 가능
 //                        .requestMatchers("/chat/**").authenticated() // 로그인한사람만
@@ -46,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
                         .requestMatchers("/report/**").permitAll()          //마지 할때 권한 변경 필요4
                         .requestMatchers("/ws-stomp").permitAll()
-                        .requestMatchers("/notice/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/notices/**").authenticated()// 공지사항 GET만 모두 허용
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 );
 

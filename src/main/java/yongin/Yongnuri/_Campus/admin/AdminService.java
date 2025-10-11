@@ -228,7 +228,7 @@ public class AdminService {
                 .images(imageDtos)
                 .build();
     }
-
+/**
     // 공지사항 작성
     @Transactional
     private User getAdminUser(String email) {
@@ -288,4 +288,5 @@ public class AdminService {
 
         notice.setStatus(Enum.NoticeStatus.DELETED);
     }
+     */
 }
