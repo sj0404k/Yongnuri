@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import yongin.Yongnuri._Campus.domain.*;
+import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.dto.notice.NoticeResponseDto;
 import yongin.Yongnuri._Campus.repository.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -33,8 +34,11 @@ public class NoticeService {
     }
     public List<NoticeResponseDto> getNotices(String email) {
         User currentUser = getUserByEmail(email);
-        List<Notice> items = noticeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
-        if (items.isEmpty()) return List.of();
+        List<Notice> allItems = noticeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        List<Notice> items = allItems.stream()
+                .filter(item -> item.getStatus() != Enum.NoticeStatus.DELETED)
+                .collect(Collectors.toList());
 
         List<Long> postIds = items.stream().map(Notice::getId).collect(Collectors.toList());
 
@@ -55,6 +59,9 @@ public class NoticeService {
     public NoticeResponseDto getNoticeDetail(String email, Long postId) {
         User currentUser = getUserByEmail(email);
         Notice item = noticeRepository.findById(postId).orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
+        if (item.getStatus() == Enum.NoticeStatus.DELETED) {
+            throw new EntityNotFoundException("삭제된 게시글입니다.");
+        }
         List<Image> images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("NOTICE", postId);
         boolean isBookmarked = bookmarkRepository.existsByUserIdAndPostTypeAndPostId(currentUser.getId(), "NOTICE", postId);
         NoticeResponseDto dto = new NoticeResponseDto(item, images);
