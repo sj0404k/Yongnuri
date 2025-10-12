@@ -17,7 +17,7 @@ import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.repository.NoticeRepository;
 import yongin.Yongnuri._Campus.repository.ImageRepository;
 import yongin.Yongnuri._Campus.domain.Notice;
-import yongin.Yongnuri._Campus.repository.BookMarksRepository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,7 +31,7 @@ public class AdminService {
     private final NoticeRepository noticeRepository;
     private final ImageRepository imageRepository;
 
-    private final BookMarksRepository bookmarkRepository;
+
 
     public List<AdminReportRes2> getReportList1(String email) {
         // 1. 관리자 확인

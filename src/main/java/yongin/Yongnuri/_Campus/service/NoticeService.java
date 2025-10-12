@@ -138,7 +138,7 @@ public class NoticeService {
 
         Notice notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
-
+        bookmarkRepository.deleteAllByPostTypeAndPostId("NOTICE", noticeId);
         notice.setStatus(Enum.NoticeStatus.DELETED);
     }
 }

@@ -65,7 +65,7 @@ public class HistoryService {
 
         Set<Long> myBookmarkedPostIds = bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "USED_ITEM", postIds)
                 .stream().map(Bookmark::getPostId).collect(Collectors.toSet());
-        List<BookmarkCountDto> bookmarkCounts = bookmarkRepository.countByPostTypeAndPostIdIn("USED_ITEM", postIds);
+        List<BookmarkCountDto> bookmarkCounts = bookmarkRepository.findBookmarkCountsByPostTypeAndPostIdIn("USED_ITEM", postIds);
         Map<Long, Long> bookmarkCountMap = bookmarkCounts.stream()
                 .collect(Collectors.toMap(BookmarkCountDto::getPostId, BookmarkCountDto::getCount));
 

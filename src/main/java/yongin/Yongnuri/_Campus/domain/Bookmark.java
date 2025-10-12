@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Builder
@@ -19,15 +20,17 @@ public class Bookmark {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
+
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column
-    private String postType; // "USED_ITEM", "LOST_ITEM"
+    @Column(name = "post_type", nullable = false)
+    private String postType;
 
-    @Column
+    @Column(name = "post_id", nullable = false)
     private Long postId;
+
     @CreationTimestamp
-    @Column
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 }

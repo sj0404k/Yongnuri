@@ -99,7 +99,7 @@ public class SearchService {
 
         List<SearchBoard> lostResults = lostItems.stream()
                 .map(item -> {
-                    Integer likeCount = bookmarkRepository.countByPostTypeAndPostId("LOST_ITEM", item.getId());
+                    long likeCount = bookmarkRepository.countByPostTypeAndPostId("LOST_ITEM", item.getId());
                     String thumbnailUrl = lostItemThumbnailMap.get(item.getId());
 
                     return SearchBoard.builder()
@@ -117,7 +117,7 @@ public class SearchService {
 
         List<SearchBoard> usedResults = usedItems.stream()
                 .map(item -> {
-                    Integer likeCount = bookmarkRepository.countByPostTypeAndPostId("USED_ITEM", item.getId());
+                    long likeCount = bookmarkRepository.countByPostTypeAndPostId("USED_ITEM", item.getId());
                     String thumbnailUrl = usedItemThumbnailMap.get(item.getId());
                     return SearchBoard.builder()
                             .id(item.getId())
@@ -132,7 +132,7 @@ public class SearchService {
                 .toList();
         List<SearchBoard> groupResults = groupBuys.stream()
                 .map(item -> {
-                    Integer likeCount = bookmarkRepository.countByPostTypeAndPostId("GROUP_BUY", item.getId());
+                    long likeCount = bookmarkRepository.countByPostTypeAndPostId("GROUP_BUY", item.getId());
                     String thumbnailUrl = groupBuyThumbnailMap.get(item.getId());
                     return SearchBoard.builder()
                             .id(item.getId())
@@ -149,7 +149,7 @@ public class SearchService {
 
         List<SearchBoard> noticeResults = notices.stream()
                 .map(item -> {
-                    Integer likeCount = bookmarkRepository.countByPostTypeAndPostId("NOTICE", item.getId());
+                    long likeCount = bookmarkRepository.countByPostTypeAndPostId("NOTICE", item.getId());
                     String thumbnailUrl = noticeThumbnailMap.get(item.getId());
                     return SearchBoard.builder()
                             .id(item.getId())
