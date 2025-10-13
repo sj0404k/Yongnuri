@@ -21,4 +21,10 @@ public class SearchBoard {
     private String boardType;
     private String statusBadge;
     private String thumbnailUrl;
+    private boolean isBookmarked;
+    private Integer limit;
+    private Integer currentCount;
+
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 }
