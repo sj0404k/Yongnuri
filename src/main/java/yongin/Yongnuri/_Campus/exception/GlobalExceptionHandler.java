@@ -3,10 +3,12 @@ package yongin.Yongnuri._Campus.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.security.access.AccessDeniedException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -24,7 +26,10 @@ public class GlobalExceptionHandler {
         body.put("path", request.getRequestURI());
         return ResponseEntity.status(status).body(body);
     }
-
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN, e.getMessage(), request);
+    }
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e, HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage(), request);

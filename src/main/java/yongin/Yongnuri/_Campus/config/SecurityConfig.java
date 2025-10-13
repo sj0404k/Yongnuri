@@ -1,16 +1,23 @@
 package yongin.Yongnuri._Campus.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // 임포트 추가
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import yongin.Yongnuri._Campus.security.JwtAuthenticationFilter;
+
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 
 @Configuration
@@ -30,24 +37,58 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // CSRF 비활성화 (JWT 사용 시 일반적으로)
                 // .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 필요 시 CORS 설정
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 사용 안 함 (JWT)
+                .exceptionHandling(exception -> {
+                    // 403 Forbidden (권한 없음) 예외 처리
+                    exception.accessDeniedHandler((request, response, accessDeniedException) -> {
+                        response.setStatus(HttpStatus.FORBIDDEN.value());
+                        response.setContentType("application/json;charset=UTF-8");
+                        Map<String, Object> body = new LinkedHashMap<>();
+                        body.put("timestamp", LocalDateTime.now().toString());
+                        body.put("status", HttpStatus.FORBIDDEN.value());
+                        body.put("error", "Forbidden");
+                        body.put("message", "접근 권한이 없습니다."); // 서비스에서 던진 메시지 대신 고정 메시지 사용
+                        body.put("path", request.getRequestURI());
+                        new ObjectMapper().writeValue(response.getWriter(), body);
+                    });
+                    // 401 Unauthorized (인증 안 됨) 예외 처리
+                    exception.authenticationEntryPoint((request, response, authException) -> {
+                        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                        response.setContentType("application/json;charset=UTF-8");
+                        Map<String, Object> body = new LinkedHashMap<>();
+                        body.put("timestamp", LocalDateTime.now().toString());
+                        body.put("status", HttpStatus.UNAUTHORIZED.value());
+                        body.put("error", "Unauthorized");
+                        body.put("message", "인증이 필요합니다. 로그인을 진행해주세요.");
+                        body.put("path", request.getRequestURI());
+                        new ObjectMapper().writeValue(response.getWriter(), body);
+                    });
+                })
                 .authorizeHttpRequests(authorize -> authorize
-                        //관리자
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        // 인증 없이 접근 허용할 API 경로들
-                        .requestMatchers("/auth/**").permitAll() // 로그인 전에 사용 가능
+                                //관리자
+                                .requestMatchers("/admin/**").hasRole("ADMIN")
+                                // (★수정★) 공지사항 조회(GET) 경로 변경
+                                .requestMatchers(HttpMethod.GET, "/board/notices/**").authenticated()
+
+                                // (★수정★) 공지사항 작성/수정/삭제는 ADMIN만 가능하도록 경로 변경
+                                .requestMatchers(HttpMethod.POST, "/board/notices").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.PATCH, "/board/notices/**").hasRole("ADMIN")
+                                .requestMatchers(HttpMethod.DELETE, "/board/notices/**").hasRole("ADMIN")
+                                // ✅ 정적 업로드 이미지 접근 허용
+                                .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                                // 인증 없이 접근 허용할 API 경로들
+                                .requestMatchers("/auth/**").permitAll() // 로그인 전에 사용 가능
 //                        .requestMatchers("/chat/**").authenticated() // 로그인한사람만
-                        .requestMatchers("/chat/**").permitAll() //채팅 테스트용
-                        .requestMatchers("/mypage/**","/mypage/bookmarks").authenticated()
-                        .requestMatchers("/ws-stomp/**").permitAll()
-                        .requestMatchers("/auth/mail/**", "/auth/verify/**").permitAll()
-                        .requestMatchers("/auth/**", "/auth/login").permitAll()
-                        //인증 필요? 나중에 작성 지금은 모두 허용중
-                        .requestMatchers("/mypage/**","/mypage/bookmarks").permitAll()
-                        .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
-                        .requestMatchers("/report/**").permitAll()          //마지 할때 권한 변경 필요4
-                        .requestMatchers("/ws-stomp").permitAll()
-                        .requestMatchers("/notice/**").permitAll()
-                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
+                                .requestMatchers("/chat/**").permitAll() //채팅 테스트용
+                                .requestMatchers("/mypage/**","/mypage/bookmarks").authenticated()
+                                .requestMatchers("/ws-stomp/**").permitAll()
+                                .requestMatchers("/auth/mail/**", "/auth/verify/**").permitAll()
+                                .requestMatchers("/auth/**", "/auth/login").permitAll()
+                                //인증 필요? 나중에 작성 지금은 모두 허용중
+                                .requestMatchers("/mypage/**","/mypage/bookmarks").permitAll()
+                                .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
+                                .requestMatchers("/report/**").permitAll()          //마지 할때 권한 변경 필요4
+                                .requestMatchers("/ws-stomp").permitAll()
+                                .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 );
 
         // ⭐ JwtAuthenticationFilter를 UsernamePasswordAuthenticationFilter 이전에 추가합니다. ⭐

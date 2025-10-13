@@ -1,18 +1,20 @@
 // yongin/Yongnuri/_Campus/service/MypageService.java
 package yongin.Yongnuri._Campus.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.domain.Block;
-import yongin.Yongnuri._Campus.domain.BookMarks;
+import yongin.Yongnuri._Campus.domain.Bookmark;
 import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.dto.BlocksRes;
 import yongin.Yongnuri._Campus.dto.MypageReq;
 import yongin.Yongnuri._Campus.dto.MypageRes;
 import yongin.Yongnuri._Campus.repository.BlockRepository;
-import yongin.Yongnuri._Campus.repository.BookMarksRepository;
+import yongin.Yongnuri._Campus.repository.BookmarkRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 
 import java.lang.constant.Constable;
@@ -25,7 +27,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 public class MypageService {
     private final UserRepository userRepository;
-    private final BookMarksRepository bookMarksRepository;
+    private final BookmarkRepository bookMarkRepository;
     private final BlockRepository blockRepository;
 
 
@@ -66,15 +68,13 @@ public class MypageService {
     public boolean deleteBookMarks(String email, Long bookmarkId) {
         User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자를 찾을 수 없습니다."));
-
-        Optional<BookMarks> bookmarkck = bookMarksRepository.findByUserIdAndId(currentUser.getId(), bookmarkId);
-
-        if (bookmarkck.isPresent()) {
-            bookMarksRepository.delete(bookmarkck.get());
-            return true;
-        } else {
-            return false;
+        Bookmark bookmark = bookMarkRepository.findById(bookmarkId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 북마크입니다."));
+        if (!bookmark.getUserId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("이 북마크를 삭제할 권한이 없습니다.");
         }
+        bookMarkRepository.delete(bookmark);
+        return true;
     }
 
     public boolean postBlocks(String email, MypageReq.blocks mypageReq) {

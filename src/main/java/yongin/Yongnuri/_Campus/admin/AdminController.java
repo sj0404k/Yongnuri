@@ -85,7 +85,7 @@ public class AdminController {
                     .body("신고 처리에 실패했습니다.");
         }
     }
-
+/**
      //공지홍보 게시글 작성
 
     @PostMapping("/board")
@@ -113,7 +113,7 @@ public class AdminController {
         adminService.deleteNotice(noticeId);
         return ResponseEntity.ok("공지사항 삭제 성공");
     }
-
+*/
 
 //    /**신고 내역 자세히 보기 */
 //    @GetMapping("/report/{reportId}")

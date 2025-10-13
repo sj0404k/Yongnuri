@@ -17,8 +17,8 @@ public class SearchBoard {
     private String location;
     private Integer price;
     private String createdAt;
-    private Integer like;
+    private long like;
     private String boardType;
-    //이미지 필요
+    private String statusBadge;
     private String thumbnailUrl;
 }
