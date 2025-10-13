@@ -52,7 +52,9 @@ public class User {
     @Builder.Default  //실행시 다음의 오류나와서 추가 User.java:53: warning: @Builder will ignore the initializing expression
     @Column(columnDefinition = "TEXT",nullable = true)
     private String text="";
-
+    /**
+     * fcm 을 위한 디바이스 토큰 저장용
+     */
     private String deviceToken;
 /**
     @Column(name = "role")
