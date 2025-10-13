@@ -15,8 +15,13 @@ public class BookmarkResponseDto {
     private String title;
     private String thumbnailUrl;
     private LocalDateTime bookmarkedAt;
+    private String location;
+    private Integer price;
+    private LocalDateTime createdAt;
+    private String statusBadge;
+    private long like;
 
-    public static BookmarkResponseDto from(UsedItem item, String thumbnailUrl, Bookmark bookmark) {
+    public static BookmarkResponseDto from(UsedItem item, String thumbnailUrl, Bookmark bookmark, long likeCount) {
         return BookmarkResponseDto.builder()
                 .bookmarkId(bookmark.getId())
                 .postId(item.getId())
@@ -24,10 +29,15 @@ public class BookmarkResponseDto {
                 .title(item.getTitle())
                 .thumbnailUrl(thumbnailUrl)
                 .bookmarkedAt(bookmark.getCreatedAt())
+                .location(item.getLocation())
+                .price(item.getPrice())
+                .createdAt(item.getCreatedAt())
+                .statusBadge(item.getStatus().name())
+                .like(likeCount)
                 .build();
     }
 
-    public static BookmarkResponseDto from(LostItem item, String thumbnailUrl, Bookmark bookmark) {
+    public static BookmarkResponseDto from(LostItem item, String thumbnailUrl, Bookmark bookmark, long likeCount) {
         return BookmarkResponseDto.builder()
                 .bookmarkId(bookmark.getId())
                 .postId(item.getId())
@@ -35,9 +45,14 @@ public class BookmarkResponseDto {
                 .title(item.getTitle())
                 .thumbnailUrl(thumbnailUrl)
                 .bookmarkedAt(bookmark.getCreatedAt())
+                .location(item.getLocation())
+                .price(null)
+                .createdAt(item.getCreatedAt())
+                .statusBadge(item.getStatus().name())
+                .like(likeCount)
                 .build();
     }
-    public static BookmarkResponseDto from(GroupBuy item, String thumbnailUrl, Bookmark bookmark) {
+    public static BookmarkResponseDto from(GroupBuy item, String thumbnailUrl, Bookmark bookmark, long likeCount) {
         return BookmarkResponseDto.builder()
                 .bookmarkId(bookmark.getId())
                 .postId(item.getId())
@@ -45,9 +60,14 @@ public class BookmarkResponseDto {
                 .title(item.getTitle())
                 .thumbnailUrl(thumbnailUrl)
                 .bookmarkedAt(bookmark.getCreatedAt())
+                .location(null)
+                .price(null)
+                .createdAt(item.getCreatedAt())
+                .statusBadge(item.getStatus().name())
+                .like(likeCount)
                 .build();
     }
-    public static BookmarkResponseDto from(Notice item, String thumbnailUrl, Bookmark bookmark) {
+    public static BookmarkResponseDto from(Notice item, String thumbnailUrl, Bookmark bookmark, long likeCount) {
         return BookmarkResponseDto.builder()
                 .bookmarkId(bookmark.getId())
                 .postId(item.getId())
@@ -55,6 +75,11 @@ public class BookmarkResponseDto {
                 .title(item.getTitle())
                 .thumbnailUrl(thumbnailUrl)
                 .bookmarkedAt(bookmark.getCreatedAt())
+                .location(null)
+                .price(null)
+                .createdAt(item.getCreatedAt())
+                .statusBadge(item.getStatus().name())
+                .like(likeCount)
                 .build();
     }
 }
