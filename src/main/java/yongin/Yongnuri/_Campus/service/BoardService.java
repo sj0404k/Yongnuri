@@ -63,9 +63,6 @@ public class BoardService {
             throw new AccessDeniedException("이 게시글을 삭제할 권한이 없습니다.");
         }
 
-// 게시글 삭제시 관심목록 삭제
-        bookmarkRepository.deleteAllByPostTypeAndPostId(postType, postId);
-
         if (itemToUpdate instanceof UsedItem) {
             ((UsedItem) itemToUpdate).setStatus(Enum.UsedItemStatus.DELETED);
         } else if (itemToUpdate instanceof LostItem) {

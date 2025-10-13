@@ -5,14 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yongin.Yongnuri._Campus.domain.*;
-import yongin.Yongnuri._Campus.domain.Bookmark;
+import yongin.Yongnuri._Campus.domain.BookMarks;
 import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.Notice;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkRequestDto;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkResponseDto;
 import yongin.Yongnuri._Campus.repository.*;
 import jakarta.persistence.EntityNotFoundException;
-import yongin.Yongnuri._Campus.repository.BookmarkRepository;
+import yongin.Yongnuri._Campus.repository.BookMarksRepository;
 import yongin.Yongnuri._Campus.repository.ImageRepository;
 import yongin.Yongnuri._Campus.repository.NoticeRepository;
 

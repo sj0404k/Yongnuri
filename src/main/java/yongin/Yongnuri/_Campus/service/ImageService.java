@@ -17,18 +17,8 @@ public class ImageService {
 
     @Value("${file.upload-dir}")
     private String uploadDir;
-
     public List<String> uploadImages(List<MultipartFile> imageFiles) {
         List<String> generatedUrls = new ArrayList<>();
-
-        // ✅ 업로드 루트 디렉토리 보장
-        File root = new File(uploadDir);
-        if (!root.exists()) {
-            boolean ok = root.mkdirs();
-            if (!ok) {
-                throw new RuntimeException("업로드 디렉토리를 생성할 수 없습니다: " + uploadDir);
-            }
-        }
 
         for (MultipartFile file : imageFiles) {
             String originalName = file.getOriginalFilename();
@@ -45,7 +35,7 @@ public class ImageService {
             try {
                 file.transferTo(new File(savedPath));
             } catch (IOException e) {
-                throw new RuntimeException("파일 저장에 실패했습니다. path=" + savedPath, e);
+                throw new RuntimeException("파일 저장에 실패했습니다.", e);
             }
             generatedUrls.add("/uploads/" + savedName);
         }

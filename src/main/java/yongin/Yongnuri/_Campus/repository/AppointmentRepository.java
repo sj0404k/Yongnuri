@@ -6,5 +6,4 @@ import java.util.List;
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
     void deleteAllByPostTypeAndPostId(String postType, Long postId);
     List<Appointment> findByPostTypeAndPostId(String postType, Long postId);
-    List<Appointment> findByBuyerIdAndPostType(Long buyerId, String postType);
 }

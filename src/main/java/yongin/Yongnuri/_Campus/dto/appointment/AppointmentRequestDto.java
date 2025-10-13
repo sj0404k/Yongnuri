@@ -5,8 +5,7 @@ import lombok.Getter;
 @Getter
 public class AppointmentRequestDto {
     private Long postId;
-    private Long buyerId;
-    private String postType; // "USED_ITEM"
+    private String postType; // "USED_ITEM"  "LOST_ITEM"
     private Long chatRoomId;
     private String date; // "2025-07-22"
     private String time; // "23:20"

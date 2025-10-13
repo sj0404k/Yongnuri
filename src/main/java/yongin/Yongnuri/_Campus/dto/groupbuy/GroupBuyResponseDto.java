@@ -2,11 +2,9 @@ package yongin.Yongnuri._Campus.dto.groupbuy;
 
 import lombok.Getter;
 import lombok.Setter;
-import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.domain.GroupBuy;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.User;
@@ -24,7 +22,6 @@ public class GroupBuyResponseDto {
     private final String link;
     private final String authorNickname;
     private final List<ImageDto> images;
-    private final Enum.authStatus authorStatus;
 
     private String authorDepartment;
     private String authorEmail;
@@ -47,7 +44,6 @@ public class GroupBuyResponseDto {
         this.link = null;
         this.authorNickname = null;
         this.images = null;
-        this.authorStatus=null;
         this.currentCount = (item.getCurrentCount() == null) ? 0L : item.getCurrentCount().longValue();
     }
 
@@ -64,7 +60,6 @@ public class GroupBuyResponseDto {
         this.link = item.getLink();
         this.currentCount = (item.getCurrentCount() == null) ? 0L : item.getCurrentCount().longValue();
         this.authorNickname = author.getNickName();
-        this.authorStatus= Objects.requireNonNull(author).getStatus();
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());
     }
 

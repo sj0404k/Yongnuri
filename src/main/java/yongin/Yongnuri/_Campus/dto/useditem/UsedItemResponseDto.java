@@ -2,12 +2,10 @@ package yongin.Yongnuri._Campus.dto.useditem;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import lombok.Getter;
 import lombok.Setter;
-import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.UsedItem;
 import yongin.Yongnuri._Campus.domain.User;
@@ -31,7 +29,7 @@ public class UsedItemResponseDto {
     private String authorNickname;          // 작성자 표시 이름
     private String authorDepartment;        // 작성자 학과(=User.major)
     private String authorEmail;             // ✅ 오너 판정용
-    private Enum.authStatus authorStatus;            // 작성자 상태
+
     private LocalDateTime createdAt;
 
     private List<ImageDto> images;          // 상세에서만 채움
@@ -60,7 +58,7 @@ public class UsedItemResponseDto {
         this.authorNickname = null;
         this.authorDepartment = null;
         this.authorEmail = null;
-        this.authorStatus=null;
+
         this.thumbnailUrl = null;
         this.isBookmarked = false;
         this.bookmarkCount = 0L;
@@ -80,7 +78,7 @@ public class UsedItemResponseDto {
         this.authorNickname   = (author != null) ? author.getNickName() : "(알 수 없음)";
         this.authorDepartment = (author != null) ? author.getMajor()   : null;   // ← User.major
         this.authorEmail      = (author != null) ? author.getEmail()   : null;
-        this.authorStatus= Objects.requireNonNull(author).getStatus();
+
         // 이미지 시퀀스 순으로 매핑
         this.images = (images != null)
                 ? images.stream().map(ImageDto::new).collect(Collectors.toList())

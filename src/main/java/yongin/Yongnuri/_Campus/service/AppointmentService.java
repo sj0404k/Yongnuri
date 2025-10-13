@@ -33,29 +33,24 @@ public class AppointmentService {
 
     @Transactional
     public Long createAppointment(String email, AppointmentRequestDto requestDto) {
-        User currentUserAsSeller = userRepository.findByEmail(email)
+        User currentUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
-        Long sellerId = currentUserAsSeller.getId();
-
-        Long buyerId = requestDto.getBuyerId();
-        if (buyerId == null) {
-            throw new IllegalArgumentException("구매자 ID는 필수입니다.");
-        }
+        Long party1_Id;
+        Long party2_Id = currentUser.getId();
         String postType = requestDto.getPostType();
-        if (postType == null || postType.trim().isEmpty()) {
-            postType = "USED_ITEM";
-        }
 
         if ("USED_ITEM".equals(postType)) {
             UsedItem item = usedItemRepository.findById(requestDto.getPostId())
                     .orElseThrow(() -> new EntityNotFoundException("중고거래 게시글을 찾을 수 없습니다."));
+            party1_Id = item.getUserId();
 
-            if (!item.getUserId().equals(sellerId)) { // 게시글 작성자가 아니면 에러
-                throw new AccessDeniedException("자신의 게시글에 대해서만 약속을 잡을 수 있습니다.");
+            if (party1_Id.equals(party2_Id)) {
+                throw new IllegalArgumentException("자신의 게시글에 대해 약속을 잡을 수 없습니다.");
             }
 
-        } /**
-         else if ("LOST_ITEM".equals(postType)) {
+            return saveAppointment(requestDto, party1_Id, party2_Id);
+
+        } else if ("LOST_ITEM".equals(postType)) {
             LostItem item = lostItemRepository.findById(requestDto.getPostId())
                     .orElseThrow(() -> new EntityNotFoundException("분실물 게시글을 찾을 수 없습니다."));
             party1_Id = item.getUser().getId();
@@ -69,17 +64,12 @@ public class AppointmentService {
             else {
                 return saveAppointment(requestDto, party2_Id, party1_Id);
             }
-        } */else {
+        } else {
             throw new IllegalArgumentException("지원하지 않는 게시글 타입입니다.");
         }
-        if (sellerId.equals(buyerId)) {
-            throw new IllegalArgumentException("자기 자신과 약속을 잡을 수 없습니다.");
-        }
-
-        return saveAppointment(requestDto, postType, sellerId, buyerId);
     }
 
-    private Long saveAppointment(AppointmentRequestDto requestDto, String postType, Long sellerId, Long buyerId) {
+    private Long saveAppointment(AppointmentRequestDto requestDto, Long sellerId, Long buyerId) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
         LocalDateTime appointmentAt = LocalDateTime.parse(requestDto.getDate() + " " + requestDto.getTime(), formatter);
 
@@ -91,7 +81,7 @@ public class AppointmentService {
                 .location(requestDto.getLocation())
                 .status(Enum.AppointmentStatus.SCHEDULED)
                 .createdAt(LocalDateTime.now())
-                .postType(postType)
+                .postType(requestDto.getPostType())
                 .postId(requestDto.getPostId())
                 .build();
 
