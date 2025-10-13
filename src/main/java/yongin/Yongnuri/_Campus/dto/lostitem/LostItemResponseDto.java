@@ -2,9 +2,11 @@ package yongin.Yongnuri._Campus.dto.lostitem;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Setter;
 import lombok.Getter;
+import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.domain.LostItem;
 import yongin.Yongnuri._Campus.domain.Image;
 
@@ -48,6 +50,7 @@ public class LostItemResponseDto {
         this.title = item.getTitle();
         this.content = item.getContent();
         this.location = item.getLocation();
+
         this.purpose = item.getPurpose().name();
         this.status = item.getStatus().name();
         this.createdAt = item.getCreatedAt();

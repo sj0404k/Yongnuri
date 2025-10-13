@@ -2,6 +2,7 @@ package yongin.Yongnuri._Campus.dto.notice;
 
 import lombok.Getter;
 import lombok.Setter;
+import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.Notice;
 
@@ -21,7 +22,6 @@ public class NoticeResponseDto {
     private final LocalDateTime createdAt;
     private final String authorNickname;
     private final List<ImageDto> images;
-
     @Setter
     private String thumbnailUrl;
     @Setter
