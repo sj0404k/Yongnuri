@@ -119,7 +119,7 @@ public class SearchService {
                             .boardType("분실물")
                             .like(likeCount)
                             .thumbnailUrl(thumbnailUrl)
-                            .statusBadge(item.getStatus().name())
+                            .statusBadge(item.getPurpose().name())
                             .build();
                 })
                 .toList();
