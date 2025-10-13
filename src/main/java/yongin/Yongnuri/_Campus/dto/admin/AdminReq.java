@@ -19,7 +19,7 @@ public class AdminReq {
     @Setter
     @Getter
     public static class reportProcessUserReq {
-//        private Long id;
+        private Long id;
         private Long userId;
         private Enum.ReportStatus reportStatus;
     }
