@@ -21,7 +21,7 @@ public class LostItemResponseDto {
     private final LocalDateTime createdAt;
     private final String authorNickname;
     private final List<ImageDto> images;
-
+    private final Enum.authStatus authorStatus;
     private String authorDepartment;        // 작성자 학과(=User.major)
     private String authorEmail;             // ✅ 오너 판정용
     @Setter
@@ -41,6 +41,7 @@ public class LostItemResponseDto {
         this.authorNickname = null;
         this.images = null;
         this.isBookmarked = false;
+        this.authorStatus = null;
     }
 
     public LostItemResponseDto(LostItem item, List<Image> images) {
@@ -57,5 +58,6 @@ public class LostItemResponseDto {
         this.authorNickname = item.getUser().getNickName();
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());
         this.isBookmarked = false;
+        this.authorStatus = item.getUser().getStatus();
     }
 }
