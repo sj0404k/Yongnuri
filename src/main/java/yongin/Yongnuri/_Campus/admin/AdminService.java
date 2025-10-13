@@ -233,7 +233,7 @@ public class AdminService {
 
     // 공지사항 작성
     @Transactional
-    protected User getAdminUser(String email) {
+    private User getAdminUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
 
