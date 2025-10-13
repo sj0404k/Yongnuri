@@ -1,5 +1,6 @@
 package yongin.Yongnuri._Campus.dto.bookmark;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 import yongin.Yongnuri._Campus.domain.*;
@@ -19,6 +20,7 @@ public class BookmarkResponseDto {
     private Integer price;
     private LocalDateTime createdAt;
     private String statusBadge;
+    @JsonProperty("likeCount")
     private long like;
 
     public static BookmarkResponseDto from(UsedItem item, String thumbnailUrl, Bookmark bookmark, long likeCount) {
