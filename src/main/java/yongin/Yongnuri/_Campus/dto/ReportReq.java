@@ -13,7 +13,7 @@ public class ReportReq {
         private Long reportedId;
         private Enum.ChatType postType;
         private Long postId;
-        private Enum.ReportType reason;
+        private Enum.ReportReason reason;
         private String content;
         private List<String> imageUrls;
     }

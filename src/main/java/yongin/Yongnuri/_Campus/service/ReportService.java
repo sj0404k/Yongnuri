@@ -29,7 +29,7 @@ public class ReportService {
                 .reportedId(reportReq.getReportedId())
                 .postId(reportReq.getPostId())
                 .postType(reportReq.getPostType())
-                .reason(reportReq.getReason())
+                .reportReason(reportReq.getReason())
                 .content(reportReq.getContent())
                 .isImages(isImagesPresent)
                 .createdAt(LocalDateTime.now())

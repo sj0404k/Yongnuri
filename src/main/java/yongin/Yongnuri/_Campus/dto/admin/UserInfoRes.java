@@ -10,6 +10,7 @@ import lombok.Setter;
 public class UserInfoRes {
     private Long id;
     private String name;
+    private String userNickname;
     private int studentId;
     private String major;
     private Long reportCount;

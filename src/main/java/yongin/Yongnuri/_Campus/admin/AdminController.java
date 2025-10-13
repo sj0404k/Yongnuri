@@ -39,14 +39,14 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getReportList(user.getUser().getEmail()));
     }
     /**신고 관리목록 가져오기 */
-    @GetMapping("/reportManagement")
-    public ResponseEntity<?> getReportList1(@AuthenticationPrincipal CustomUserDetails user) {
-        return ResponseEntity.ok(adminService.getReportList1(user.getUser().getEmail()));
-    }
-    @GetMapping("/reportList/{userId}")
-    public ResponseEntity<?> getReportListDetail(@AuthenticationPrincipal CustomUserDetails user, @PathVariable("userId") Long reporedId) {
-        return ResponseEntity.ok(adminService.getReportListDetail(user.getUser().getEmail(),reporedId));
-    }
+//    @GetMapping("/reportManagement")
+//    public ResponseEntity<?> getReportList1(@AuthenticationPrincipal CustomUserDetails user) {
+//        return ResponseEntity.ok(adminService.getReportList1(user.getUser().getEmail()));
+//    }
+//    @GetMapping("/reportList/{userId}")
+//    public ResponseEntity<?> getReportListDetail(@AuthenticationPrincipal CustomUserDetails user, @PathVariable("userId") Long reporedId) {
+//        return ResponseEntity.ok(adminService.getReportListDetail(user.getUser().getEmail(),reporedId));
+//    }
     @GetMapping("/userInfo")
     public ResponseEntity<List<UserInfoRes>> getAllUserInfo(@AuthenticationPrincipal CustomUserDetails user) {
         // 1. 관리자 권한 확인 후 모든 유저 정보 조회
