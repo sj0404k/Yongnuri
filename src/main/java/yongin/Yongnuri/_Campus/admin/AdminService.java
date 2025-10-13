@@ -8,16 +8,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.domain.Image;
-import yongin.Yongnuri._Campus.domain.Notice;
 import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.dto.admin.*;
 import yongin.Yongnuri._Campus.repository.ReportRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
-import yongin.Yongnuri._Campus.repository.NoticeRepository;
 import yongin.Yongnuri._Campus.repository.ImageRepository;
-import yongin.Yongnuri._Campus.domain.Notice;
-import yongin.Yongnuri._Campus.repository.BookMarksRepository;
+
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,10 +28,10 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
-    private final NoticeRepository noticeRepository;
+
     private final ImageRepository imageRepository;
 
-    private final BookMarksRepository bookmarkRepository;
+
 
 //    public List<AdminReportRes2> getReportList1(String email) {
 //        // 1. 관리자 확인
@@ -246,7 +244,7 @@ public class AdminService {
                 .build();
     }
 
-    // 공지사항 작성
+
     @Transactional
     protected User getAdminUser(String email) {
         User user = userRepository.findByEmail(email)
@@ -257,6 +255,8 @@ public class AdminService {
         }
         return user;
     }
+    /**
+    // 공지사항 작성
     public Long createNotice(String adminEmail, AdminReq.NoticeCreateReqDto requestDto) { // <-- 타입을 NoticeCreateReqDto로 변경
         User admin = getAdminUser(adminEmail);
 
@@ -304,7 +304,7 @@ public class AdminService {
                 .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
 
         notice.setStatus(Enum.NoticeStatus.DELETED);
-    }
+    }*/
     @Transactional
     public void postNotice(CustomUserDetails user, String text) {
         getAdminUser(user.getUser().getEmail());

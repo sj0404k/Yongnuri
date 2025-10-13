@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import yongin.Yongnuri._Campus.domain.Enum.ChatType;
 import yongin.Yongnuri._Campus.domain.Enum.ReportStatus;
+//import yongin.Yongnuri._Campus.domain.Enum.ReportReason;
 import java.time.LocalDateTime;
 
 @Entity

@@ -1,4 +1,3 @@
-// src/main/java/yongin/Yongnuri/_Campus/admin/AdminInitializer.java
 package yongin.Yongnuri._Campus.admin;
 
 import org.springframework.boot.ApplicationArguments;
@@ -44,6 +43,7 @@ public class AdminInitializer implements ApplicationRunner {
                             .email(adminConfig.getEmail().trim())
                             .nickName(adminConfig.getNickName())
                             .password(passwordEncoder.encode(adminConfig.getPassword()))
+                            .creatAt(LocalDateTime.now())
                             .role(adminConfig.getRole())
                             .build();
                     userRepository.save(admin);

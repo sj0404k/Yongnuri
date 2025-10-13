@@ -63,7 +63,7 @@ public class UsedItemService {
         List<Bookmark> myBookmarks = bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "USED_ITEM", postIds);
         Set<Long> myBookmarkedPostIds = myBookmarks.stream().map(Bookmark::getPostId).collect(Collectors.toSet());
 
-        List<BookmarkCountDto> bookmarkCounts = bookmarkRepository.countByPostTypeAndPostIdIn("USED_ITEM", postIds);
+        List<BookmarkCountDto> bookmarkCounts = bookmarkRepository.findBookmarkCountsByPostTypeAndPostIdIn("USED_ITEM", postIds);
         Map<Long, Long> bookmarkCountMap = bookmarkCounts.stream()
                 .collect(Collectors.toMap(BookmarkCountDto::getPostId, BookmarkCountDto::getCount));
 

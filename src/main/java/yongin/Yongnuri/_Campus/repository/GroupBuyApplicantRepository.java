@@ -19,4 +19,5 @@ public interface GroupBuyApplicantRepository extends JpaRepository<GroupBuyAppli
     void deleteAllByPostId(Long postId);
     boolean existsByPostIdAndUserId(Long postId, Long userId);
 
+    List<GroupBuyApplicant> findByUserId(Long userId);
 }

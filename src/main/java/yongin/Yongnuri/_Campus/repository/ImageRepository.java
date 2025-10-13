@@ -10,4 +10,5 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
 
     List<Image> findByTypeAndTypeIdOrderBySequenceAsc(String type, Long typeId);
     List<Image> findByTypeAndTypeIdInAndSequence(String type, List<Long> typeIds, int sequence);
+    boolean existsByImageUrl(String imageUrl);
 }
