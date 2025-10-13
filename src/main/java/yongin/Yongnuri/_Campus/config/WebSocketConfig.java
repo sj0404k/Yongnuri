@@ -30,9 +30,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
      */
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // 메시지를 구독하는 요청 URL (subscribe)
+        // 메시지를 구독하는 요청 URL (subscribe) 수신
         registry.enableSimpleBroker("/sub");
-        // 메시지를 발행하는 요청 URL (publish)
+        // 메시지를 발행하는 요청 URL (publish) 송신
         registry.setApplicationDestinationPrefixes("/pub");
     }
 }

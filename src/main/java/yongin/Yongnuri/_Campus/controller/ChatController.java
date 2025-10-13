@@ -15,12 +15,14 @@ import yongin.Yongnuri._Campus.dto.chat.ChatMessageRequest;
 import yongin.Yongnuri._Campus.dto.chat.ChatMessagesRes;
 import yongin.Yongnuri._Campus.dto.chat.ChatRoomDto;
 import yongin.Yongnuri._Campus.dto.chat.ChatRoomReq;
+import yongin.Yongnuri._Campus.repository.ReportRepository;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.ChatService;
 import yongin.Yongnuri._Campus.service.MypageService;
 import yongin.Yongnuri._Campus.service.ReportService;
 
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,7 @@ public class ChatController {
     private final ChatService chatService;
     private final MypageService mypageService;
     private final ReportService reportService;
+    private final ReportRepository reportRepository;
 /**
  * 필요 기능들
  * 채팅방 목록 조회 (닉네임 시간 마지막 내용) ----  완료
@@ -77,11 +80,19 @@ public class ChatController {
         chatService.createChatRoom(user, request);
         return ResponseEntity.ok("채팅방 활성화");
     }
+
+    /**
+     * 채팅방 삭제 방법 완전삭제가 아닌 플래그로 관리
+     * 채팅방을 가지고 있는 사람들이 모두 해당 방을 지워야지 방삭제가 됨
+     * 초기 방생성시 chatStatus true 필요  -- 만들러감
+     */
     @DeleteMapping
-    public ResponseEntity<?> deleteRoom(@AuthenticationPrincipal CustomUserDetails user, @RequestBody Enum.ChatType type) {
+    public ResponseEntity<?> deleteRoom(@AuthenticationPrincipal CustomUserDetails user, @RequestBody Long chatRoomId) {
+        chatService.deleteChatRoom(user, chatRoomId);
         return ResponseEntity.ok("방 삭제 완료");
     }
-//
+
+
 //    /** 메시지 보내기 */
 //    @PostMapping("/{chatRoomId}/messages")
 //    public ResponseEntity<?> sendMessage(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long chatRoomId, @RequestBody ChatMessageRequest message) {
@@ -105,17 +116,33 @@ public class ChatController {
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
     }
 
+    @GetMapping("/notice")
+    public ResponseEntity<?> getNoticeChat(@AuthenticationPrincipal CustomUserDetails user) {
+
+        return ResponseEntity.ok("공지채팅 가져옴");
+    }
+//    //문의하기
+//    @MessageMapping("/notice")
+//    public void notice(ChatMessageRequest message) {
+//
+//    }
+
+
+    // 채팅 리폿 관련 부분
     @PostMapping("/rooms/report")
     public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq) {
         reportReq.setPostType(Enum.ChatType.Chat);
         boolean reoprtChat = reportService.reports(user, reportReq);
         if (reoprtChat) {
-            return ResponseEntity.ok("채팅신고 완료");
+            Map<String, Object> response = new HashMap<>();
+            response.put("reportId", user.getUser().getId());
+            response.put("createdAt", LocalDateTime.now());
+
+            return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 차단한 유저입니다.");
         }
     }
-
     @PostMapping("/blocks")
     public ResponseEntity<?> blockChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody MypageReq.blocks mypageReq) {
         boolean blocked = mypageService.postBlocks(user.getUser().getEmail(), mypageReq);

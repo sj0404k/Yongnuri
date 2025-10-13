@@ -48,6 +48,9 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+    @Column(columnDefinition = "TEXT",nullable = true)
+    private String text="";
 /**
     @Column(name = "role")
     private Role role;

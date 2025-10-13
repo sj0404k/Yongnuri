@@ -5,9 +5,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.dto.admin.AdminReportIdRes;
 import yongin.Yongnuri._Campus.dto.admin.AdminReq;
 import yongin.Yongnuri._Campus.dto.admin.UserInfoRes;
+import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -19,7 +21,18 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
+    private final UserRepository userRepository;
 
+    //문의사항 공지
+    @GetMapping ("/notice")
+    public ResponseEntity<?> getNotice (@AuthenticationPrincipal CustomUserDetails user){
+        return ResponseEntity.ok(user.getUser().getText());
+    }
+    @PostMapping("/notice")
+    public ResponseEntity<String> postNotice (@AuthenticationPrincipal CustomUserDetails user, @RequestBody String text){
+        adminService.postNotice(user,text);
+        return ResponseEntity.ok(user.getUser().getText());
+    }
     /**신고 관리목록 가져오기 */
     @GetMapping("/reportList")
     public ResponseEntity<?> getReportList(@AuthenticationPrincipal CustomUserDetails user) {

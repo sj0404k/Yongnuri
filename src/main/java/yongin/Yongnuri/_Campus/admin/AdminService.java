@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import yongin.Yongnuri._Campus.domain.Enum;
+import yongin.Yongnuri._Campus.security.CustomUserDetails;
+
 @Service
 @AllArgsConstructor
 public class AdminService {
@@ -231,7 +233,7 @@ public class AdminService {
 
     // 공지사항 작성
     @Transactional
-    private User getAdminUser(String email) {
+    protected User getAdminUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
 
@@ -287,5 +289,13 @@ public class AdminService {
                 .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
 
         notice.setStatus(Enum.NoticeStatus.DELETED);
+    }
+    @Transactional
+    public void postNotice(CustomUserDetails user, String text) {
+        getAdminUser(user.getUser().getEmail());
+        User user1 = user.getUser();
+        user1.setText(text);
+        userRepository.save(user1);
+
     }
 }
