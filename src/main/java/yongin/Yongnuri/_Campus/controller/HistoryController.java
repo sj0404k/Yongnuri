@@ -1,4 +1,3 @@
-// controller/HistoryController.java (신규 파일)
 package yongin.Yongnuri._Campus.controller;
 
 import lombok.RequiredArgsConstructor;

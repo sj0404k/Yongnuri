@@ -20,7 +20,7 @@ public class ChatRoomDto {
     private String updateTime;          //마지막 채팅 보낸 시간
     private Long fromUserId;            //user1
     private Long toUserId;              //user2 아마 게시글 작성자?
-
+    private int count;
     // 엔티티 → DTO 변환
     public static ChatRoomDto fromEntity(ChatRoom room) {
         return ChatRoomDto.builder()
@@ -30,6 +30,7 @@ public class ChatRoomDto {
                 .toUserId(room.getToUserId())
                 .type(room.getType())
                 .updateTime(TimeUtils.toRelativeTime(room.getUpdateTime()))
+
                 .build();
     }
 }

@@ -16,14 +16,15 @@ public class AdminReportRes {
     private Long id;
     private int reportStudentId;
     private String reportStudentName;
-    private Long reportCount;
+    private String reportStudentNickName;
+//    private Long reportCount;
     private Enum.ChatType reportType;
     private Long typeId;
-    private String major;
+//    private String major;
     private Long reportId;
     private Long reportedId;
 
-    private String reason;
+    private Enum.ReportReason reportReason;
     private String content;
     private LocalDateTime processedAt;
     private Enum.ReportStatus status;

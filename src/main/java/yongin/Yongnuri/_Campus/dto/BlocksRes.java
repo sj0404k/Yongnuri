@@ -1,7 +1,7 @@
 package yongin.Yongnuri._Campus.dto;
 
 import lombok.*;
-import yongin.Yongnuri._Campus.domain.Block;
+
 
 
 @Getter

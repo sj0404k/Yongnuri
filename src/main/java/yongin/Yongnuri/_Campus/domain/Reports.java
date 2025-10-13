@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import yongin.Yongnuri._Campus.domain.Enum.ChatType;
 import yongin.Yongnuri._Campus.domain.Enum.ReportStatus;
-import yongin.Yongnuri._Campus.domain.Enum.ReportType;
+//import yongin.Yongnuri._Campus.domain.Enum.ReportReason;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,7 +30,7 @@ public class Reports {
     @Enumerated(EnumType.STRING)
     private ChatType postType;  //게시글 타입
     @Enumerated(EnumType.STRING)
-    private ReportType reason;      //이유
+    private Enum.ReportReason reportReason;      //이유
     @Enumerated(EnumType.STRING)
     private ReportStatus status;
 }

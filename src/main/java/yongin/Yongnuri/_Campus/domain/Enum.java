@@ -37,7 +37,7 @@ public class Enum {
         SUSPENDED;       // 정지된 사용자
     }
 
-    public static enum ReportType {
+    public static enum ReportReason {
         SPAM,                       // 도배
         PROMOTION_ADVERTISING,      // 홍보_광고행위
         OBSCENE_CONTENT,            // 음란성게시물

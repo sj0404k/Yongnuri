@@ -30,29 +30,35 @@ public class ChatService {
     private final ChatStatusRepository chatStatusRepository;
     private static final int MESSAGE_PAGE_SIZE = 20;// 채팅 20개 씩 보여주기
 
+    // 첫 채팅방들 모음
+
+    /** 필요한 것
+     * 닉네임
+     * 시간
+     * 내용
+     */
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
 
-       Enum.ChatType chatType;
-        try {
-            chatType = type;
-        } catch (IllegalArgumentException e) {
-            chatType = Enum.ChatType.ALL; // 잘못된 값이면 전체로 처리
-        }
+        Enum.ChatType chatType = (type != null) ? type : Enum.ChatType.ALL;
+        List<ChatStatus> activeStatuses = chatStatusRepository.findByUserIdAndChatStatusTrue(user.getUser().getId());
+
+
+        List<Long> activeRoomIds = activeStatuses.stream()
+                .map(ChatStatus::getChatRoomId)
+                .toList();
 
         List<ChatRoom> rooms;
         if (chatType == Enum.ChatType.ALL) {
-            rooms = chatRoomRepository.findByFromUserIdOrToUserId(user.getUser().getId(), user.getUser().getId());
+            rooms = chatRoomRepository.findByIdIn(activeRoomIds);
         } else {
-            rooms = chatRoomRepository.findByFromUserIdOrToUserIdAndType(user.getUser().getId(), user.getUser().getId(), chatType);
+            rooms = chatRoomRepository.findByIdInAndType(activeRoomIds, chatType);
         }
+
         return rooms.stream()
                 .map(ChatRoomDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
-//    public ChatRoomDto getChatRoom(CustomUserDetails user, Long chatRoomId) {
-//
-//    }
 
     public void createChatRoom(CustomUserDetails user, ChatRoomReq request) {
         // 1. 이미 같은 조건의 채팅방이 있는지 중복 확인
@@ -64,31 +70,32 @@ public class ChatService {
         );
 
         if (existing.isPresent()) {
+            // 이미 존재하면 있는 방을 보내줘야됨
             throw new IllegalStateException("이미 존재하는 채팅방입니다.");
-        }
-        ChatRoom newChatRoom = ChatRoom.builder()
-                .type(request.getType())
-                .typeId(request.getTypeId())
-                .fromUserId(user.getUser().getId()) // 현재 로그인한 사용자 ID가 채팅방을 시작한 사용자
-                .toUserId(request.getFromUserId()) // request의 fromUserId가 상대방 (채팅 대상) 사용자
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .lastMessage(request.getMessage())
+        }else {
+            ChatRoom newChatRoom = ChatRoom.builder()
+                    .type(request.getType())
+                    .typeId(request.getTypeId())
+                    .fromUserId(user.getUser().getId()) // 현재 로그인한 사용자 ID가 채팅방을 시작한 사용자
+                    .toUserId(request.getFromUserId()) // request의 fromUserId가 상대방 (채팅 대상) 사용자
+                    .createTime(LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
+                    .lastMessage(request.getMessage())
 //                .status(1)
-                .build();
-
-        chatRoomRepository.save(newChatRoom);
-
-        if(request.getMessageType().equals(ChatMessages.messageType.텍스트)) {
-            ChatMessages newChatMessages = ChatMessages.builder()
-                    .chatRoomId(newChatRoom.getId())
-                    .chatType(ChatMessages.messageType.텍스트)
-                    .message(request.getMessage())
-                    .senderId(user.getUser().getId())
-                    .createdAt(LocalDateTime.now())
                     .build();
-            chatMessagesRepository.save(newChatMessages);
-        }
+
+            chatRoomRepository.save(newChatRoom);
+
+            if (request.getMessageType().equals(ChatMessages.messageType.텍스트)) {
+                ChatMessages newChatMessages = ChatMessages.builder()
+                        .chatRoomId(newChatRoom.getId())
+                        .chatType(ChatMessages.messageType.텍스트)
+                        .message(request.getMessage())
+                        .senderId(user.getUser().getId())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                chatMessagesRepository.save(newChatMessages);
+            }
 //       else if(request.getChatType().equals(ChatMessages.ChatType.이미지)) {
 //            ChatMessages newChatMessages = ChatMessages.builder()
 //                    .chatId(newChatRoom.getId())
@@ -99,14 +106,23 @@ public class ChatService {
 //                    .build();
 //            chatMessagesRepository.save(newChatMessages);
 //        }
-        ChatStatus newchatStatus = ChatStatus.builder()
-                .chatRoomId(newChatRoom.getId())
-                .userId(user.getUser().getId())
-                .lastDate(LocalDateTime.now())
-                .chatStatus(true)
-                .build();
-        chatStatusRepository.save(newchatStatus);
-        return ;
+            ChatStatus newchatStatus = ChatStatus.builder()
+                    .chatRoomId(newChatRoom.getId())
+                    .userId(user.getUser().getId())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+            chatStatusRepository.save(newchatStatus);
+
+            ChatStatus newchatStatus1 = ChatStatus.builder()
+                    .chatRoomId(newChatRoom.getId())
+                    .userId(request.getFromUserId())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+            chatStatusRepository.save(newchatStatus1);
+
+        }
     }
 
     public List<ChatMessagesRes> getEnterChatRoom(CustomUserDetails user, Long roomId) {
@@ -197,6 +213,17 @@ public class ChatService {
 
                 .createdAt(chatMessage.getCreatedAt())
                 .build();
+    }
+
+    public void deleteChatRoom(CustomUserDetails user, Long chatRoomId) {
+        ChatStatus chatStatus = chatStatusRepository.findByUserIdAndChatRoomId(
+                user.getUser().getId(), chatRoomId);
+        if (chatStatus == null) {
+            throw new IllegalArgumentException("해당 채팅방 상태를 찾을 수 없습니다.");
+        }
+        chatStatus.setChatStatus(false);
+        chatStatusRepository.save(chatStatus);
+
     }
 //
 //    public ChatMessages saveMessage(CustomUserDetails user, Long chatRoomId, ChatMessageRequest message) {

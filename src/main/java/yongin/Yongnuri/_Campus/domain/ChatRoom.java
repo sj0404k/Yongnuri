@@ -23,12 +23,13 @@ public class ChatRoom {
     private Long id;                    //해당 부분으로 채팅방 메시지등 조회
 
     @Enumerated(EnumType.STRING)
-    private Enum.ChatType type;
-    private Long typeId;
+    private Enum.ChatType type;     // 채팅방이 파생된 곳
+    private Long typeId;            // 파생된 id
 
-    private Long toUserId;
-    private Long fromUserId;
-
+    // 해당 부분이 필요한가?
+    private Long toUserId;          // 주로 게시글 작성자?
+    private Long fromUserId;        //
+    //
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private String lastMessage;

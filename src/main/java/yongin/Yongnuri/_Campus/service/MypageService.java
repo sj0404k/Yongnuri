@@ -1,4 +1,3 @@
-// yongin/Yongnuri/_Campus/service/MypageService.java
 package yongin.Yongnuri._Campus.service;
 
 import jakarta.persistence.EntityNotFoundException;

@@ -27,17 +27,27 @@ public class AdminInitializer implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         userRepository.findByEmail(adminConfig.getEmail()).ifPresentOrElse(
-                user -> System.out.println("Admin 계정 이미 존재함: " + user.getEmail()),
+                user -> {
+                    // ✅ 이미 있으면 비번/권한 동기화
+                    user.setPassword(passwordEncoder.encode(adminConfig.getPassword()));
+                    user.setRole(adminConfig.getRole());
+                    if (user.getNickName() == null || user.getNickName().isBlank()) {
+                        user.setNickName(adminConfig.getNickName());
+                    }
+                    userRepository.save(user);
+                    System.out.println("[ADMIN] 기존 관리자 계정 동기화 완료: " + user.getEmail());
+                },
                 () -> {
+                    // ✅ 없으면 생성
                     User admin = User.builder()
-                            .email(adminConfig.getEmail())
+                            .email(adminConfig.getEmail().trim())
                             .nickName(adminConfig.getNickName())
                             .password(passwordEncoder.encode(adminConfig.getPassword()))
                             .creatAt(LocalDateTime.now())
                             .role(adminConfig.getRole())
                             .build();
                     userRepository.save(admin);
-                    System.out.println("Admin 계정 생성 완료: " + admin.getEmail());
+                    System.out.println("[ADMIN] 관리자 계정 생성 완료: " + admin.getEmail());
                 }
         );
     }

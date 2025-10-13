@@ -51,7 +51,6 @@ public class LostItemResponseDto {
         this.title = item.getTitle();
         this.content = item.getContent();
         this.location = item.getLocation();
-
         this.purpose = item.getPurpose().name();
         this.status = item.getStatus().name();
         this.createdAt = item.getCreatedAt();
