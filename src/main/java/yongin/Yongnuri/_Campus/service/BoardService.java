@@ -1,6 +1,8 @@
 package yongin.Yongnuri._Campus.service;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,6 +10,9 @@ import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.repository.*;
 import jakarta.persistence.EntityNotFoundException;
+
+import java.io.File;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +26,8 @@ public class BoardService {
     private final BookmarkRepository bookmarkRepository;
     private final GroupBuyApplicantRepository applicantRepository;
     private final AppointmentRepository appointmentRepository;
-
+    @Value("${file.upload-dir}") // application.properties의 파일 저장 경로
+    private String uploadDir;
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
     }
@@ -62,10 +68,19 @@ public class BoardService {
         if (!isAuthor && !isAdmin) {
             throw new AccessDeniedException("이 게시글을 삭제할 권한이 없습니다.");
         }
+        List<Image> imagesToDelete = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc(postType, postId);
 
+     //게시글삭제시이미지삭제
+        for (Image image : imagesToDelete) {
+            String fileName = image.getImageUrl().substring("/uploads/".length());
+            File file = new File(uploadDir + fileName);
+            if (file.exists()) {
+                file.delete();
+            }
+        }
 // 게시글 삭제시 관심목록 삭제
         bookmarkRepository.deleteAllByPostTypeAndPostId(postType, postId);
-
+        imageRepository.deleteAll(imagesToDelete);
         if (itemToUpdate instanceof UsedItem) {
             ((UsedItem) itemToUpdate).setStatus(Enum.UsedItemStatus.DELETED);
         } else if (itemToUpdate instanceof LostItem) {

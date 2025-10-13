@@ -46,7 +46,7 @@ public class SecurityConfig {
                         body.put("timestamp", LocalDateTime.now().toString());
                         body.put("status", HttpStatus.FORBIDDEN.value());
                         body.put("error", "Forbidden");
-                        body.put("message", "접근 권한이 없습니다."); // 서비스에서 던진 메시지 대신 고정 메시지 사용
+                        body.put("message", "접근 권한이 없습니다.");
                         body.put("path", request.getRequestURI());
                         new ObjectMapper().writeValue(response.getWriter(), body);
                     });
@@ -66,10 +66,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                                 //관리자
                                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                                // (★수정★) 공지사항 조회(GET) 경로 변경
+                                // 공지사항 조회(GET)
                                 .requestMatchers(HttpMethod.GET, "/board/notices/**").authenticated()
 
-                                // (★수정★) 공지사항 작성/수정/삭제는 ADMIN만 가능하도록 경로 변경
+                                // 공지사항 작성/수정/삭제는 ADMIN만 가능하도록
                                 .requestMatchers(HttpMethod.POST, "/board/notices").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.PATCH, "/board/notices/**").hasRole("ADMIN")
                                 .requestMatchers(HttpMethod.DELETE, "/board/notices/**").hasRole("ADMIN")
