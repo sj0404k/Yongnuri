@@ -13,10 +13,7 @@ import yongin.Yongnuri._Campus.dto.SearchRes;
 import yongin.Yongnuri._Campus.repository.*;
 
 import java.time.LocalDateTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -96,6 +93,16 @@ public class SearchService {
         List<Long> noticeIds = notices.stream().map(Notice::getId).collect(Collectors.toList());
         List<Long> groupBuyIds = groupBuys.stream().map(GroupBuy::getId).collect(Collectors.toList());
 
+        Set<Long> myBookmarkedPostIds = Stream.of(
+                        bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "USED_ITEM", usedItemIds),
+                        bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "LOST_ITEM", lostItemIds),
+                        bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "NOTICE", noticeIds),
+                        bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "GROUP_BUY", groupBuyIds)
+                )
+                .flatMap(List::stream)
+                .map(Bookmark::getPostId)
+                .collect(Collectors.toSet());
+
         Map<Long, String> usedItemThumbnailMap = imageRepository.findByTypeAndTypeIdInAndSequence("USED_ITEM", usedItemIds, 1)
                 .stream().collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
         Map<Long, String> lostItemThumbnailMap = imageRepository.findByTypeAndTypeIdInAndSequence("LOST_ITEM", lostItemIds, 1)
@@ -117,6 +124,7 @@ public class SearchService {
                             .price(null)
                             .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
                             .boardType("분실물")
+                            .isBookmarked(myBookmarkedPostIds.contains(item.getId()))
                             .like(likeCount)
                             .thumbnailUrl(thumbnailUrl)
                             .statusBadge(item.getPurpose().name())
@@ -134,6 +142,7 @@ public class SearchService {
                             .location(item.getLocation())
                             .price(item.getPrice())
                             .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt())).boardType("중고거래")
+                            .isBookmarked(myBookmarkedPostIds.contains(item.getId()))
                             .like(likeCount)
                             .thumbnailUrl(thumbnailUrl)
                             .statusBadge(item.getStatus().name())
@@ -151,16 +160,19 @@ public class SearchService {
                             .price(null)
                             .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
                             .boardType("공동구매")
+                            .isBookmarked(myBookmarkedPostIds.contains(item.getId()))
                             .like(likeCount)
                             .thumbnailUrl(thumbnailUrl)
                             .statusBadge(item.getStatus().name())
+                            .limit(item.getLimit())
+                            .currentCount(item.getCurrentCount())
                             .build();
                 })
                 .toList();
 
         List<SearchBoard> noticeResults = notices.stream()
                 .map(item -> {
-                    long likeCount = bookmarkRepository.countByPostTypeAndPostId("NOTICE", item.getId());
+                    // long likeCount = bookmarkRepository.countByPostTypeAndPostId("NOTICE", item.getId());
                     String thumbnailUrl = noticeThumbnailMap.get(item.getId());
                     return SearchBoard.builder()
                             .id(item.getId())
@@ -169,9 +181,12 @@ public class SearchService {
                             .price(null)
                             .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
                             .boardType("공지홍보")
-                            .like(likeCount)
+                            .isBookmarked(myBookmarkedPostIds.contains(item.getId()))
+                            //   .like(likeCount)
                             .statusBadge(item.getStatus().name())
                             .thumbnailUrl(thumbnailUrl)
+                            .startDate(item.getStartDate())
+                            .endDate(item.getEndDate())
                             .build();
                 })
                 .toList();
