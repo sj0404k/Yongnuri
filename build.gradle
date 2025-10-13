@@ -44,6 +44,8 @@ dependencies {
     //만약 오류시 이게 원인
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	//파이어 베이스
+	implementation 'com.google.firebase:firebase-admin:9.7.0'
 }
 
 tasks.named('test') {

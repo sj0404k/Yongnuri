@@ -14,11 +14,13 @@ import yongin.Yongnuri._Campus.domain.Notice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import yongin.Yongnuri._Campus.dto.NotificationRequest;
 import yongin.Yongnuri._Campus.dto.notice.NoticeCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeUpdateRequestDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeResponseDto;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.NoticeService;
+import yongin.Yongnuri._Campus.service.NotificationService;
 
 import java.util.List;
 
@@ -30,6 +32,7 @@ import java.util.Map;
 public class NoticeController {
 
     private final NoticeService noticeService;
+    private final NotificationService notificationService;
 
     @GetMapping
     public ResponseEntity<List<NoticeResponseDto>> getNotices(
@@ -56,6 +59,14 @@ public class NoticeController {
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody NoticeCreateRequestDto requestDto) {
         Long noticeId = noticeService.createNotice(requestDto, user.getUser().getEmail());
+        // 2. NotificationRequest 생성
+        NotificationRequest notificationRequest = new NotificationRequest();
+        notificationRequest.setTitle("새 공지사항: " + requestDto.getTitle());
+        notificationRequest.setMessage(requestDto.getContent());
+        notificationRequest.setTargetAll(true); // 전체 사용자에게 알림 전송용 플래그
+
+        // 3. NotificationService 호출
+        notificationService.sendNotification(notificationRequest);
         return ResponseEntity.ok(Map.of("message", "공지사항 작성 성공", "noticeId", noticeId));
     }
 

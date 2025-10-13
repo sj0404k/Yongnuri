@@ -18,6 +18,13 @@ import yongin.Yongnuri._Campus.service.ReportService;
 public class ReportController {
     private final ReportService reportService;
 
+    /**
+     *
+     * @param user :
+     * @param reportReq : reportedId, postType, postId, reason, content, imageUrls
+     *     }
+     * @return 상태갑
+     */
     @PostMapping
     public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq){
         boolean report = reportService.reports(user, reportReq);
