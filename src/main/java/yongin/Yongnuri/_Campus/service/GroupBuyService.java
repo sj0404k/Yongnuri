@@ -61,12 +61,15 @@ public class GroupBuyService {
 
         Set<Long> myBookmarkedPostIds = bookmarkRepository.findByUserIdAndPostTypeAndPostIdIn(currentUser.getId(), "GROUP_BUY", postIds)
                 .stream().map(Bookmark::getPostId).collect(Collectors.toSet());
+        List<BookmarkCountDto> bookmarkCounts = bookmarkRepository.findBookmarkCountsByPostTypeAndPostIdIn("GROUP_BUY", postIds);
+        Map<Long, Long> bookmarkCountMap = bookmarkCounts.stream()
+                .collect(Collectors.toMap(BookmarkCountDto::getPostId, BookmarkCountDto::getCount));
 
         return items.stream().map(item -> {
             GroupBuyResponseDto dto = new GroupBuyResponseDto(item);
             dto.setThumbnailUrl(thumbnailMap.get(item.getId()));
             dto.setBookmarked(myBookmarkedPostIds.contains(item.getId()));
-
+            dto.setBookmarkCount(bookmarkCountMap.getOrDefault(item.getId(), 0L));
             return dto;
         }).collect(Collectors.toList());
     }
@@ -90,6 +93,8 @@ public class GroupBuyService {
 
         GroupBuyResponseDto dto = new GroupBuyResponseDto(item, author, images);
         dto.setBookmarked(isBookmarked);
+        long bookmarkCount = bookmarkRepository.countByPostTypeAndPostId("GROUP_BUY", postId);
+        dto.setBookmarkCount(bookmarkCount);
 
         return dto;
     }

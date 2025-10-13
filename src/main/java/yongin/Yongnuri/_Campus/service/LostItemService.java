@@ -17,6 +17,7 @@ import yongin.Yongnuri._Campus.domain.Bookmark;
 import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.LostItem;
 import yongin.Yongnuri._Campus.domain.User;
+import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemResponseDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemUpdateRequestDto;
@@ -75,12 +76,15 @@ public class LostItemService {
         List<Image> thumbnails = imageRepository.findByTypeAndTypeIdInAndSequence("LOST_ITEM", postIdsWithImages, 1);
         Map<Long, String> thumbnailMap = thumbnails.stream()
                 .collect(Collectors.toMap(Image::getTypeId, Image::getImageUrl));
-
+        List<BookmarkCountDto> bookmarkCounts = bookmarkRepository.findBookmarkCountsByPostTypeAndPostIdIn("LOST_ITEM", postIds);
+        Map<Long, Long> bookmarkCountMap = bookmarkCounts.stream()
+                .collect(Collectors.toMap(BookmarkCountDto::getPostId, BookmarkCountDto::getCount));
         return items.stream()
                 .map(item -> {
                     LostItemResponseDto dto = new LostItemResponseDto(item);
                     dto.setThumbnailUrl(thumbnailMap.get(item.getId()));
                     dto.setBookmarked(myBookmarkedPostIds.contains(item.getId()));
+                    dto.setBookmarkCount(bookmarkCountMap.getOrDefault(item.getId(), 0L));
                     return dto;
                 })
                 .collect(Collectors.toList());
@@ -104,7 +108,8 @@ public class LostItemService {
         }
 
         LostItemResponseDto dto = new LostItemResponseDto(item, images);
-
+        long bookmarkCount = bookmarkRepository.countByPostTypeAndPostId("LOST_ITEM", postId);
+        dto.setBookmarkCount(bookmarkCount);
         boolean isBookmarked = bookmarkRepository.existsByUserIdAndPostTypeAndPostId(
                 currentUser.getId(), "LOST_ITEM", postId);
         dto.setBookmarked(isBookmarked);

@@ -28,6 +28,8 @@ public class LostItemResponseDto {
     private String thumbnailUrl;
     @Setter
     private boolean isBookmarked;
+    @Setter
+    private long bookmarkCount;
 
     public LostItemResponseDto(LostItem item) {
         this.id = item.getId();
@@ -41,7 +43,9 @@ public class LostItemResponseDto {
         this.authorNickname = null;
         this.images = null;
         this.isBookmarked = false;
+        this.bookmarkCount = 0;
         this.authorStatus = null;
+
     }
 
     public LostItemResponseDto(LostItem item, List<Image> images) {
@@ -57,6 +61,7 @@ public class LostItemResponseDto {
         this.authorNickname = item.getUser().getNickName();
         this.images = images.stream().map(ImageDto::new).collect(Collectors.toList());
         this.isBookmarked = false;
+        this.bookmarkCount = 0;
         this.authorStatus = item.getUser().getStatus();
     }
 }

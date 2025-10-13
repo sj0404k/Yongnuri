@@ -35,7 +35,8 @@ public class GroupBuyResponseDto {
     private String thumbnailUrl;
     @Setter
     private boolean isBookmarked;
-
+    @Setter
+    private long bookmarkCount;
     // 공동구매목록 조회
     public GroupBuyResponseDto(GroupBuy item) {
         this.id = item.getId();
@@ -48,6 +49,8 @@ public class GroupBuyResponseDto {
         this.authorNickname = null;
         this.images = null;
         this.authorStatus=null;
+        this.isBookmarked = false;
+        this.bookmarkCount = 0L;
         this.currentCount = (item.getCurrentCount() == null) ? 0L : item.getCurrentCount().longValue();
     }
 
@@ -62,6 +65,8 @@ public class GroupBuyResponseDto {
         this.createdAt = item.getCreatedAt();
         this.content = item.getContent();
         this.link = item.getLink();
+        this.isBookmarked = false;
+        this.bookmarkCount = 0L;
         this.currentCount = (item.getCurrentCount() == null) ? 0L : item.getCurrentCount().longValue();
         this.authorNickname = author.getNickName();
         this.authorStatus= Objects.requireNonNull(author).getStatus();
