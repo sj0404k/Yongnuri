@@ -1,4 +1,4 @@
-/**package yongin.Yongnuri._Campus.service;
+package yongin.Yongnuri._Campus.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +32,6 @@ public class CleanupService {
 
 
     // 매일 17시에 실행: 90일이 지난 DELETED 상태의 게시글을 완전 삭제
-
     @Scheduled(cron = "0 0 17 * * ?")
     @Transactional
     public void cleanupDeletedPosts() {
@@ -44,12 +43,16 @@ public class CleanupService {
 
         List<LostItem> lostItemsToDelete = lostItemRepository.findAllByStatusAndCreatedAtBefore(Enum.LostItemStatus.DELETED, cutoffDate);
         permanentlyDeletePosts("LOST_ITEM", lostItemsToDelete.stream().map(LostItem::getId).collect(Collectors.toList()));
-        // ... (LostItem, GroupBuy, Notice에 대해서도 동일한 로직 반복)
+
+        List<GroupBuy> groupBuysToDelete = groupBuyRepository.findAllByStatusAndCreatedAtBefore(Enum.GroupBuyStatus.DELETED, cutoffDate);
+        permanentlyDeletePosts("GROUP_BUY", groupBuysToDelete.stream().map(GroupBuy::getId).collect(Collectors.toList()));
+
+        List<Notice> noticesToDelete = noticeRepository.findAllByStatusAndCreatedAtBefore(Enum.NoticeStatus.DELETED, cutoffDate);
+        permanentlyDeletePosts("NOTICE", noticesToDelete.stream().map(Notice::getId).collect(Collectors.toList()));
     }
 
 
-   //매월 1일 17시에 실행: 5년이 지난 모든 게시글을 영구 삭제합니다.
-
+   //매월 1일 17시에 실행 5년이 지난 모든 게시글을 영구 삭제
     @Scheduled(cron = "0 0 17 1 * ?")
     @Transactional
     public void cleanupOldPosts() {
@@ -60,10 +63,18 @@ public class CleanupService {
         List<UsedItem> usedItemsToDelete = usedItemRepository.findAllByCreatedAtBefore(cutoffDate);
         permanentlyDeletePosts("USED_ITEM", usedItemsToDelete.stream().map(UsedItem::getId).collect(Collectors.toList()));
 
+        List<LostItem> lostItemsToDelete = lostItemRepository.findAllByCreatedAtBefore(cutoffDate);
+        permanentlyDeletePosts("LOST_ITEM", lostItemsToDelete.stream().map(LostItem::getId).collect(Collectors.toList()));
+
+        List<GroupBuy> groupBuysToDelete = groupBuyRepository.findAllByCreatedAtBefore(cutoffDate);
+        permanentlyDeletePosts("GROUP_BUY", groupBuysToDelete.stream().map(GroupBuy::getId).collect(Collectors.toList()));
+
+        List<Notice> noticesToDelete = noticeRepository.findAllByCreatedAtBefore(cutoffDate);
+        permanentlyDeletePosts("NOTICE", noticesToDelete.stream().map(Notice::getId).collect(Collectors.toList()));
     }
 
     private void permanentlyDeletePosts(String postType, List<Long> postIds) {
-        if (postIds.isEmpty()) {
+        if (postIds == null || postIds.isEmpty()) {
             return;
         }
 
@@ -75,11 +86,13 @@ public class CleanupService {
                 file.delete();
             }
         }
-        imageRepository.deleteAll(imagesToDelete);
+        imageRepository.deleteAllInBatch(imagesToDelete);
 
         for(Long postId : postIds) {
             bookmarkRepository.deleteAllByPostTypeAndPostId(postType, postId);
-            appointmentRepository.deleteAllByPostTypeAndPostId(postType, postId);
+            if ("USED_ITEM".equals(postType)) {
+                appointmentRepository.deleteAllByPostTypeAndPostId(postType, postId);
+            }
             if ("GROUP_BUY".equals(postType)) {
                 applicantRepository.deleteAllByPostId(postId);
             }
@@ -102,4 +115,4 @@ public class CleanupService {
         }
         System.out.println(postType + " 게시글 " + postIds.size() + "개 및 관련 데이터 영구 삭제 완료.");
     }
-}*/
+}
