@@ -52,6 +52,8 @@ public class User {
     @Builder.Default  //실행시 다음의 오류나와서 추가 User.java:53: warning: @Builder will ignore the initializing expression
     @Column(columnDefinition = "TEXT",nullable = true)
     private String text="";
+
+    private String deviceToken;
 /**
     @Column(name = "role")
     private Role role;
