@@ -19,6 +19,6 @@ public class SearchBoard {
     private String createdAt;
     private long like;
     private String boardType;
-
+    private String statusBadge;
     private String thumbnailUrl;
 }

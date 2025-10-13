@@ -11,6 +11,6 @@ public interface UsedItemRepository extends JpaRepository<UsedItem, Long>, JpaSp
 
     List<UsedItem> findByTitleContainingIgnoreCase(String title);
     List<UsedItem> findByUserIdAndStatusInOrderByCreatedAtDesc(Long userId, List<Enum.UsedItemStatus> statuses);
-
+    List<UsedItem> findByTitleContainingIgnoreCaseAndStatusNot(String title, Enum.UsedItemStatus status);
     List<UsedItem> findByIdInAndStatusInOrderByCreatedAtDesc(List<Long> ids, List<Enum.UsedItemStatus> statuses);
 }

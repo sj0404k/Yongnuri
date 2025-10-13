@@ -9,10 +9,8 @@ import java.util.List;
 
 public interface LostItemRepository extends JpaRepository<LostItem, Long>, JpaSpecificationExecutor<LostItem> {
    List<LostItem> findByTitleContainingIgnoreCase(String title);
-
     List<LostItem> findByUserAndPurposeOrderByCreatedAtDesc(User user, Enum.LostItemPurpose purpose);
-
-
+    List<LostItem> findByTitleContainingIgnoreCaseAndStatusNot(String title, Enum.LostItemStatus status);
     List<LostItem> findByUserAndStatusOrderByCreatedAtDesc(User user, Enum.LostItemStatus status);
 
 }

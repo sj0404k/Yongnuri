@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.config.TimeUtils;
 import yongin.Yongnuri._Campus.domain.*;
+import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.dto.SearchBoard;
 import yongin.Yongnuri._Campus.dto.SearchReq;
 import yongin.Yongnuri._Campus.dto.SearchRes;
@@ -78,10 +79,17 @@ public class SearchService {
         searchRepository.save(search);
 
         // 1차: 키워드 포함 검색
-        List<LostItem> lostItems = lostItemRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
-        List<UsedItem> usedItems = usedItemRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
-        List<Notice> notices = noticeRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
-        List<GroupBuy> groupBuys = groupbuyRepository.findByTitleContainingIgnoreCase(searchReq.getQuery());
+        List<LostItem> lostItems = lostItemRepository.findByTitleContainingIgnoreCaseAndStatusNot(
+                searchReq.getQuery(), Enum.LostItemStatus.DELETED);
+
+        List<UsedItem> usedItems = usedItemRepository.findByTitleContainingIgnoreCaseAndStatusNot(
+                searchReq.getQuery(), Enum.UsedItemStatus.DELETED);
+
+        List<Notice> notices = noticeRepository.findByTitleContainingIgnoreCaseAndStatusNot(
+                searchReq.getQuery(), Enum.NoticeStatus.DELETED);
+
+        List<GroupBuy> groupBuys = groupbuyRepository.findByTitleContainingIgnoreCaseAndStatusNot(
+                searchReq.getQuery(), Enum.GroupBuyStatus.DELETED);
 
         List<Long> lostItemIds = lostItems.stream().map(LostItem::getId).collect(Collectors.toList());
         List<Long> usedItemIds = usedItems.stream().map(UsedItem::getId).collect(Collectors.toList());
@@ -111,6 +119,7 @@ public class SearchService {
                             .boardType("분실물")
                             .like(likeCount)
                             .thumbnailUrl(thumbnailUrl)
+                            .statusBadge(item.getStatus().name())
                             .build();
                 })
                 .toList();
@@ -127,6 +136,7 @@ public class SearchService {
                             .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt())).boardType("중고거래")
                             .like(likeCount)
                             .thumbnailUrl(thumbnailUrl)
+                            .statusBadge(item.getStatus().name())
                             .build();
                 })
                 .toList();
@@ -143,6 +153,7 @@ public class SearchService {
                             .boardType("공동구매")
                             .like(likeCount)
                             .thumbnailUrl(thumbnailUrl)
+                            .statusBadge(item.getStatus().name())
                             .build();
                 })
                 .toList();
@@ -159,6 +170,7 @@ public class SearchService {
                             .createdAt(TimeUtils.toRelativeTime(item.getCreatedAt()))
                             .boardType("공지홍보")
                             .like(likeCount)
+                            .statusBadge(item.getStatus().name())
                             .thumbnailUrl(thumbnailUrl)
                             .build();
                 })
