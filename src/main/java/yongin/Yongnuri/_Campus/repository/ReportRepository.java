@@ -11,11 +11,7 @@ import java.util.List;
 
 @Repository
 public interface ReportRepository extends JpaRepository<Reports,Long> {
-    @Query("SELECT r, u " +
-            "FROM Reports r " +
-            "JOIN User u ON r.reportedId = u.id " +
-            "ORDER BY r.createdAt DESC")
-    List<Object[]> findAllReportsWithUser();
+
     List<Reports> findByReportedId(Long reportedId);
 
     Long countByReportedId(Long reportedId);
