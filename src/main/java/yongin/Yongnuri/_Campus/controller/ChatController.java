@@ -130,8 +130,10 @@ public class ChatController {
 
     // 채팅 리폿 관련 부분
     @PostMapping("/rooms/report")
-    public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq) {
+    public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user,
+                                        @RequestBody ReportReq.reportDto reportReq) {
         reportReq.setPostType(Enum.ChatType.Chat);
+
         Long reportedUserId = reportService.reports(user, reportReq);
 
         if (reportedUserId != null) {
@@ -143,6 +145,21 @@ public class ChatController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 차단한 유저입니다.");
         }
     }
+    /**
+    @PostMapping("/rooms/report")
+    public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq) {
+        reportReq.setPostType(Enum.ChatType.Chat);
+        boolean reoprtChat = reportService.reports(user, reportReq);
+        if (reoprtChat) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("reportId", user.getUser().getId());
+            response.put("createdAt", LocalDateTime.now());
+
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 차단한 유저입니다.");
+        }
+    }*/
     @PostMapping("/blocks")
     public ResponseEntity<?> blockChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody MypageReq.blocks mypageReq) {
         boolean blocked = mypageService.postBlocks(user.getUser().getEmail(), mypageReq);

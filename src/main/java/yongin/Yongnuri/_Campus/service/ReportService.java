@@ -23,6 +23,7 @@ public class ReportService {
     private final UserRepository userRepository;
     @Transactional
     public Long reports(CustomUserDetails user, ReportReq.reportDto reportReq) {
+
         boolean isImagesPresent = reportReq.getImageUrls() != null && !reportReq.getImageUrls().isEmpty();
 
         User reportedUser = userRepository.findById(reportReq.getReportedId())
@@ -30,7 +31,7 @@ public class ReportService {
 
         Reports newReport = Reports.builder()
                 .reportId(user.getUser().getId())
-                .reportedUser(reportedUser)
+                .reportedId(reportReq.getReportedId())
                 .postId(reportReq.getPostId())
                 .postType(reportReq.getPostType())
                 .reportReason(reportReq.getReason())
@@ -39,7 +40,6 @@ public class ReportService {
                 .createdAt(LocalDateTime.now())
                 .status(Enum.ReportStatus.PENDING)
                 .build();
-
         Reports savedReport = reportRepository.save(newReport);
 
         if (isImagesPresent) {
@@ -53,7 +53,6 @@ public class ReportService {
                         .build());
             }
         }
-
         return reportedUser.getId();
     }
 }

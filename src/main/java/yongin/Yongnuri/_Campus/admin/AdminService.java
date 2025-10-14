@@ -85,15 +85,16 @@ public class AdminService {
         // DTO 변환
         return results.stream()
                 .map(report -> {
-                    User reportedUser = report.getReportedUser();
-
+                    Optional<User> reportedUserOpt = userRepository.findById(report.getReportedId());
+                    String nickName = reportedUserOpt.map(User::getNickName).orElse("탈퇴한 사용자"); // ← 안전 처리
                     String content = report.getContent();
+
                     if (content != null && content.length() > 20) {
                         content = content.substring(0, 20) + "...";
                     }
                     return AdminReportRes.builder()
                             .id(report.getId())
-                            .reportStudentNickName(reportedUser != null ? reportedUser.getNickName() : "익명")
+                            .reportStudentNickName(nickName)
                             .reportReason(report.getReportReason())
                             .content(content)
                             .reportType(report.getPostType())
@@ -155,7 +156,7 @@ public class AdminService {
         // 3. DTO 변환 (신고 횟수 포함)
         return users.stream()
                 .map(user -> {
-                    Long reportCount = reportRepository.countByReportedUser_IdAndStatus(user.getId(), Enum.ReportStatus.APPROVED);
+                    Long reportCount = reportRepository.countByReportedIdAndStatus(user.getId(), Enum.ReportStatus.APPROVED);
                     return UserInfoRes.builder()
                             .id(user.getId())
                             .name(user.getName())
@@ -201,7 +202,7 @@ public class AdminService {
         }
 
         // 2. 신고당한 유저의 모든 신고 조회
-        List<Reports> reports = reportRepository.findByReportedUser_Id(req.getUserId());
+        List<Reports> reports = reportRepository.findByReportedId(req.getUserId());
         if (reports.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "신고를 찾을 수 없습니다.");
         }
@@ -224,7 +225,8 @@ public class AdminService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."));
 
         // 2. 피신고 유저 조회
-        User reportedUser = report.getReportedUser();
+        User reportedUser = userRepository.findById(report.getReportedId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
 
         //이미지리수트
         List<Image> images = List.of();
@@ -236,11 +238,10 @@ public class AdminService {
         // 3. DTO 변환
         return AdminReportIdRes.builder()
                 .id(report.getId())
-                .reportedStudentId(reportedUser != null ? reportedUser.getStudentId() : 0)  //학번
-                .reportedStudentName(reportedUser != null ? reportedUser.getName() : "탈퇴한 사용자")  //이름
-                .reportedStudentNickName(reportedUser != null ? reportedUser.getNickName() : "익명")  //닉네임
-                .reason(report.getReportReason())   //신고사유
-                .content(report.getContent())       //내용
+                .reportedStudentId(reportedUser.getStudentId())   // User 엔티티의 학번
+                .reportedStudentName(reportedUser.getName())      // User 엔티티의 이름
+                .reason(report.getReportReason())
+                .content(report.getContent())                     // 신고 내용
                 .images(imageDtos)
                 .build();
     }
@@ -257,55 +258,55 @@ public class AdminService {
         return user;
     }
     /**
-    // 공지사항 작성
-    public Long createNotice(String adminEmail, AdminReq.NoticeCreateReqDto requestDto) { // <-- 타입을 NoticeCreateReqDto로 변경
-        User admin = getAdminUser(adminEmail);
+     // 공지사항 작성
+     public Long createNotice(String adminEmail, AdminReq.NoticeCreateReqDto requestDto) { // <-- 타입을 NoticeCreateReqDto로 변경
+     User admin = getAdminUser(adminEmail);
 
-        Notice newNotice = Notice.builder()
-                .author(admin)
-                .title(requestDto.getTitle())
-                .content(requestDto.getContent())
-                .status(Enum.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()))
-                .link(requestDto.getLink())
-                .startDate(requestDto.getStartDate())
-                .endDate(requestDto.getEndDate())
-                .isImages(requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty())
-                .createdAt(LocalDateTime.now())
-                .build();
+     Notice newNotice = Notice.builder()
+     .author(admin)
+     .title(requestDto.getTitle())
+     .content(requestDto.getContent())
+     .status(Enum.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()))
+     .link(requestDto.getLink())
+     .startDate(requestDto.getStartDate())
+     .endDate(requestDto.getEndDate())
+     .isImages(requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty())
+     .createdAt(LocalDateTime.now())
+     .build();
 
-        Notice savedNotice = noticeRepository.save(newNotice);
-        Long newPostId = savedNotice.getId();
+     Notice savedNotice = noticeRepository.save(newNotice);
+     Long newPostId = savedNotice.getId();
 
-        if (savedNotice.getIsImages()) {
-            int sequence = 1;
-            for (String url : requestDto.getImageUrls()) {
-                imageRepository.save(Image.builder().type("NOTICE").typeId(newPostId).imageUrl(url).sequence(sequence++).build());
-            }
-        }
-        return newPostId;
-    }
+     if (savedNotice.getIsImages()) {
+     int sequence = 1;
+     for (String url : requestDto.getImageUrls()) {
+     imageRepository.save(Image.builder().type("NOTICE").typeId(newPostId).imageUrl(url).sequence(sequence++).build());
+     }
+     }
+     return newPostId;
+     }
 
      //공지사항 수정
      @Transactional
      public void updateNotice(AdminReq.NoticeUpdateReqDto requestDto) {
-         Notice notice = noticeRepository.findById(requestDto.getNoticeId())
-                 .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
-         if(requestDto.getTitle() != null) notice.setTitle(requestDto.getTitle());
-         if(requestDto.getContent() != null) notice.setContent(requestDto.getContent());
-         if(requestDto.getStatus() != null) notice.setStatus(Enum.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()));
-         if(requestDto.getLink() != null) notice.setLink(requestDto.getLink());
-         if(requestDto.getStartDate() != null) notice.setStartDate(requestDto.getStartDate());
-         if(requestDto.getEndDate() != null) notice.setEndDate(requestDto.getEndDate());
+     Notice notice = noticeRepository.findById(requestDto.getNoticeId())
+     .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
+     if(requestDto.getTitle() != null) notice.setTitle(requestDto.getTitle());
+     if(requestDto.getContent() != null) notice.setContent(requestDto.getContent());
+     if(requestDto.getStatus() != null) notice.setStatus(Enum.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()));
+     if(requestDto.getLink() != null) notice.setLink(requestDto.getLink());
+     if(requestDto.getStartDate() != null) notice.setStartDate(requestDto.getStartDate());
+     if(requestDto.getEndDate() != null) notice.setEndDate(requestDto.getEndDate());
 
      }
      //공지사항 삭제
      @Transactional
-    public void deleteNotice(Long noticeId) {
-        Notice notice = noticeRepository.findById(noticeId)
-                .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
+     public void deleteNotice(Long noticeId) {
+     Notice notice = noticeRepository.findById(noticeId)
+     .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
 
-        notice.setStatus(Enum.NoticeStatus.DELETED);
-    }*/
+     notice.setStatus(Enum.NoticeStatus.DELETED);
+     }*/
     @Transactional
     public void postNotice(CustomUserDetails user, String text) {
         getAdminUser(user.getUser().getEmail());

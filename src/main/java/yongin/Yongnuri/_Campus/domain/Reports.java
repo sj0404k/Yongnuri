@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import yongin.Yongnuri._Campus.domain.Enum.ChatType;
 import yongin.Yongnuri._Campus.domain.Enum.ReportStatus;
-import yongin.Yongnuri._Campus.domain.Enum.ReportReason;
+//import yongin.Yongnuri._Campus.domain.Enum.ReportReason;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,9 +21,7 @@ public class Reports {
     private Long id;// 게시글 id
 
     private Long reportId;      // 신고자
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reported_id", nullable = true)
-    private User reportedUser;        //당한자
+    private Long reportedId;        //당한자
     private Long postId;        //게시글 id
     private String content;     //신고내용
     private Boolean isImages;
@@ -38,27 +36,27 @@ public class Reports {
 }
 
 /**
-    public enum ReportType{
-        도배,
-        홍보_광고행위,
-        음란성게시물,
-        상대방비방및혐오,
-        사칭및거짓정보,
-        기타
-    }
+ public enum ReportType{
+ 도배,
+ 홍보_광고행위,
+ 음란성게시물,
+ 상대방비방및혐오,
+ 사칭및거짓정보,
+ 기타
+ }
 
-    public enum ChatType {
-        전체,
-        중고,
-        분실,
-        공동구매
-    }
+ public enum ChatType {
+ 전체,
+ 중고,
+ 분실,
+ 공동구매
+ }
 
-    public enum ReportStatus {
-        처리대기,
-        처리반려,
-        처리승인,
-    }
-*/
+ public enum ReportStatus {
+ 처리대기,
+ 처리반려,
+ 처리승인,
+ }
+ */
 
 

@@ -58,11 +58,11 @@ public class User {
      */
     private String deviceToken;
 /**
-    @Column(name = "role")
-    private Role role;
-    public enum Role {
-        USER,
-        ADMIN
-    }
-*/
+ @Column(name = "role")
+ private Role role;
+ public enum Role {
+ USER,
+ ADMIN
+ }
+ */
 }

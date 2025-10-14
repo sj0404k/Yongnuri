@@ -26,10 +26,20 @@ public class ReportController {
      *     }
      * @return 상태갑
      */
+    /**
+    @PostMapping
+    public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq){
+        boolean report = reportService.reports(user, reportReq);
+        if (report) {
+            return ResponseEntity.ok("Reports 성공");
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 신고한 게시글입니다.");
+        }
+    }*/
     @PostMapping
     public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user,
                                         @RequestBody ReportReq.reportDto reportReq) {
-        Long reportedUserId = reportService.reports(user, reportReq);
+        Long reportedUserId = reportService.reports(user, reportReq);  // Long 타입으로 변경
         if (reportedUserId != null) {
             ReportRes response = new ReportRes("Reports 성공", reportedUserId);
             return ResponseEntity.ok(response);
@@ -37,5 +47,5 @@ public class ReportController {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("이미 신고한 게시글입니다.");
         }
-    }
+}
 }
