@@ -22,11 +22,12 @@ public class ReportService {
     private final ImageRepository imageRepository;
     private final UserRepository userRepository;
     @Transactional
-    public boolean reports(CustomUserDetails user, ReportReq.reportDto reportReq) {
-
+    public Long reports(CustomUserDetails user, ReportReq.reportDto reportReq) {
         boolean isImagesPresent = reportReq.getImageUrls() != null && !reportReq.getImageUrls().isEmpty();
+
         User reportedUser = userRepository.findById(reportReq.getReportedId())
                 .orElseThrow(() -> new RuntimeException("해당 유저가 없습니다."));
+
         Reports newReport = Reports.builder()
                 .reportId(user.getUser().getId())
                 .reportedUser(reportedUser)
@@ -38,6 +39,7 @@ public class ReportService {
                 .createdAt(LocalDateTime.now())
                 .status(Enum.ReportStatus.PENDING)
                 .build();
+
         Reports savedReport = reportRepository.save(newReport);
 
         if (isImagesPresent) {
@@ -51,6 +53,7 @@ public class ReportService {
                         .build());
             }
         }
-        return true;
+
+        return reportedUser.getId();
     }
 }

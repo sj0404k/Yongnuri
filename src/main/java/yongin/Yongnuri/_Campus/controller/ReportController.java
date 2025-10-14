@@ -29,9 +29,9 @@ public class ReportController {
     @PostMapping
     public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user,
                                         @RequestBody ReportReq.reportDto reportReq) {
-        boolean report = reportService.reports(user, reportReq);
-        if (report) {
-            ReportRes response = new ReportRes("Reports 성공", user.getUser().getId());
+        Long reportedUserId = reportService.reports(user, reportReq);
+        if (reportedUserId != null) {
+            ReportRes response = new ReportRes("Reports 성공", reportedUserId);
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.CONFLICT)

@@ -7,5 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ReportRes {
     private String message;
-    private Long reporterId;  // 신고자 ID
+    private Long reportedUserId;  // 신고받은사람 ID
 }

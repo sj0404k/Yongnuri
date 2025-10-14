@@ -132,12 +132,12 @@ public class ChatController {
     @PostMapping("/rooms/report")
     public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq) {
         reportReq.setPostType(Enum.ChatType.Chat);
-        boolean reoprtChat = reportService.reports(user, reportReq);
-        if (reoprtChat) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("reportId", user.getUser().getId());
-            response.put("createdAt", LocalDateTime.now());
+        Long reportedUserId = reportService.reports(user, reportReq);
 
+        if (reportedUserId != null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("reportedUserId", reportedUserId);
+            response.put("createdAt", LocalDateTime.now());
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 차단한 유저입니다.");
