@@ -17,6 +17,7 @@ public class AdminReportIdRes {
 
     private int reportedStudentId;
     private String reportedStudentName;
+    private String reportedStudentNickName;
     private Enum.ReportReason reason;
     private String content;
     //게시판 관련 id?

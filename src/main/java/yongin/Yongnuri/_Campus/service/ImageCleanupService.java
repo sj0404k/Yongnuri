@@ -23,7 +23,7 @@ public class ImageCleanupService {
 
    //이미지 등록만하고 글 등록하지 않는 등의 문제로 db에 없는 이미지 파일 폴더에서 삭제
 
-    @Scheduled(cron = "* * 17 * * ?")
+    @Scheduled(cron = "0 0 17 * * ?")
     public void cleanupUnusedImages() {
         System.out.println("매일 오후 5시 - 불필요한 이미지 파일 정리를 시작합니다...");
         File uploadFolder = new File(uploadDir);

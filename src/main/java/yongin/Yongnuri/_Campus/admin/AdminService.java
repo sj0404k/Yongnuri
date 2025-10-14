@@ -85,13 +85,14 @@ public class AdminService {
         // DTO 변환
         return results.stream()
                 .map(report -> {
-                    Optional<User> reportedUser = userRepository.findById(report.getReportedId());
+                    Optional<User> reportedUser = userRepository.findById(report.getReportedUser().getId());
                     String content = report.getContent();
 
                     if (content != null && content.length() > 20) {
                         content = content.substring(0, 20) + "...";
                     }
                     return AdminReportRes.builder()
+                            .id(report.getId())
                             .reportStudentNickName(reportedUser.get().getNickName())
                             .reportReason(report.getReportReason())
                             .content(content)
@@ -154,7 +155,7 @@ public class AdminService {
         // 3. DTO 변환 (신고 횟수 포함)
         return users.stream()
                 .map(user -> {
-                    Long reportCount = reportRepository.countByReportedIdAndStatus(user.getId(), Enum.ReportStatus.APPROVED);
+                    Long reportCount = reportRepository.countByReportedUser_IdAndStatus(user.getId(), Enum.ReportStatus.APPROVED);
                     return UserInfoRes.builder()
                             .id(user.getId())
                             .name(user.getName())
@@ -200,7 +201,7 @@ public class AdminService {
         }
 
         // 2. 신고당한 유저의 모든 신고 조회
-        List<Reports> reports = reportRepository.findByReportedId(req.getUserId());
+        List<Reports> reports = reportRepository.findByReportedUser_Id(req.getUserId());
         if (reports.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "신고를 찾을 수 없습니다.");
         }
@@ -223,7 +224,7 @@ public class AdminService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."));
 
         // 2. 피신고 유저 조회
-        User reportedUser = userRepository.findById(report.getReportedId())
+        User reportedUser = userRepository.findById(report.getReportedUser().getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
 
         //이미지리수트
@@ -238,6 +239,7 @@ public class AdminService {
                 .id(report.getId())
                 .reportedStudentId(reportedUser.getStudentId())   // User 엔티티의 학번
                 .reportedStudentName(reportedUser.getName())      // User 엔티티의 이름
+                .reportedStudentNickName(reportedUser.getNickName()) //닉네임
                 .reason(report.getReportReason())
                 .content(report.getContent())                     // 신고 내용
                 .images(imageDtos)
