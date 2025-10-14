@@ -1,6 +1,5 @@
 package yongin.Yongnuri._Campus.admin;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -18,6 +17,7 @@ import yongin.Yongnuri._Campus.repository.ImageRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
@@ -80,19 +80,19 @@ public class AdminService {
         }
 
         // 모든 신고 + 유저 정보 조회
-        List<Object[]> results = reportRepository.findAllReportsWithUser();
+        List<Reports> results = reportRepository.findAll();
 
         // DTO 변환
         return results.stream()
-                .map(obj -> {
-                    Reports report = (Reports) obj[0];
-                    User reportedUser = (User) obj[1];
+                .map(report -> {
+                    Optional<User> reportedUser = userRepository.findById(report.getReportedId());
                     String content = report.getContent();
+
                     if (content != null && content.length() > 20) {
                         content = content.substring(0, 20) + "...";
                     }
                     return AdminReportRes.builder()
-                            .reportStudentNickName(reportedUser.getNickName())
+                            .reportStudentNickName(reportedUser.get().getNickName())
                             .reportReason(report.getReportReason())
                             .content(content)
                             .reportType(report.getPostType())
