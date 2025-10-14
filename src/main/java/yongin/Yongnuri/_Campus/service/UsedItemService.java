@@ -16,11 +16,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import yongin.Yongnuri._Campus.repository.AppointmentRepository;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.security.access.AccessDeniedException; 
+import org.springframework.security.access.AccessDeniedException;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemUpdateRequestDto;
 import org.springframework.beans.factory.annotation.Value;
 import java.util.Map;
@@ -32,7 +34,7 @@ public class UsedItemService {
 
     private final UsedItemRepository usedItemRepository;
     private final BlockService blockService;
-    private final UserRepository userRepository; 
+    private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final BookmarkRepository bookmarkRepository;
     private final AppointmentRepository appointmentRepository;
@@ -82,7 +84,7 @@ public class UsedItemService {
                 .collect(Collectors.toList());
     }
 
-    // 게시글 상세 조회 
+    // 게시글 상세 조회
     public UsedItemResponseDto getUsedItemDetail(String email, Long postId) {
         User currentUser = getUserByEmail(email);
         List<Long> blockedUserIds = blockService.getBlockedUserIds(currentUser.getId());
@@ -93,7 +95,7 @@ public class UsedItemService {
         }
         Long authorId = item.getUserId();
         if (blockedUserIds.contains(authorId)) {
-            throw new EntityNotFoundException("404: 게시글 없음 (차단됨)"); 
+            throw new EntityNotFoundException("404: 게시글 없음 (차단됨)");
         }
         User author = userRepository.findById(authorId)
                 .orElseThrow(() -> new EntityNotFoundException("작성자 정보를 찾을 수 없습니다."));
@@ -138,7 +140,7 @@ public class UsedItemService {
         return newPostId;
     }
     //게시글수정
-    @Transactional 
+    @Transactional
     public Long updateUsedItem(String email, Long postId, UsedItemUpdateRequestDto requestDto) {
         Long currentUserId = getUserByEmail(email).getId();
         UsedItem item = usedItemRepository.findById(postId)
@@ -188,20 +190,107 @@ public class UsedItemService {
 
     @Transactional
     public void updateUsedItemStatus(String email, Long postId, UpdateStatusRequestDto requestDto) {
+        // 1) 권한/엔티티 확인 -------------------------------------------------------
         User currentUser = getUserByEmail(email);
         UsedItem item = usedItemRepository.findById(postId)
                 .orElseThrow(() -> new EntityNotFoundException("404: 게시글 없음"));
+
         if (!item.getUserId().equals(currentUser.getId())) {
             throw new AccessDeniedException("403: 상태를 변경할 권한이 없습니다.");
         }
-        Enum.UsedItemStatus newStatus = Enum.UsedItemStatus.valueOf(requestDto.getStatus().toUpperCase());
+
+        // 2) 상태 파싱 (SELLING / RESERVED / SOLD / DELETED) -----------------------
+        Enum.UsedItemStatus newStatus = Enum.UsedItemStatus.valueOf(
+                requestDto.getStatus().toUpperCase()
+        );
+
+        // 3) 상태 적용
         item.setStatus(newStatus);
-        if (newStatus == Enum.UsedItemStatus.SOLD) {
-            List<Appointment> appointments = appointmentRepository.findByPostTypeAndPostId("USED_ITEM", postId);
-            for (Appointment appointment : appointments) {
-                appointment.setStatus(Enum.AppointmentStatus.COMPLETED);
+
+        // 4) 해당 글과 연관된 약속(appointment) 조회 -------------------------------
+        //    - 구매 탭 노출은 Appointment(buyerId, status) 기반으로 이뤄지므로
+        //      상태 변경 시 Appointment를 반드시 동기화해야 함.
+        List<Appointment> appointments = appointmentRepository.findByPostTypeAndPostId("USED_ITEM", postId);
+
+        // 프론트에서 넘어온 구매자 ID (RESERVED/SOLD에 필요)
+        Long buyerId = requestDto.getBuyerId();
+
+        // 5) 상태별 Appointment 동기화 ---------------------------------------------
+        switch (newStatus) {
+            case RESERVED: {
+                // ✅ 예약중: 특정 구매자에게 예약을 걸어야 하므로 buyerId 필요
+                if (buyerId == null) {
+                    throw new IllegalArgumentException("RESERVED 전환에는 buyerId가 필요합니다.");
+                }
+
+                // (정책) 동일 게시글의 다른 예약은 모두 취소하고, 해당 buyerId만 SCHEDULED로 유지
+                for (Appointment a : appointments) {
+                    if (a.getBuyerId().equals(buyerId)) {
+                        a.setStatus(Enum.AppointmentStatus.SCHEDULED);
+                    } else {
+                        a.setStatus(Enum.AppointmentStatus.CANCELED);
+                    }
+                }
+
+                // 해당 buyerId의 예약이 없는 경우 새로 생성 (upsert)
+                boolean hasTarget = appointments.stream().anyMatch(a -> a.getBuyerId().equals(buyerId));
+                if (!hasTarget) {
+                    Appointment created = Appointment.builder()
+                            .postType("USED_ITEM")
+                            .postId(postId)
+                            .sellerId(item.getUserId())
+                            .buyerId(buyerId)
+                            // TODO: 실제 약속 시간/장소로 교체 (채팅에서 입력받는 값 사용)
+                            .appointmentAt(LocalDateTime.now())
+                            .location(item.getLocation() != null ? item.getLocation() : "미정")
+                            .status(Enum.AppointmentStatus.SCHEDULED)
+                            .build();
+                    appointmentRepository.save(created);
+                } else {
+                    appointmentRepository.saveAll(appointments);
+                }
+                break;
+            }
+
+            case SOLD: {
+                // ✅ 거래완료: 보통 예약 걸린 구매자만 COMPLETED 처리
+                if (buyerId != null) {
+                    for (Appointment a : appointments) {
+                        if (a.getBuyerId().equals(buyerId)) {
+                            a.setStatus(Enum.AppointmentStatus.COMPLETED);
+                        } else {
+                            // (정책) 다른 예약은 취소
+                            a.setStatus(Enum.AppointmentStatus.CANCELED);
+                        }
+                    }
+                } else {
+                    // buyerId가 없으면 해당 글의 모든 예약을 완료 처리(혹은 취소) — 정책 선택
+                    // 여기서는 안전하게 모두 완료로 처리하지 않고 모두 취소로 두는 방법도 있음.
+                    for (Appointment a : appointments) {
+                        a.setStatus(Enum.AppointmentStatus.COMPLETED);
+                    }
+                }
+                appointmentRepository.saveAll(appointments);
+                break;
+            }
+
+            case SELLING: {
+                // ✅ 판매중(되돌림): 예약을 모두 취소 상태로 변경
+                for (Appointment a : appointments) {
+                    a.setStatus(Enum.AppointmentStatus.CANCELED);
+                }
+                appointmentRepository.saveAll(appointments);
+                break;
+            }
+
+            case DELETED: {
+                // ✅ 삭제: 약속은 취소로 처리 (선택 정책)
+                for (Appointment a : appointments) {
+                    a.setStatus(Enum.AppointmentStatus.CANCELED);
+                }
+                appointmentRepository.saveAll(appointments);
+                break;
             }
         }
     }
 }
-
