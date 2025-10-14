@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import yongin.Yongnuri._Campus.dto.ReportReq;
+import yongin.Yongnuri._Campus.dto.ReportRes;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.ReportService;
 
@@ -26,13 +27,15 @@ public class ReportController {
      * @return 상태갑
      */
     @PostMapping
-    public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq){
+    public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user,
+                                        @RequestBody ReportReq.reportDto reportReq) {
         boolean report = reportService.reports(user, reportReq);
         if (report) {
-            return ResponseEntity.ok("Reports 성공");
+            ReportRes response = new ReportRes("Reports 성공", user.getUser().getId());
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 신고한 게시글입니다.");
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("이미 신고한 게시글입니다.");
         }
-         
     }
 }
