@@ -69,7 +69,7 @@ public ResponseEntity<?> getUsedItems(
 
     @GetMapping("/{postId}")
     public ResponseEntity<?> getUsedItemDetail(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         UsedItemResponseDto item = usedItemService.getUsedItemDetail(user.getUser().getEmail(), postId);
@@ -93,7 +93,7 @@ public ResponseEntity<?> getUsedItems(
     //게시글수정
     @PatchMapping("/{postId}")
     public ResponseEntity<?> updateUsedItem(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody UsedItemUpdateRequestDto requestDto
     ) {
@@ -109,7 +109,7 @@ public ResponseEntity<?> getUsedItems(
 
     @PatchMapping("/{postId}/status")
     public ResponseEntity<String> updateUsedItemStatus(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody UpdateStatusRequestDto requestDto
     ) {
