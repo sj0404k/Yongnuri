@@ -67,7 +67,7 @@ public class ChatController {
      * 채팅방 세부 조회 (채팅방 입장하기)
      */
     @GetMapping("/rooms/{RoomId}")
-    public ResponseEntity<List<ChatMessagesRes>> getChatRoom(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long RoomId) {
+    public ResponseEntity<List<ChatMessagesRes>> getChatRoom(@AuthenticationPrincipal CustomUserDetails user, @PathVariable("RoomId") Long RoomId) {
         List<ChatMessagesRes> room = chatService.getEnterChatRoom(user, RoomId);
         return ResponseEntity.ok(room);
     }

@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import yongin.Yongnuri._Campus.domain.Enum.ChatType;
 import yongin.Yongnuri._Campus.domain.Enum.ReportStatus;
-//import yongin.Yongnuri._Campus.domain.Enum.ReportReason;
+import yongin.Yongnuri._Campus.domain.Enum.ReportReason;
 import java.time.LocalDateTime;
 
 @Entity
@@ -21,7 +21,9 @@ public class Reports {
     private Long id;// 게시글 id
 
     private Long reportId;      // 신고자
-    private Long reportedId;        //당한자
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reported_id", referencedColumnName = "user_id")
+    private User reportedUser;        //당한자
     private Long postId;        //게시글 id
     private String content;     //신고내용
     private Boolean isImages;

@@ -12,9 +12,9 @@ import java.util.List;
 @Repository
 public interface ReportRepository extends JpaRepository<Reports,Long> {
 
-    List<Reports> findByReportedId(Long reportedId);
+    List<Reports> findByReportedUser_Id(Long reportedUserId);
 
-    Long countByReportedId(Long reportedId);
+    Long countByReportedUser_Id(Long reportedUserId);
 
-    Long countByReportedIdAndStatus(Long reportedId, Enum.ReportStatus status);
+    Long countByReportedUser_IdAndStatus(Long reportedUserId, Enum.ReportStatus status);
 }

@@ -39,7 +39,7 @@ public class LostItemController {
 
     @GetMapping("/{postId}")
     public ResponseEntity<?> getLostItemDetail(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         LostItemResponseDto item = lostItemService.getLostItemDetail(user.getUser().getEmail(), postId);
@@ -64,7 +64,7 @@ public class LostItemController {
 
     @PatchMapping("/{postId}")
     public ResponseEntity<?> updateLostItem(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody LostItemUpdateRequestDto requestDto
     ) {

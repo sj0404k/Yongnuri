@@ -31,7 +31,7 @@ public class AppointmentController {
 
     @PatchMapping("/{appointmentId}")
     public ResponseEntity<String> updateAppointment(
-            @PathVariable Long appointmentId,
+            @PathVariable("appointmentId") Long appointmentId,
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody AppointmentUpdateRequestDto requestDto
     ) {

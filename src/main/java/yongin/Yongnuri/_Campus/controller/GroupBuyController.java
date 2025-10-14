@@ -32,7 +32,7 @@ public class GroupBuyController {
     //공동구매글상세보기
     @GetMapping("/{postId}")
     public ResponseEntity<GroupBuyResponseDto> getGroupBuyDetail(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         GroupBuyResponseDto item = groupBuyService.getGroupBuyDetail(user.getUser().getEmail(), postId);
@@ -51,7 +51,7 @@ public class GroupBuyController {
     //공동구매글수정
     @PatchMapping("/{postId}")
     public ResponseEntity<?> updateGroupBuy(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody GroupBuyUpdateRequestDto requestDto
     ) {
@@ -62,7 +62,7 @@ public class GroupBuyController {
      //공동구매 신청
     @PostMapping("/{postId}/apply")
     public ResponseEntity<String> applyToGroupBuy(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         groupBuyService.applyForGroupBuy(user.getUser().getEmail(), postId);
@@ -72,7 +72,7 @@ public class GroupBuyController {
      //현재 모집 인원 수정
      @PatchMapping("/{postId}/current-count")
      public ResponseEntity<GroupBuyResponseDto> updateCurrentCount(
-             @PathVariable Long postId,
+             @PathVariable("postId") Long postId,
              @AuthenticationPrincipal CustomUserDetails user,
              @RequestBody UpdateCountRequestDto requestDto
      ) {

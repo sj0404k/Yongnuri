@@ -44,7 +44,7 @@ public class NoticeController {
 
     @GetMapping("/{postId}")
     public ResponseEntity<NoticeResponseDto> getNoticeDetail(
-            @PathVariable Long postId,
+            @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         NoticeResponseDto item = noticeService.getNoticeDetail(user.getUser().getEmail(), postId);
@@ -72,7 +72,7 @@ public class NoticeController {
 
     @PatchMapping("/{noticeId}")
     public ResponseEntity<?> updateNotice(
-            @PathVariable Long noticeId,
+            @PathVariable("noticeId") Long noticeId,
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody NoticeUpdateRequestDto requestDto) {
         noticeService.updateNotice(noticeId, requestDto, user.getUser().getEmail());
@@ -81,7 +81,7 @@ public class NoticeController {
 
     @DeleteMapping("/{noticeId}")
     public ResponseEntity<?> deleteNotice(
-            @PathVariable Long noticeId,
+            @PathVariable("noticeId") Long noticeId,
             @AuthenticationPrincipal CustomUserDetails user) {
         noticeService.deleteNotice(noticeId, user.getUser().getEmail());
         return ResponseEntity.ok("공지사항이 삭제되었습니다.");
