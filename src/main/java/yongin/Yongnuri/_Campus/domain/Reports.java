@@ -22,7 +22,7 @@ public class Reports {
 
     private Long reportId;      // 신고자
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reported_id", referencedColumnName = "user_id")
+    @JoinColumn(name = "reported_id", nullable = true)
     private User reportedUser;        //당한자
     private Long postId;        //게시글 id
     private String content;     //신고내용

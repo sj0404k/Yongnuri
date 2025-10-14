@@ -85,15 +85,15 @@ public class AdminService {
         // DTO 변환
         return results.stream()
                 .map(report -> {
-                    Optional<User> reportedUser = userRepository.findById(report.getReportedUser().getId());
-                    String content = report.getContent();
+                    User reportedUser = report.getReportedUser();
 
+                    String content = report.getContent();
                     if (content != null && content.length() > 20) {
                         content = content.substring(0, 20) + "...";
                     }
                     return AdminReportRes.builder()
                             .id(report.getId())
-                            .reportStudentNickName(reportedUser.get().getNickName())
+                            .reportStudentNickName(reportedUser != null ? reportedUser.getNickName() : "익명")
                             .reportReason(report.getReportReason())
                             .content(content)
                             .reportType(report.getPostType())
@@ -224,8 +224,7 @@ public class AdminService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."));
 
         // 2. 피신고 유저 조회
-        User reportedUser = userRepository.findById(report.getReportedUser().getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
+        User reportedUser = report.getReportedUser();
 
         //이미지리수트
         List<Image> images = List.of();
@@ -237,11 +236,11 @@ public class AdminService {
         // 3. DTO 변환
         return AdminReportIdRes.builder()
                 .id(report.getId())
-                .reportedStudentId(reportedUser.getStudentId())   // User 엔티티의 학번
-                .reportedStudentName(reportedUser.getName())      // User 엔티티의 이름
-                .reportedStudentNickName(reportedUser.getNickName()) //닉네임
-                .reason(report.getReportReason())
-                .content(report.getContent())                     // 신고 내용
+                .reportedStudentId(reportedUser != null ? reportedUser.getStudentId() : 0)  //학번
+                .reportedStudentName(reportedUser != null ? reportedUser.getName() : "탈퇴한 사용자")  //이름
+                .reportedStudentNickName(reportedUser != null ? reportedUser.getNickName() : "익명")  //닉네임
+                .reason(report.getReportReason())   //신고사유
+                .content(report.getContent())       //내용
                 .images(imageDtos)
                 .build();
     }
