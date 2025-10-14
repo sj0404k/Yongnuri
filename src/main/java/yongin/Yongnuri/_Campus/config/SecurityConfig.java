@@ -86,6 +86,7 @@ public class SecurityConfig {
                                 //인증 필요? 나중에 작성 지금은 모두 허용중
                                 .requestMatchers("/mypage/**","/mypage/bookmarks").permitAll()
                                 .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
+                                .requestMatchers("/notifications/**").permitAll()
                                 .requestMatchers("/report/**").permitAll()          //마지 할때 권한 변경 필요4
                                 .requestMatchers("/ws-stomp").permitAll()
                                 .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
