@@ -1,17 +1,21 @@
 package yongin.Yongnuri._Campus.controller;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.AuthReq;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.repository.VerificationRepository;
+import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.AuthService;
 import yongin.Yongnuri._Campus.service.MailService;
 
 @RestController
 @RequestMapping("/auth")
 @AllArgsConstructor
+@Slf4j
 public class AuthController {
     private final MailService mailService;
     private final UserRepository userRepository;
@@ -74,5 +78,16 @@ public class AuthController {
     public ResponseEntity<?> resetPassword(@RequestBody AuthReq.resetPasswordReqDto req) {
         authService.rePassword(req);
         return ResponseEntity.ok("비밀번호 재설정 성공");
+    }
+
+    /**
+     * 계정 탈퇴
+     * @param user : 정보 가져옴
+     * @return 뭐줘야됨?
+     */
+    @PostMapping("deleteAccount")
+    public void deleteAccount(@AuthenticationPrincipal CustomUserDetails user){
+        authService.deleteAccount(user);
+        log.info("회원 id 값 : ", user.getUser().toString(),"현제 상태값 : ",user.getUser().getStatus());
     }
 }
