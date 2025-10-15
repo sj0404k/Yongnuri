@@ -1,173 +1,1 @@
-package yongin.Yongnuri._Campus.service;
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import yongin.Yongnuri._Campus.domain.RefreshToken;
-import yongin.Yongnuri._Campus.domain.User;
-import yongin.Yongnuri._Campus.dto.AuthReq;
-import yongin.Yongnuri._Campus.exception.ConflictException;
-import yongin.Yongnuri._Campus.repository.RefreshTokenRepository;
-import yongin.Yongnuri._Campus.repository.UserRepository;
-import yongin.Yongnuri._Campus.security.JwtProvider;
-import yongin.Yongnuri._Campus.domain.Enum;
-import java.time.LocalDateTime;
-import java.util.stream.Stream;
-
-@Service
-@RequiredArgsConstructor
-public class AuthService {
-    private final UserRepository userRepository;
-    private final MailService mailService;
-    private final JwtProvider jwtProvider;
-    private final RefreshTokenRepository refreshTokenRepository;
-    private final PasswordEncoder passwordEncoder;
-    //회원가입
-    public void join(AuthReq.joinReqDto req) {
-        // 1. 필수값 확인
-        if (Stream.of(req.getEmail(), req.getPassword(), req.getPasswordCheck(),
-                        req.getName(), req.getMajor(), req.getNickname())
-                .anyMatch(s -> s == null || s.trim().isEmpty())) {
-            throw new IllegalArgumentException("필수 데이터 미입력");
-        }
-
-        // 1.1 이미 회원으로 존재한는 이메일인지 확인 ////---   혹시 몰라서 일단 넣어둠
-        if (userRepository.existsByEmail((req.getEmail()))) {
-            throw new ConflictException("이미 가입된 이메일");
-        }
-
-        // 2. 이메일 인증 여부 확인
-        if (!mailService.isEmailVerified(req.getEmail())) {
-            throw new SecurityException("이메일 인증 실패");
-        }
-
-        // 3. 비밀번호 일치 여부 확인
-        if (!req.getPassword().equals(req.getPasswordCheck())) {
-            throw new SecurityException("비밀번호 불일치");
-        }
-
-        // 4. 비밀번호 유효성 검사
-        if (!PasswordValidator(req.getPassword())) {
-            throw new IllegalArgumentException("비밀번호 형식 불일치");
-        }
-
-        // 5. 닉네임 중복 확인
-        if (userRepository.existsByNickName((req.getNickname()))) {
-            throw new ConflictException("이미 존재하는 닉네임");
-        }
-        // 1. 이메일에서 studentId 추출
-        String email = req.getEmail();
-        String studentId = null;
-
-        // 이메일 주소에 '@' 기호가 있는지 확인하고 추출합니다.
-        int atIndex = email.indexOf('@');
-        if (atIndex != -1) { // '@' 기호가 있는 경우
-            studentId = email.substring(0, atIndex);
-        }
-        // 6. 비밀번호 해시화
-        String encodedPassword = passwordEncoder.encode(req.getPassword());
-        // 6. 회원 저장
-        User newUser = User.builder()
-                .email(req.getEmail())
-                .password(encodedPassword)
-                .studentId(Integer.parseInt(studentId))
-                .name(req.getName())
-                .major(req.getMajor())
-                .nickName(req.getNickname())
-                .creatAt(LocalDateTime.now())
-                .role(Enum.UserRole.USER)
-                .status(Enum.authStatus.ACTIVE)
-                .build();
-
-        userRepository.save(newUser);
-        mailService.deleteVerifiedCode(req.getEmail());
-    }
-
-    // 비밀번호 유효성 검사 // 조건 추가 필욯함!!!!!!!!!!
-    public static boolean PasswordValidator(String password) {
-        // 최소 8자 + 특수문자 1개 이상
-        return password.matches("^(?=.*[!@#$%^&*(),.?\":{}|<>]).{8,}$");
-    }
-
-
-    // 로그인
-    public ResponseEntity<String> login(String email, String password) {
-
-        // 1. 유효성 확인
-        if (email == null || password == null) {
-            return ResponseEntity.badRequest().body("데이터 미입력");
-        }
-
-        // 2. 이메일로 회원정보 확인
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new SecurityException("가입되지 않은 이메일"));
-
-        // 3. 비밀번호 검증
-
-        if (!passwordEncoder.matches(password, user.getPassword())) { // 수정된 부분
-            throw new SecurityException("비밀번호 불일치");
-        }
-
-        // 4. 토큰 발급 (JWT 발급)
-        String accessToken = jwtProvider.createAccessToken(user.getEmail(), "User");
-        String refreshToken = jwtProvider.createRefreshToken(user.getEmail());
-
-        // Refresh Token 저장 (DB or Redis에 저장)
-        refreshTokenRepository.save(
-                new RefreshToken(user.getEmail(), refreshToken)
-        );
-
-        // 5. 응답 반환 refreshtoken 나중에 지울것 !!
-        String responseBody = String.format("""
-    {
-        "message": "로그인 성공",
-        "accessToken": "%s",
-        "refreshToken": "%s"
-    }
-    """, accessToken, refreshToken);
-
-        return ResponseEntity.ok(responseBody);
-    }
-
-    //password 변경
-    public void rePassword (AuthReq.resetPasswordReqDto req) {
-        // 1. 필수값 확인
-        if (Stream.of(req.getEmail(), req.getPassword(), req.getPasswordCheck())
-                .anyMatch(s -> s == null || s.trim().isEmpty())) {
-            throw new IllegalArgumentException("필수 데이터 미입력");
-        }
-
-        // 2. 이메일 인증 여부 확인
-        if (!mailService.isEmailVerified(req.getEmail())) {
-            throw new SecurityException("이메일 인증 실패");
-        }
-
-        // 3. 비밀번호 일치 여부 확인
-        if (!req.getPassword().equals(req.getPasswordCheck())) {
-            throw new SecurityException("비밀번호 불일치");
-        }
-
-        // 4. 비밀번호 유효성 검사
-        if (!PasswordValidator(req.getPassword())) {
-            throw new IllegalArgumentException("비밀번호 형식 불일치");
-        }
-
-        // 5. 기존 회원 조회
-        User user = userRepository.findByEmail(req.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("해당 이메일의 사용자를 찾을 수 없습니다."));
-
-        // 6. 비밀번호 해시화 후 업데이트
-        String encodedPassword = passwordEncoder.encode(req.getPassword());
-        user.setPassword(encodedPassword);
-
-        userRepository.save(user);
-        mailService.deleteVerifiedCode(req.getEmail());
-
-    }
-
-    //로그아웃
-//    public ResponseEntity<String> logout(String accessToken) {
-//
-//    }
-}
+package yongin.Yongnuri._Campus.service;import lombok.RequiredArgsConstructor;import org.springframework.http.ResponseEntity;import org.springframework.security.crypto.password.PasswordEncoder;import org.springframework.stereotype.Service;import org.springframework.transaction.annotation.Transactional;import yongin.Yongnuri._Campus.domain.RefreshToken;import yongin.Yongnuri._Campus.domain.User;import yongin.Yongnuri._Campus.dto.AuthReq;import yongin.Yongnuri._Campus.exception.ConflictException;import yongin.Yongnuri._Campus.repository.RefreshTokenRepository;import yongin.Yongnuri._Campus.repository.UserRepository;import yongin.Yongnuri._Campus.security.CustomUserDetails;import yongin.Yongnuri._Campus.security.JwtProvider;import yongin.Yongnuri._Campus.domain.Enum;import java.time.LocalDateTime;import java.util.Objects;import java.util.Optional;import java.util.stream.Stream;@Service@RequiredArgsConstructorpublic class AuthService {    private final UserRepository userRepository;    private final MailService mailService;    private final JwtProvider jwtProvider;    private final RefreshTokenRepository refreshTokenRepository;    private final PasswordEncoder passwordEncoder;    //회원가입    @Transactional    public void join(AuthReq.joinReqDto req) {        // 1. 필수값 확인        if (Stream.of(req.getEmail(), req.getPassword(), req.getPasswordCheck(),                        req.getName(), req.getMajor(), req.getNickname())                .anyMatch(s -> s == null || s.trim().isEmpty())) {            throw new IllegalArgumentException("필수 데이터 미입력");        }        // 1.1 이미 회원으로 존재한는 이메일인지 확인 ////---   혹시 몰라서 일단 넣어둠        if (userRepository.existsByEmail((req.getEmail()))) {            Optional<User> user = userRepository.findByEmail(req.getEmail());            if(Objects.equals(user.get().getStatus(), Enum.authStatus.SUSPENDED)){                throw new ConflictException("강퇴된 사용자");            }            throw new ConflictException("이미 가입된 이메일");        }        // 2. 이메일 인증 여부 확인        if (!mailService.isEmailVerified(req.getEmail())) {            throw new SecurityException("이메일 인증 실패");        }        // 3. 비밀번호 일치 여부 확인        if (!req.getPassword().equals(req.getPasswordCheck())) {            throw new SecurityException("비밀번호 불일치");        }        // 4. 비밀번호 유효성 검사        if (!PasswordValidator(req.getPassword())) {            throw new IllegalArgumentException("비밀번호 형식 불일치");        }        // 5. 닉네임 중복 확인        if (userRepository.existsByNickName((req.getNickname()))) {            throw new ConflictException("이미 존재하는 닉네임");        }        // 1. 이메일에서 studentId 추출        String email = req.getEmail();        String studentId = null;        // 이메일 주소에 '@' 기호가 있는지 확인하고 추출합니다.        int atIndex = email.indexOf('@');        if (atIndex != -1) { // '@' 기호가 있는 경우            studentId = email.substring(0, atIndex);        }        // 6. 비밀번호 해시화        String encodedPassword = passwordEncoder.encode(req.getPassword());        // 6. 회원 저장        User newUser = User.builder()                .email(req.getEmail())                .password(encodedPassword)                .studentId(Integer.parseInt(studentId))                .name(req.getName())                .major(req.getMajor())                .nickName(req.getNickname())                .creatAt(LocalDateTime.now())                .role(Enum.UserRole.USER)                .status(Enum.authStatus.ACTIVE)                .build();        userRepository.save(newUser);        mailService.deleteVerifiedCode(req.getEmail());    }    // 비밀번호 유효성 검사 // 조건 추가 필욯함!!!!!!!!!!    public static boolean PasswordValidator(String password) {        // 최소 8자 + 특수문자 1개 이상        return password.matches("^(?=.*[!@#$%^&*(),.?\":{}|<>]).{8,}$");    }    // 로그인    public ResponseEntity<String> login(String email, String password) {        // 1. 유효성 확인        if (email == null || password == null) {            return ResponseEntity.badRequest().body("데이터 미입력");        }        // 2. 이메일로 회원정보 확인        User user = userRepository.findByEmail(email)                .orElseThrow(() -> new SecurityException("가입되지 않은 이메일"));        //2.1 강퇴당한 회원을 거르는 부분        if(user.getStatus().equals(Enum.authStatus.SUSPENDED)) {            String responseBody = """                    {                        "message":"강퇴당한 회원입니다. 자세한 사항은 관리자에게 문의 하십시오",                    }                    """;            return ResponseEntity.ok(responseBody);        }else {            // 3. 비밀번호 검증            if (!passwordEncoder.matches(password, user.getPassword())) { // 수정된 부분                throw new SecurityException("비밀번호 불일치");            }            // 4. 토큰 발급 (JWT 발급)            String accessToken = jwtProvider.createAccessToken(user.getEmail(), "User");            String refreshToken = jwtProvider.createRefreshToken(user.getEmail());            // Refresh Token 저장 (DB or Redis에 저장)            refreshTokenRepository.save(                    new RefreshToken(user.getEmail(), refreshToken)            );            // 5. 응답 반환 refreshtoken 나중에 지울것 !!            String responseBody = String.format("""                    {                        "message": "로그인 성공",                        "accessToken": "%s",                        "refreshToken": "%s"                    }                    """, accessToken, refreshToken);            return ResponseEntity.ok(responseBody);        }    }    //password 변경    public void rePassword (AuthReq.resetPasswordReqDto req) {        // 1. 필수값 확인        if (Stream.of(req.getEmail(), req.getPassword(), req.getPasswordCheck())                .anyMatch(s -> s == null || s.trim().isEmpty())) {            throw new IllegalArgumentException("필수 데이터 미입력");        }        // 2. 이메일 인증 여부 확인        if (!mailService.isEmailVerified(req.getEmail())) {            throw new SecurityException("이메일 인증 실패");        }        // 3. 비밀번호 일치 여부 확인        if (!req.getPassword().equals(req.getPasswordCheck())) {            throw new SecurityException("비밀번호 불일치");        }        // 4. 비밀번호 유효성 검사        if (!PasswordValidator(req.getPassword())) {            throw new IllegalArgumentException("비밀번호 형식 불일치");        }        // 5. 기존 회원 조회        User user = userRepository.findByEmail(req.getEmail())                .orElseThrow(() -> new IllegalArgumentException("해당 이메일의 사용자를 찾을 수 없습니다."));        // 6. 비밀번호 해시화 후 업데이트        String encodedPassword = passwordEncoder.encode(req.getPassword());        user.setPassword(encodedPassword);        userRepository.save(user);        mailService.deleteVerifiedCode(req.getEmail());    }    /**     * 계정 탈퇴 탈퇴시 status 값을 변병함 신고누적으로 탈퇴한 사람과 비교하기 위해서     *     * @param user     */    public void deleteAccount(CustomUserDetails user) {        User deleteUser = user.getUser();        deleteUser.setStatus(Enum.authStatus.WITHDRAWN);        userRepository.save(deleteUser);    }    //로그아웃//    public ResponseEntity<String> logout(String accessToken) {////    }}
