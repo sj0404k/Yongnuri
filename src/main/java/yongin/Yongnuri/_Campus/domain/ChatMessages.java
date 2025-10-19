@@ -1,9 +1,6 @@
 package yongin.Yongnuri._Campus.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,21 +22,54 @@ ChatMessageRequest
 @NoArgsConstructor
 @Builder
 public class ChatMessages {
+
     /**
-     *주고 받은 매시지들이 보관되는 장소
+     * 주고받은 메시지를 저장하는 엔티티
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long chatRoomId;    //채팅방의 방 번호
-    private messageType chatType;  //채팅 타입
-    private String message;     //메시지 타입에 따른 결과 다름 택스트 or url
-    private Long senderId;      //보낸 사람
-    private LocalDateTime createdAt;    //생성일 이걸로 유저의 채팅 확인했는지 알아봄 비교 대상임
+    /**
+     * 해당 메시지가 속한 채팅방
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chat_room_id", nullable = false)
+    private ChatRoom chatRoom;
+
+    /**
+     * 메시지 타입 (텍스트 / 이미지)
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private messageType chatType;
+
+    /**
+     * 메시지 내용 (텍스트 or 이미지 URL)
+     */
+    @Column(columnDefinition = "TEXT")
+    private String message;
+
+    /**
+     * 메시지 보낸 사람
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
+
+    /**
+     * 메시지 생성 시각
+     */
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 
     public enum messageType {
-        이미지,
-        텍스트
+        img,
+        text
     }
 }

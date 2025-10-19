@@ -13,5 +13,5 @@ public class ChatMessageRequest {
     private String sender;
     private String type;
     private String content;
-    private Long timestamp;
+//    private Long timestamp;
 }

@@ -20,28 +20,31 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository; // 전체 사용자 조회용
     private final FCMService fcmService;
+    private final AsyncNotificationService asyncNotificationService;
 
     public void sendNotification(NotificationRequest request) {
-
+        asyncNotificationService.processNotificationSending(request);
+/*
         if (request.isTargetAll()) {
             // 전체 사용자 조회
             request.setTargetUserIds(userRepository.findAllUserIds());
         }
-
-        for (Long userId : request.getTargetUserIds()) {
-            // DB 저장
-            Notification notification = Notification.builder()
-                    .userId(userId)
-                    .title(request.getTitle())
-                    .message(request.getMessage())
-                    .build();
-            notificationRepository.save(notification);
+            // 1. 저장할 Notification 객체들을 리스트에 먼저 담습니다.
+            List<Notification> notificationsToSave = request.getTargetUserIds().stream()
+                    .map(userId -> Notification.builder()
+                            .userId(userId)
+                            .title(request.getTitle())
+                            .message(request.getMessage())
+                            .build())
+                    .collect(Collectors.toList());
+        // 2. 리스트 전체를 한 번에 저장합니다. (DB 호출 1번으로 최적화)
+            notificationRepository.saveAll(notificationsToSave);
 
             // FCM 발송
 //            String token = userRepository.findDeviceTokenById(userId);
 //            fcmService.sendPush(token, request.getTitle(), request.getMessage());
+        */
         }
-    }
 
     @Transactional
     public List<Notificationres> getNotifications(CustomUserDetails user) {

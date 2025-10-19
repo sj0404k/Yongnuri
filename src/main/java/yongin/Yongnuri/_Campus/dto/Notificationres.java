@@ -1,9 +1,6 @@
 package yongin.Yongnuri._Campus.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.domain.Notification;
 
@@ -13,6 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class Notificationres {
     private Long id;
     private String title;
@@ -24,6 +22,8 @@ public class Notificationres {
 
     public Notificationres(Notification notification) {
     }
+
+
     /**
      *     public static enum ChatType {
      *         ALL,        // 전체
