@@ -11,7 +11,7 @@ import yongin.Yongnuri._Campus.domain.ChatRoom;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageRequest {
-    private ChatRoom roomId;
+    private Long roomId;
     private String sender;
     private ChatMessages.messageType type;
     private String message;

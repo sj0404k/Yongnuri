@@ -325,16 +325,18 @@ public class ChatService {
     }
 
     public void saveMessage(CustomUserDetails user, ChatMessageRequest message) {
-
+        ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."
+                ));
         ChatMessages newChatMessages = ChatMessages.builder()
-                .chatRoom(message.getRoomId())
+                .chatRoom(chatRoom)
                 .chatType(message.getType())
                 .message(message.getMessage())
                 .sender(user.getUser())
                 .createdAt(LocalDateTime.now())
                 .build();
         chatMessagesRepository.save(newChatMessages);
-
     }
 
 //
