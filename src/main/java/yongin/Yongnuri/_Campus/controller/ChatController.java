@@ -98,23 +98,20 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
 
-//    /** 메시지 보내기 */
-//    @PostMapping("/{chatRoomId}/messages")
-//    public ResponseEntity<?> sendMessage(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long chatRoomId, @RequestBody ChatMessageRequest message) {
-//
-//        ChatMessages saved = chatService.saveMessage(user, chatRoomId, message);
-//
-//        // 웹소켓 구독자에게도 메시지 발행
-//        messagingTemplate.convertAndSend("/sub/chat/room/" + chatRoomId, message);
-//
-//        return ResponseEntity.ok(saved);
-//    }
+    /** 메시지 보내기 */
+    @PostMapping("/rooms/messages")
+    public void sendMessage(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ChatMessageRequest message) {
+
+        chatService.saveMessage(user, message);
+
+        messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
+    }
 
     // 테스트용 api
     @MessageMapping("/chat/message") // 클라이언트가 /pub/chat/message 로 메시지 발행
     public void message(ChatMessageRequest message) {
         // 메시지 처리 로직 (DB 저장, 사용자 알림 등)
-        System.out.println("message: " + message.getContent() + " from " + message.getSender());
+        System.out.println("message: " + message.getMessage() + " from " + message.getSender());
 //        ChatMessagesRes savedMessage = chatService.saveMessage(message);
         // 특정 채팅방 구독자에게 메시지 전송
         // 이 예시에서는 topic으로 보냈지만, 1:1 채팅은 /queue/{userId} 형태가 될 수 있습니다.

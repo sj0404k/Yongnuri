@@ -13,10 +13,7 @@ import yongin.Yongnuri._Campus.admin.AdminConfig;
 import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.dto.Notificationres;
-import yongin.Yongnuri._Campus.dto.chat.ChatEnterRes;
-import yongin.Yongnuri._Campus.dto.chat.ChatMessagesRes;
-import yongin.Yongnuri._Campus.dto.chat.ChatRoomDto;
-import yongin.Yongnuri._Campus.dto.chat.ChatRoomReq;
+import yongin.Yongnuri._Campus.dto.chat.*;
 import yongin.Yongnuri._Campus.exception.ResourceNotFoundException;
 import yongin.Yongnuri._Campus.repository.*;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
@@ -239,31 +236,6 @@ public class ChatService {
         }
         // DTO로 반환
         return ChatEnterRes.from(room, opponent, messageList, extraInfo);
-
-//        // 5. 상대방의 상태 가져오기 (마지막 접속 시간)
-//        ChatStatus otherChatStatus = chatStatusRepository.findByUserIdAndChatRoomId(fromUserId, roomId);
-//        LocalDateTime otherLastDate = otherChatStatus != null ? otherChatStatus.getLastDate() : LocalDateTime.MIN;
-//
-//        // 6. 채팅 메시지 전체 불러오기
-//        List<ChatMessages> messages = chatMessagesRepository.findByChatRoomId(roomId);
-//
-//        // 7. 메시지를 DTO로 변환 + 상대방 마지막 접속 이후의 메시지 개수를 count로 넣기
-//        return messages.stream()
-//                .map(msg -> {
-//                    int count = 0;
-//                    if (msg.getCreatedAt().isAfter(otherLastDate)) {
-//                        // 상대방이 못 본 메시지라면 count 증가
-//                        count = 1;
-//                    }
-//
-//                    return ChatMessagesRes.builder()
-//                            .chatType(msg.getChatType())
-//                            .message(msg.getMessage())
-//                            .senderId(msg.getSender().getId())
-//                            .createdAt(msg.getCreatedAt())
-//                            .build();
-//                })
-//                .toList();
     }
 
 
@@ -350,6 +322,19 @@ public class ChatService {
                 .message(notificationMessage)
                 .build();
         messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, notification);
+    }
+
+    public void saveMessage(CustomUserDetails user, ChatMessageRequest message) {
+
+        ChatMessages newChatMessages = ChatMessages.builder()
+                .chatRoom(message.getRoomId())
+                .chatType(message.getType())
+                .message(message.getMessage())
+                .sender(user.getUser())
+                .createdAt(LocalDateTime.now())
+                .build();
+        chatMessagesRepository.save(newChatMessages);
+
     }
 
 //

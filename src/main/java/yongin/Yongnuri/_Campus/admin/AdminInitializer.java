@@ -42,10 +42,13 @@ public class AdminInitializer implements ApplicationRunner {
                     // ✅ 없으면 생성
                     User admin = User.builder()
                             .email(adminConfig.getEmail().trim())
+                            .name("관리자")
+                            .major("관리자")
                             .nickName(adminConfig.getNickName())
                             .password(passwordEncoder.encode(adminConfig.getPassword()))
                             .creatAt(LocalDateTime.now())
                             .status(Enum.authStatus.ACTIVE)
+                            .text("채팅 관련 공지 안내")
                             .role(adminConfig.getRole())
                             .build();
                     userRepository.save(admin);
