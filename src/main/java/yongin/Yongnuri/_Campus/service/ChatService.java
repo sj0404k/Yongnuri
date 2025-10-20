@@ -195,8 +195,7 @@ public class ChatService {
                     .chatStatus(true)
                     .build();
             chatStatusRepository.saveAll(List.of(myStatus, opponentStatus));
-            ChatRoom chatRoom = existing.get();
-            return getEnterChatRoom(user,chatRoom.getId());
+            return getEnterChatRoom(user,newChatRoom.getId());
         }
     }
 
