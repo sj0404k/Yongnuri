@@ -117,19 +117,19 @@ public class ChatService {
             User targetUser;
             switch (request.getType()) {
                 case LOST_ITEM -> {
-                    LostItem lostItem = lostItemRepository.findById(request.getToUserId())
+                    LostItem lostItem = lostItemRepository.findById(request.getTypeId())
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "분실물 게시글을 찾을 수 없습니다."));
                     targetUser = lostItem.getUser();
                 }
                 case USED_ITEM -> {
-                    UsedItem usedItem = usedItemRepository.findById(request.getToUserId())
+                    UsedItem usedItem = usedItemRepository.findById(request.getTypeId())
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "중고거래 게시글을 찾을 수 없습니다."));
                     targetUser = userRepository.findById(usedItem.getUserId())
                             .orElseThrow(() -> new ResponseStatusException(
                                     HttpStatus.NOT_FOUND, "해당 게시글 작성자를 찾을 수 없습니다."));
                 }
                 case GROUP_BUY -> {
-                    GroupBuy groupBuy = groupBuyRepository.findById(request.getToUserId())
+                    GroupBuy groupBuy = groupBuyRepository.findById(request.getTypeId())
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공동구매 게시글을 찾을 수 없습니다."));
                     targetUser = userRepository.findById(groupBuy.getUserId())
                             .orElseThrow(() -> new ResponseStatusException(
