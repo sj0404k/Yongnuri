@@ -105,9 +105,11 @@ public class ChatService {
                     return participantIds.contains(request.getFromUserId()) && participantIds.contains(request.getToUserId());
                 })
                 .findFirst();
+        log.info("Creating chat room {}", existing);
         User toUser = userRepository.findById(request.getToUserId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "해당 유저 계정을 찾을 수 없습니다."));
+        log.info("user {}", toUser);
         if (existing.isPresent()) {
             // 이미 존재하면 있는 방을 보내줘야됨
             ChatRoom chatRoom = existing.get();
