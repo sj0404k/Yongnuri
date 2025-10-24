@@ -19,33 +19,15 @@ import yongin.Yongnuri._Campus.service.ReportService;
 public class ReportController {
     private final ReportService reportService;
 
-    /**
-     *
-     * @param user :
-     * @param reportReq : reportedId, postType, postId, reason, content, imageUrls
-     *     }
-     * @return 상태갑
-     */
-    /**
-    @PostMapping
-    public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ReportReq.reportDto reportReq){
-        boolean report = reportService.reports(user, reportReq);
-        if (report) {
-            return ResponseEntity.ok("Reports 성공");
-        } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 신고한 게시글입니다.");
-        }
-    }*/
     @PostMapping
     public ResponseEntity<?> setReports(@AuthenticationPrincipal CustomUserDetails user,
                                         @RequestBody ReportReq.reportDto reportReq) {
-        Long reportedUserId = reportService.reports(user, reportReq);  // Long 타입으로 변경
-        if (reportedUserId != null) {
+        try {
+            Long reportedUserId = reportService.reports(user, reportReq);
             ReportRes response = new ReportRes("Reports 성공", reportedUserId);
             return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("이미 신고한 게시글입니다.");
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(iae.getMessage());
         }
-}
+    }
 }
