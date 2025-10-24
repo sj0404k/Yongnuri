@@ -6,8 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.domain.Enum;
+import yongin.Yongnuri._Campus.repository.ImageRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Data
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 @Builder
 public class ChatEnterRes {
 
+    private static ImageRepository imageRepository;
     private RoomInfo roomInfo;
     private List<MessageInfo> messages;
 
@@ -37,6 +40,7 @@ public class ChatEnterRes {
         private Enum.UsedItemStatus tradeStatus;   // USED_ITEM 거래상태
         private Integer peopleCount;   // GROUP_BUY 인원 표시 (ex. 3/5)
         private String text;
+        private String imageUrl;
     }
 
     @Data
@@ -62,13 +66,43 @@ public class ChatEnterRes {
         if (extraInfo instanceof LostItem lost) {
             infoBuilder.title(lost.getTitle())
                     .status(lost.getStatus());
+            if (lost.getIsImages()) {
+                String thumbnailUrl = imageRepository
+                        .findByTypeAndTypeIdInAndSequence("LOST_ITEM", List.of(lost.getId()), 1)
+                        .stream()
+                        .findFirst()   // 첫 번째 이미지만
+                        .map(Image::getImageUrl) // URL만 추출
+                        .orElse(null); // 없으면 null
+
+                infoBuilder.imageUrl(thumbnailUrl);
+            }
         } else if (extraInfo instanceof UsedItem used) {
             infoBuilder.title(used.getTitle())
                     .price(String.valueOf(used.getPrice()))
                     .tradeStatus(used.getStatus());
+            if (used.getIsImages()) {
+                String thumbnailUrl = imageRepository
+                        .findByTypeAndTypeIdInAndSequence("LOST_ITEM", List.of(used.getId()), 1)
+                        .stream()
+                        .findFirst()   // 첫 번째 이미지만
+                        .map(Image::getImageUrl) // URL만 추출
+                        .orElse(null); // 없으면 null
+
+                infoBuilder.imageUrl(thumbnailUrl);
+            }
         } else if (extraInfo instanceof GroupBuy group) {
             infoBuilder.title(group.getTitle())
                     .peopleCount(group.getLimit());
+            if (group.getIsImages()) {
+                String thumbnailUrl = imageRepository
+                        .findByTypeAndTypeIdInAndSequence("LOST_ITEM", List.of(group.getId()), 1)
+                        .stream()
+                        .findFirst()   // 첫 번째 이미지만
+                        .map(Image::getImageUrl) // URL만 추출
+                        .orElse(null); // 없으면 null
+
+                infoBuilder.imageUrl(thumbnailUrl);
+            }
         } else if (extraInfo instanceof ChatAdminRes chatAdminRes) {
             infoBuilder.text(chatAdminRes.getText());
         }

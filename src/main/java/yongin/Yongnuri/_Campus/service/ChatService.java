@@ -232,7 +232,6 @@ public class ChatService {
                         .orElse(null); // admin 계정 이메일에 맞게 수정
                 extraInfo = adminUser != null ? adminUser.getText() : "**채팅 공지사항**";
             }
-            default -> extraInfo = null;
         }
         // DTO로 반환
         return ChatEnterRes.from(room, opponent, messageList, extraInfo);
