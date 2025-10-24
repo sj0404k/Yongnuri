@@ -25,11 +25,19 @@ public class MypageController {
     private final JwtProvider jwtProvider;
     private final MailService mailService;
 
+
+
     @GetMapping
     public ResponseEntity<MypageRes.getpage> getMyPageInfo(@AuthenticationPrincipal CustomUserDetails user) {
 
         MypageRes.getpage mypageInfo = mypageService.getMypageDetails(user.getUser().getEmail());
         return ResponseEntity.ok(mypageInfo);
+    }
+    @GetMapping("/page")
+    public ResponseEntity<MypageRes.getmypage> getMyProfileSimple(
+            @AuthenticationPrincipal CustomUserDetails user) {
+        MypageRes.getmypage page = mypageService.getUserProfileSimple(user.getUser().getEmail());
+        return ResponseEntity.ok(page);
     }
     @PostMapping
     public ResponseEntity<?> setMyPageInfo(@AuthenticationPrincipal CustomUserDetails user,@RequestBody MypageReq.setpage mypageReq) {

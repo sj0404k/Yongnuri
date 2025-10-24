@@ -20,4 +20,12 @@ public class MypageRes {
         private String major;
         // 필요 시 major 등 필드 확장 가능
     }
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class getmypage {
+        private String name;
+        private String studentId;
+    }
 }
