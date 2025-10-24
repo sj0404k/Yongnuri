@@ -10,8 +10,8 @@ import yongin.Yongnuri._Campus.domain.Enum;
 public class ChatRoomReq {
     private Enum.ChatType type;
     private Long typeId;;
-    private Long userId;
-    private Long fromUserId;
+    private Long toUserId;      //받는사람
+    private Long fromUserId;    //보내는 사람
     private String message;
     private ChatMessages.messageType messageType;
 }

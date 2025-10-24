@@ -4,6 +4,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.domain.User;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 
@@ -41,9 +42,13 @@ public class AdminInitializer implements ApplicationRunner {
                     // ✅ 없으면 생성
                     User admin = User.builder()
                             .email(adminConfig.getEmail().trim())
+                            .name("관리자")
+                            .major("관리자")
                             .nickName(adminConfig.getNickName())
                             .password(passwordEncoder.encode(adminConfig.getPassword()))
                             .creatAt(LocalDateTime.now())
+                            .status(Enum.authStatus.ACTIVE)
+                            .text("채팅 관련 공지 안내")
                             .role(adminConfig.getRole())
                             .build();
                     userRepository.save(admin);

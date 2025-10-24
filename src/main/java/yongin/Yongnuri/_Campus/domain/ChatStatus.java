@@ -1,9 +1,6 @@
 package yongin.Yongnuri._Campus.domain;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,16 +14,30 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class ChatStatus {
+
     /**
-     * 채팅방을 봤는지 알아보기 위한 도매인
+     * 채팅방을 본 기록을 추적하는 엔티티
+     * (읽음 여부, 마지막 접속시간 등)
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long chatRoomId;
-    private Long userId;                //해당 본인 유저 id값
-    private LocalDateTime firstDate;    // 채팅방 처음 접속일 일단 넣어봤음
-    private LocalDateTime lastDate;     //마지막 채팅 본기록 체팅방 눌렀을때 최신화하기
-    private boolean chatStatus;         //true 채팅방 활성화 // false 비활성화
 
+    /**
+     * 어떤 채팅방에 대한 상태인지
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chat_room_id", nullable = false)
+    private ChatRoom chatRoom;
+
+    /**
+     * 어떤 유저의 상태인지
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    private LocalDateTime firstDate; // 처음 접속 시간
+    private LocalDateTime lastDate;  // 마지막 접속 시간
+    private boolean chatStatus;      // true = 활성화, false = 비활성화
 }

@@ -54,7 +54,11 @@ public class Enum {
         ADMIN,      // 관리자와 채팅
         Chat        // 채팅
     }
+    public static  enum ChatStatusType {
+        ENTER,
+        CHAT,
 
+    }
     public static enum ReportStatus {
         PENDING,    // 처리 대기
         REJECTED,   // 처리 반려
