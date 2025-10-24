@@ -13,7 +13,6 @@ public interface ReportRepository extends JpaRepository<Reports, Long> {
     List<Reports> findByReportedId(Long reportedId);
 
     Long countByReportedId(Long reportedId);
-    List<Reports> findAllByOrderByCreatedAtDesc();
     Long countByReportedIdAndStatus(Long reportedId, Enum.ReportStatus status);
 
     /** 관리자 목록: 최신순 전체 조회 */
