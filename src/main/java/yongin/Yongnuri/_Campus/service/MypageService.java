@@ -29,14 +29,14 @@ public class MypageService {
     private final BookmarkRepository bookMarkRepository;
     private final BlockRepository blockRepository;
 
-    // 마이페이지 들어갔을때 이름, 학번 반환
+    // 마이페이지 들어갔을때 닉네임, 학번 반환
     public MypageRes.getmypage getUserProfileSimple(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "해당 사용자를 찾을 수 없습니다."));
 
         String studentId = resolveStudentId(user);
 
-        return new MypageRes.getmypage(user.getName(), studentId);
+        return new MypageRes.getmypage(user.getNickName(), studentId);
     }
 
     public MypageRes.getpage getMypageDetails(String email) {

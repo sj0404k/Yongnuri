@@ -25,7 +25,7 @@ public class MypageRes {
     @AllArgsConstructor
     @NoArgsConstructor
     public static class getmypage {
-        private String name;
+        private String nickName;
         private String studentId;
     }
 }
