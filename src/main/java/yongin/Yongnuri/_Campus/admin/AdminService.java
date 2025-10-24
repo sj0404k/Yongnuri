@@ -1,11 +1,12 @@
+// src/main/java/yongin/Yongnuri/_Campus/admin/AdminService.java
 package yongin.Yongnuri._Campus.admin;
 
 import lombok.AllArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
 import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.domain.User;
@@ -14,11 +15,16 @@ import yongin.Yongnuri._Campus.repository.ReportRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.repository.ImageRepository;
 
+import yongin.Yongnuri._Campus.repository.UsedItemRepository;
+import yongin.Yongnuri._Campus.repository.LostItemRepository;
+import yongin.Yongnuri._Campus.repository.GroupBuyRepository;
 
+import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 
@@ -28,50 +34,15 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final ReportRepository reportRepository;
-
     private final ImageRepository imageRepository;
 
+    // 게시글 상태 변경용
+    private final UsedItemRepository usedItemRepository;
+    private final LostItemRepository lostItemRepository;
+    private final GroupBuyRepository groupBuyRepository;
 
-
-//    public List<AdminReportRes2> getReportList1(String email) {
-//        // 1. 관리자 확인
-//        User admin = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
-//
-//        if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
-//            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
-//        }
-//
-//        // 2. 모든 신고 조회
-//        List<Reports> reports = reportRepository.findAll();
-//
-//        // 3. DTO 변환
-//        return reports.stream()
-//                .map(report -> {
-//                    User reportedUser = userRepository.findById(report.getReportedId())
-//                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
-//
-//                    String truncatedContent = report.getContent();
-//                    if (truncatedContent != null && truncatedContent.length() > 30) {
-//                        truncatedContent = truncatedContent.substring(0, 30) + "..."; // 잘린 표시
-//                    }
-//
-//                    return AdminReportRes2.builder()
-//                            .id(report.getId())
-//                            .reportedStudentId(reportedUser.getStudentId())
-//                            .reportedStudentName(reportedUser.getName())
-//                            .content(truncatedContent)
-//                            .build();
-//                })
-//                .collect(Collectors.toList());
-//
-//    }
-
-    /**
-     *
-     * @param email: 신고 리스트 보여줌
-     * @return : reportStudentNickName, reportReason, content, reportType, typeId, status
-     */
+    /** 신고 목록 */
+    @Transactional(readOnly = true)
     public List<AdminReportRes> getReportList(String email) {
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
@@ -79,81 +50,54 @@ public class AdminService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
-        // 모든 신고 + 유저 정보 조회
-        List<Reports> results = reportRepository.findAll();
+        List<Reports> results = reportRepository.findAllByOrderByCreatedAtDesc();
 
-        // DTO 변환
-        return results.stream()
-                .map(report -> {
-                    Optional<User> reportedUserOpt = userRepository.findById(report.getReportedId());
-                    String nickName = reportedUserOpt.map(User::getNickName).orElse("탈퇴한 사용자"); // ← 안전 처리
-                    String content = report.getContent();
-
-                    if (content != null && content.length() > 20) {
-                        content = content.substring(0, 20) + "...";
+        return results.stream().map(report -> {
+            Long reportedId = report.getReportedId();
+            String nickName = "탈퇴한 사용자";
+            if (reportedId != null) {
+                Optional<User> reportedUserOpt = userRepository.findById(reportedId);
+                if (reportedUserOpt.isPresent()) {
+                    User u = reportedUserOpt.get();
+                    String n = u.getNickName();
+                    if (n == null || n.trim().isEmpty()) n = u.getName();
+                    if ((n == null || n.trim().isEmpty()) && u.getEmail() != null) {
+                        n = u.getEmail().split("@")[0];
                     }
-                    return AdminReportRes.builder()
-                            .id(report.getId())
-                            .reportStudentNickName(nickName)
-                            .reportReason(report.getReportReason())
-                            .content(content)
-                            .reportType(report.getPostType())
-                            .typeId(report.getPostId())
-                            .status(report.getStatus())
-                            .build();
-                })
-                .collect(Collectors.toList());
-    }
-//    public List<AdminReportRes> getReportListDetail(String email, Long reportedId) {
-//        // 1. 관리자 확인
-//        User admin = userRepository.findByEmail(email)
-//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
-//        if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
-//            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
-//        }
-//
-//        // 2. 신고 내역 조회 (특정 유저)
-//        List<Reports> reports = reportRepository.findByReportedId(reportedId); // <- Repository에 메소드 필요
-//
-//        if (reports.isEmpty()) {
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 유저의 신고 내역이 없습니다.");
-//        }
-//
-//        // 3. 신고당한 유저 정보
-//        User reportedUser = userRepository.findById(reportedId)
-//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "유저를 찾을 수 없습니다."));
-//
-//        // 4. DTO 변환
-//        return reports.stream()
-//                .map(report -> AdminReportRes.builder()
-//                        .reportStudentId(reportedUser.getStudentId()) // 학생 학번
-//                        .reportStudentName(reportedUser.getName())   // 이름
-////                        .major(reportedUser.getMajor())             // 전공
-//                        .reportType(report.getPostType())           // 신고 타입
-//                        .typeId(report.getPostId())                 // 신고 대상 ID
-//                        .build()
-//                )
-//                .collect(Collectors.toList());
-//    }
+                    if (n != null && !n.trim().isEmpty()) nickName = n;
+                }
+            }
 
-    /**
-     *
-     * @param adminEmail :
-     * @return id, name, userNickname, studentId, major, reportCount
-     */
+            String content = report.getContent();
+            if (content != null && content.length() > 20) content = content.substring(0, 20) + "...";
+
+            return AdminReportRes.builder()
+                    .id(report.getId())
+                    .reportStudentNickName(nickName)
+                    .reportReason(report.getReportReason())
+                    .content(content)
+                    .reportType(report.getPostType())
+                    .typeId(report.getPostId())
+                    .status(report.getStatus())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    /** 전체 유저 + 신고 승인 횟수 (관리자 제외) */
     public List<UserInfoRes> getAllUserInfo(String adminEmail) {
-        // 1. 관리자 확인
+        // 1) 관리자 검증
         User admin = userRepository.findByEmail(adminEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
-
         if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
-        // 2. 전체 유저 조회
-        List<User> users = userRepository.findAll();
+        // 2) 일반 유저만 조회(ADMIN 제외)
+        List<User> users = userRepository.findAll().stream()
+                .filter(u -> u.getRole() != Enum.UserRole.ADMIN)
+                .collect(Collectors.toList());
 
-        // 3. DTO 변환 (신고 횟수 포함)
+        // 3) DTO 변환 (승인된 신고 횟수 포함)
         return users.stream()
                 .map(user -> {
                     Long reportCount = reportRepository.countByReportedIdAndStatus(user.getId(), Enum.ReportStatus.APPROVED);
@@ -169,150 +113,196 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
+    /** 신고 처리 (APPROVED / REJECTED) */
     @Transactional
     public boolean processReport(String email, AdminReq.reportProcessReq req) {
-        // 1. 관리자 확인
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
-
         if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
-        // 2. 신고 조회
         Reports report = reportRepository.findById(req.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고를 찾을 수 없습니다."));
 
-        // 3. 상태 변경
-        report.setStatus(req.getReportStatus()); // AdminReq.reportProcessReq에 status 필드 필요
+        Enum.ReportStatus next = req.getReportStatus();
+        report.setStatus(next);
         report.setProcessedAt(LocalDateTime.now());
-        // 4. DB 저장
         reportRepository.save(report);
 
-        return true; // 성공적으로 처리됨
+        if (Enum.ReportStatus.APPROVED.equals(next)) {
+            // 인정 → 비노출/해결 처리
+            softDeletePostIfNeeded(report);
+        } else if (Enum.ReportStatus.REJECTED.equals(next)) {
+            // 미인정 → 다시 노출(활성화)
+            reactivatePostIfNeeded(report);
+        }
+        return true;
     }
 
+    /** 동일 유저 대상 신고 일괄 처리 */
+    @Transactional
     public boolean processReportUser(String email, AdminReq.reportProcessUserReq req) {
-        // 1. 관리자 확인
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
-
         if (!Enum.UserRole.ADMIN.equals(admin.getRole())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
-        // 2. 신고당한 유저의 모든 신고 조회
         List<Reports> reports = reportRepository.findByReportedId(req.getUserId());
         if (reports.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "신고를 찾을 수 없습니다.");
         }
 
-        // 3. 상태 변경
-        reports.forEach(report -> {
-            report.setStatus(req.getReportStatus()); // 상태 변경
-            report.setProcessedAt(LocalDateTime.now());    // 처리 일시 업데이트
+        reports.forEach(r -> {
+            r.setStatus(req.getReportStatus());
+            r.setProcessedAt(LocalDateTime.now());
         });
-
-        // 4. DB 저장
         reportRepository.saveAll(reports);
 
-        return true; // 성공적으로 처리됨
+        // 필요하면 일괄 활성/비활성도 여기서 돌릴 수 있음
+        return true;
     }
 
+    /** 신고 상세 */
     public AdminReportIdRes getReportDetail(Long reportId) {
-        // 1. 신고 조회
         Reports report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다."));
 
-        // 2. 피신고 유저 조회
         User reportedUser = userRepository.findById(report.getReportedId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
 
-        //이미지리수트
         List<Image> images = List.of();
         if (Boolean.TRUE.equals(report.getIsImages())) {
             images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("REPORT", reportId);
         }
         List<ImageDto> imageDtos = images.stream().map(ImageDto::new).collect(Collectors.toList());
 
-        // 3. DTO 변환
         return AdminReportIdRes.builder()
                 .id(report.getId())
-                .reportedStudentId(reportedUser.getStudentId())   // User 엔티티의 학번
-                .reportedStudentName(reportedUser.getName())      // User 엔티티의 이름
+                .reportedStudentId(reportedUser.getStudentId())
+                .reportedStudentName(reportedUser.getName())
                 .reason(report.getReportReason())
-                .content(report.getContent())                     // 신고 내용
+                .content(report.getContent())
                 .images(imageDtos)
                 .build();
     }
-
 
     @Transactional
     protected User getAdminUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
-
         if (user.getRole() != Enum.UserRole.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
         return user;
     }
-    /**
-     // 공지사항 작성
-     public Long createNotice(String adminEmail, AdminReq.NoticeCreateReqDto requestDto) { // <-- 타입을 NoticeCreateReqDto로 변경
-     User admin = getAdminUser(adminEmail);
 
-     Notice newNotice = Notice.builder()
-     .author(admin)
-     .title(requestDto.getTitle())
-     .content(requestDto.getContent())
-     .status(Enum.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()))
-     .link(requestDto.getLink())
-     .startDate(requestDto.getStartDate())
-     .endDate(requestDto.getEndDate())
-     .isImages(requestDto.getImageUrls() != null && !requestDto.getImageUrls().isEmpty())
-     .createdAt(LocalDateTime.now())
-     .build();
-
-     Notice savedNotice = noticeRepository.save(newNotice);
-     Long newPostId = savedNotice.getId();
-
-     if (savedNotice.getIsImages()) {
-     int sequence = 1;
-     for (String url : requestDto.getImageUrls()) {
-     imageRepository.save(Image.builder().type("NOTICE").typeId(newPostId).imageUrl(url).sequence(sequence++).build());
-     }
-     }
-     return newPostId;
-     }
-
-     //공지사항 수정
-     @Transactional
-     public void updateNotice(AdminReq.NoticeUpdateReqDto requestDto) {
-     Notice notice = noticeRepository.findById(requestDto.getNoticeId())
-     .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
-     if(requestDto.getTitle() != null) notice.setTitle(requestDto.getTitle());
-     if(requestDto.getContent() != null) notice.setContent(requestDto.getContent());
-     if(requestDto.getStatus() != null) notice.setStatus(Enum.NoticeStatus.valueOf(requestDto.getStatus().toUpperCase()));
-     if(requestDto.getLink() != null) notice.setLink(requestDto.getLink());
-     if(requestDto.getStartDate() != null) notice.setStartDate(requestDto.getStartDate());
-     if(requestDto.getEndDate() != null) notice.setEndDate(requestDto.getEndDate());
-
-     }
-     //공지사항 삭제
-     @Transactional
-     public void deleteNotice(Long noticeId) {
-     Notice notice = noticeRepository.findById(noticeId)
-     .orElseThrow(() -> new EntityNotFoundException("공지사항을 찾을 수 없습니다."));
-
-     notice.setStatus(Enum.NoticeStatus.DELETED);
-     }*/
     @Transactional
     public void postNotice(CustomUserDetails user, String text) {
         getAdminUser(user.getUser().getEmail());
         User user1 = user.getUser();
         user1.setText(text);
         userRepository.save(user1);
+    }
 
+    /* ================== 내부 유틸 ================== */
+
+    /** 인정 시: 게시글 비노출/해결 처리 */
+    private void softDeletePostIfNeeded(Reports report) {
+        if (report.getPostId() == null || report.getPostType() == null) return;
+
+        Long postId = report.getPostId();
+        Enum.ChatType type = report.getPostType();
+
+        switch (type) {
+            case USED_ITEM:
+                usedItemRepository.findById(postId).ifPresent(item -> {
+                    Enum.UsedItemStatus s = firstEnumOrNull(Enum.UsedItemStatus.class,
+                            "DELETED", "HIDDEN", "REMOVED", "SOLD");
+                    if (s != null) { item.setStatus(s); usedItemRepository.save(item); }
+                });
+                break;
+
+            case LOST_ITEM:
+                lostItemRepository.findById(postId).ifPresent(lost -> {
+                    Enum.LostItemStatus s = firstEnumOrNull(Enum.LostItemStatus.class,
+                            "RESOLVED", "CLOSED", "DELETED", "RETURNED", "COMPLETED");
+                    if (s != null) { lost.setStatus(s); lostItemRepository.save(lost); }
+                });
+                break;
+
+            case GROUP_BUY:
+                groupBuyRepository.findById(postId).ifPresent(gb -> {
+                    Enum.GroupBuyStatus s = firstEnumOrNull(Enum.GroupBuyStatus.class,
+                            "DELETED", "COMPLETED", "CLOSED");
+                    if (s != null) { gb.setStatus(s); groupBuyRepository.save(gb); }
+                });
+                break;
+
+            case ALL:
+            case ADMIN:
+            case Chat:
+            default:
+                break;
+        }
+    }
+
+    /** 미인정 시: 게시글 재노출(활성화) 처리 */
+    private void reactivatePostIfNeeded(Reports report) {
+        if (report.getPostId() == null || report.getPostType() == null) return;
+
+        Long postId = report.getPostId();
+        Enum.ChatType type = report.getPostType();
+
+        switch (type) {
+            case USED_ITEM:
+                usedItemRepository.findById(postId).ifPresent(item -> {
+                    Enum.UsedItemStatus s = firstEnumOrNull(Enum.UsedItemStatus.class,
+                            "ON_SALE", "ACTIVE", "OPEN");
+                    if (s != null) { item.setStatus(s); usedItemRepository.save(item); }
+                });
+                break;
+
+            case LOST_ITEM:
+                lostItemRepository.findById(postId).ifPresent(lost -> {
+                    Enum.LostItemStatus s = firstEnumOrNull(Enum.LostItemStatus.class,
+                            "OPEN", "ACTIVE");
+                    if (s != null) { lost.setStatus(s); lostItemRepository.save(lost); }
+                });
+                break;
+
+            case GROUP_BUY:
+                groupBuyRepository.findById(postId).ifPresent(gb -> {
+                    Enum.GroupBuyStatus s = firstEnumOrNull(Enum.GroupBuyStatus.class,
+                            "RECRUITING", "OPEN", "ACTIVE");
+                    if (s != null) { gb.setStatus(s); groupBuyRepository.save(gb); }
+                });
+                break;
+
+            case ALL:
+            case ADMIN:
+            case Chat:
+            default:
+                break;
+        }
+    }
+
+    /** 주어진 이름들 중 첫 번째로 존재하는 Enum 상수를 반환 (없으면 null) */
+    private static <E extends java.lang.Enum<E>> E firstEnumOrNull(Class<E> enumType, String... names) {
+        for (String n : names) {
+            try { return java.lang.Enum.valueOf(enumType, n); }
+            catch (IllegalArgumentException ignored) {}
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unused")
+    private static void safeSetStatus(Object entity, Object statusEnum) {
+        if (entity == null || statusEnum == null) return;
+        try {
+            Method m = entity.getClass().getMethod("setStatus", statusEnum.getClass());
+            m.invoke(entity, statusEnum);
+        } catch (Exception ignored) {}
     }
 }
