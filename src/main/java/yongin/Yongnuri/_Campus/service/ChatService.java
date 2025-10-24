@@ -39,6 +39,7 @@ public class ChatService {
     private final GroupBuyRepository groupBuyRepository;
     private final UserRepository userRepository;
     private final AdminConfig adminConfig;
+    private final ImageRepository imageRepository;
     // 첫 채팅방들 모음
 
     /** 필요한 것
@@ -222,10 +223,46 @@ public class ChatService {
                 });
 
         Object extraInfo = null;
+        String thumbnailUrl = null;
         switch (room.getType()) {
-            case LOST_ITEM -> extraInfo = lostItemRepository.findById(room.getTypeId()).orElse(null);
-            case USED_ITEM -> extraInfo = usedItemRepository.findById(room.getTypeId()).orElse(null);
-            case GROUP_BUY -> extraInfo = groupBuyRepository.findById(room.getTypeId()).orElse(null);
+            case LOST_ITEM -> {
+                LostItem lost = lostItemRepository.findById(room.getTypeId()).orElse(null);
+                extraInfo = lost;
+                if (lost != null && Boolean.TRUE.equals(lost.getIsImages())) {
+                    thumbnailUrl = imageRepository
+                            .findByTypeAndTypeIdInAndSequence("LOST_ITEM", List.of(lost.getId()), 1)
+                            .stream()
+                            .findFirst()
+                            .map(Image::getImageUrl)
+                            .orElse(null);
+                }
+            }
+            case USED_ITEM -> {
+                UsedItem used = usedItemRepository.findById(room.getTypeId()).orElse(null);
+                extraInfo = used;
+
+                if (used != null && Boolean.TRUE.equals(used.getIsImages())) {
+                    thumbnailUrl = imageRepository
+                            .findByTypeAndTypeIdInAndSequence("USED_ITEM", List.of(used.getId()), 1)
+                            .stream()
+                            .findFirst()
+                            .map(Image::getImageUrl)
+                            .orElse(null);
+                }
+            }
+            case GROUP_BUY -> {
+                GroupBuy group = groupBuyRepository.findById(room.getTypeId()).orElse(null);
+                extraInfo = group;
+
+                if (group != null && Boolean.TRUE.equals(group.getIsImages())) {
+                    thumbnailUrl = imageRepository
+                            .findByTypeAndTypeIdInAndSequence("GROUP_BUY", List.of(group.getId()), 1)
+                            .stream()
+                            .findFirst()
+                            .map(Image::getImageUrl)
+                            .orElse(null);
+                }
+            }
             case ADMIN -> {
                 // admin 계정 정보 직접 조회
                 User adminUser = userRepository.findByEmail(adminConfig.getEmail())
@@ -234,7 +271,7 @@ public class ChatService {
             }
         }
         // DTO로 반환
-        return ChatEnterRes.from(room, opponent, messageList, extraInfo);
+        return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
     }
 
 
