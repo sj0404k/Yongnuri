@@ -20,6 +20,9 @@ public class GroupBuyResponseDto {
     private final Integer limit;
     private final LocalDateTime createdAt;
 
+    private Enum.ChatType Type;
+    private Long userId;            //글 작성자
+
     private final String content;
     private final String link;
     private final String authorNickname;
@@ -58,6 +61,8 @@ public class GroupBuyResponseDto {
     public GroupBuyResponseDto(GroupBuy item, User author, List<Image> images) {
         this.authorEmail = author.getEmail();
         this.authorDepartment = author.getMajor();
+        this.Type = Enum.ChatType.GROUP_BUY;
+        this.userId = author.getId();
         this.id = item.getId();
         this.title = item.getTitle();
         this.status = item.getStatus().name();

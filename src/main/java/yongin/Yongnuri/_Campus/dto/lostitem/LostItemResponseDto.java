@@ -24,6 +24,8 @@ public class LostItemResponseDto {
     private final Enum.authStatus authorStatus;
     private String authorDepartment;        // 작성자 학과(=User.major)
     private String authorEmail;             // ✅ 오너 판정용
+    private Enum.ChatType Type;
+    private Long userId;            //글 작성자
     @Setter
     private String thumbnailUrl;
     @Setter
@@ -52,6 +54,8 @@ public class LostItemResponseDto {
         this.authorEmail = item.getUser().getEmail();
         this.authorDepartment = item.getUser().getMajor();
         this.id = item.getId();
+        this.Type = Enum.ChatType.LOST_ITEM;
+        this.userId = item.getUser().getId();
         this.title = item.getTitle();
         this.content = item.getContent();
         this.location = item.getLocation();

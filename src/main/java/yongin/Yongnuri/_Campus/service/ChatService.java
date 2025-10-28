@@ -100,7 +100,7 @@ public class ChatService {
                             .map(p -> p.getUser().getId())
                             .toList();
                     // 두 명의 유저가 모두 포함되어 있는지 확인
-                    return participantIds.contains(request.getFromUserId()) && participantIds.contains(request.getToUserId());
+                    return participantIds.contains(user.getUser().getId()) && participantIds.contains(request.getToUserId());
                 })
                 .findFirst();
         log.info("Creating chat room {}", existing);

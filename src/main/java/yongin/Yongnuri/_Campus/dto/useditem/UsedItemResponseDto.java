@@ -28,6 +28,9 @@ public class UsedItemResponseDto {
     private String location;
     private String status;
 
+    private Enum.ChatType Type;
+    private Long userId;            //글 작성자
+
     private String authorNickname;          // 작성자 표시 이름
     private String authorDepartment;        // 작성자 학과(=User.major)
     private String authorEmail;             // ✅ 오너 판정용
@@ -75,6 +78,9 @@ public class UsedItemResponseDto {
         this.location = item.getLocation();
         this.status = item.getStatus().name();
         this.createdAt = item.getCreatedAt();
+
+        this.Type = Enum.ChatType.USED_ITEM;
+        this.userId = author.getId();
 
         // 작성자 정보: User 엔티티 필드명에 맞춰 매핑
         this.authorNickname   = (author != null) ? author.getNickName() : "(알 수 없음)";
