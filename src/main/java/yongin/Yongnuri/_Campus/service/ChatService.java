@@ -4,9 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.admin.AdminConfig;
@@ -84,7 +86,7 @@ public class ChatService {
                             .filter(u -> !u.getId().equals(user.getUser().getId()))
                             .findFirst()
                             .orElse(null);
-                    return ChatRoomDto.fromEntity(room,opponentUser ,lastMessage);
+                    return ChatRoomDto.fromEntity(room, Objects.requireNonNull(opponentUser),lastMessage);
                 })
                 .collect(Collectors.toList());
     }
@@ -187,7 +189,7 @@ public class ChatService {
 
             ChatStatus opponentStatus = ChatStatus.builder()
                     .chatRoom(newChatRoom)
-                    .user(toUser)
+                    .user(targetUser)
                     .firstDate(LocalDateTime.now())
                     .lastDate(LocalDateTime.now())
                     .chatStatus(true)
@@ -360,11 +362,10 @@ public class ChatService {
         messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, notification);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveMessage(CustomUserDetails user, ChatMessageRequest message) {
-        ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."
-                ));
+        ChatRoom chatRoom = chatRoomRepository.getReferenceById(message.getRoomId());
+
         ChatMessages newChatMessages = ChatMessages.builder()
                 .chatRoom(chatRoom)
                 .chatType(message.getType())
@@ -372,8 +373,17 @@ public class ChatService {
                 .sender(user.getUser())
                 .createdAt(LocalDateTime.now())
                 .build();
+
         chatMessagesRepository.save(newChatMessages);
     }
+//        ChatMessages saved = chatMessagesRepository.save(newChatMessages);
+//        return ChatMessagesRes.builder()
+//                .chatType(message.getType())
+//                .senderId(user.getUser().getId())
+//                .message(message.getMessage())
+//                .createdAt(saved.getCreatedAt())
+//                .build();
+//    }
 
 //
 //    public ChatMessages saveMessage(CustomUserDetails user, Long chatRoomId, ChatMessageRequest message) {

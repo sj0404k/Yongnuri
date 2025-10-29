@@ -12,7 +12,7 @@ import yongin.Yongnuri._Campus.domain.ChatRoom;
 @AllArgsConstructor
 public class ChatMessageRequest {
     private Long roomId;
-    private String sender;
+//    private String sender;
     private ChatMessages.messageType type;
     private String message;
 //    private Long timestamp;
