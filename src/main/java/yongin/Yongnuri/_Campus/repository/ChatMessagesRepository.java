@@ -3,6 +3,8 @@ package yongin.Yongnuri._Campus.repository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import yongin.Yongnuri._Campus.domain.ChatMessages;
 
@@ -19,4 +21,10 @@ public interface ChatMessagesRepository extends JpaRepository<ChatMessages, Long
     Optional<ChatMessages> findTopByChatRoomIdOrderByCreatedAtDesc(Long chatRoomId);
 
     List<ChatMessages> findByChatRoomIdOrderByCreatedAtAsc(Long chatRoomId);
+    // [추가] 여러 채팅방의 마지막 메시지를 한 번의 쿼리로 가져오기 (N+1 최적화)
+    @Query(value = "SELECT m.* FROM ( " +
+            "    SELECT *, ROW_NUMBER() OVER (PARTITION BY chat_room_id ORDER BY created_at DESC) as rn " +
+            "    FROM chat_messages WHERE chat_room_id IN :roomIds " +
+            ") m WHERE m.rn = 1", nativeQuery = true)
+    List<ChatMessages> findLastMessagesByRoomIds(@Param("roomIds") List<Long> roomIds);
 }
