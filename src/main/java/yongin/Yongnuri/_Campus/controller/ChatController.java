@@ -106,6 +106,14 @@ public class ChatController {
 
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
     }
+    /** 메시지 보내기 */
+    @PostMapping("/rooms/messages")
+    public void sendMessagePosttest(@AuthenticationPrincipal CustomUserDetails user, @RequestBody ChatMessageRequest message) {
+
+        chatService.saveMessage(user, message);
+
+        messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), message);
+    }
 
 //    // 테스트용 api
 //    @MessageMapping("/chat/message") // 클라이언트가 /pub/chat/message 로 메시지 발행
