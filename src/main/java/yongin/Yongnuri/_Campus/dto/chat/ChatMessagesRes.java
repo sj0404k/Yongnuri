@@ -11,13 +11,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 public class ChatMessagesRes {
-    /**
-     * 채탕방 들어갈때 보여줘야 되는 틀
-     */
-
-    private ChatMessages.messageType chatType;  //채팅 타입
-    private String message;                     //메시지 타입에 따른 결과 다름 택스트 or url
-    private Long senderId;                      //보낸 사람
-//    private int count;
-    private LocalDateTime createdAt;
+    private ChatMessages.messageType chatType;  // 'text' | 'img' 등
+    private String message;                     // 본문(텍스트 or 이미지 URL 등)
+    private Long senderId;                      // ✅ 보낸 사람 ID (항상 포함)
+    private String senderEmail;                 // ✅ 소문자 이메일 (항상 포함)
+    private LocalDateTime createdAt;            // ISO 직렬화 가능 타입
 }

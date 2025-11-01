@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import yongin.Yongnuri._Campus.domain.Image;
+import yongin.Yongnuri._Campus.repository.ChatMessagesRepository;
 import yongin.Yongnuri._Campus.repository.ImageRepository;
 
 import java.io.File;
@@ -18,11 +19,12 @@ import java.util.stream.Collectors;
 public class ImageCleanupService {
 
     private final ImageRepository imageRepository;
+    private final ChatMessagesRepository chatMessagesRepository;
     @Value("${file.upload-dir}")
     private String uploadDir;
 
    //이미지 등록만하고 글 등록하지 않는 등의 문제로 db에 없는 이미지 파일 폴더에서 삭제
-
+   // 게시글 이미지, 채팅 이미지 메시지 확인
     @Scheduled(cron = "0 0 17 * * ?")
     public void cleanupUnusedImages() {
         System.out.println("매일 오후 5시 - 불필요한 이미지 파일 정리를 시작합니다...");
@@ -35,6 +37,8 @@ public class ImageCleanupService {
         Set<String> dbImageUrls = imageRepository.findAll().stream()
                 .map(Image::getImageUrl)
                 .collect(Collectors.toSet());
+        List<String> chatImageUrls = chatMessagesRepository.findAllImageUrls();
+        dbImageUrls.addAll(chatImageUrls);
         int deleteCount = 0;
         for (File file : imageFiles) {
             String fileUrl = "/uploads/" + file.getName();

@@ -54,22 +54,14 @@ public class AppointmentService {
                 throw new AccessDeniedException("자신의 게시글에 대해서만 약속을 잡을 수 있습니다.");
             }
 
-        } /**
-         else if ("LOST_ITEM".equals(postType)) {
+        }
+        else if ("LOST_ITEM".equals(postType)) {
             LostItem item = lostItemRepository.findById(requestDto.getPostId())
                     .orElseThrow(() -> new EntityNotFoundException("분실물 게시글을 찾을 수 없습니다."));
-            party1_Id = item.getUser().getId();
-
-            if (party1_Id.equals(party2_Id)) {
-                throw new IllegalArgumentException("자신의 게시글에 대해 약속을 잡을 수 없습니다.");
+            if (!item.getUser().getId().equals(sellerId)) {
+                throw new AccessDeniedException("자신의 게시글에 대해서만 약속을 잡을 수 있습니다.");
             }
-            if (item.getPurpose() == Enum.LostItemPurpose.FOUND) {
-                return saveAppointment(requestDto, party1_Id, party2_Id);
-            }
-            else {
-                return saveAppointment(requestDto, party2_Id, party1_Id);
-            }
-        } */else {
+        } else {
             throw new IllegalArgumentException("지원하지 않는 게시글 타입입니다.");
         }
         if (sellerId.equals(buyerId)) {

@@ -13,19 +13,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import yongin.Yongnuri._Campus.domain.Bookmark;
-import yongin.Yongnuri._Campus.domain.Image;
-import yongin.Yongnuri._Campus.domain.LostItem;
-import yongin.Yongnuri._Campus.domain.User;
+import yongin.Yongnuri._Campus.domain.*;
+import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemResponseDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemUpdateRequestDto;
-import yongin.Yongnuri._Campus.repository.BookmarkRepository;
-import yongin.Yongnuri._Campus.repository.ImageRepository;
-import yongin.Yongnuri._Campus.repository.LostItemRepository;
-import yongin.Yongnuri._Campus.repository.UserRepository;
-import yongin.Yongnuri._Campus.domain.Enum;
+import yongin.Yongnuri._Campus.repository.*;
+
 @Service
 @RequiredArgsConstructor
 public class LostItemService {
@@ -35,6 +30,7 @@ public class LostItemService {
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final AppointmentRepository appointmentRepository;
     @Value("${file.upload-dir}")
     private String uploadDir;
     private User getUserByEmail(String email) {
@@ -182,7 +178,32 @@ public class LostItemService {
              item.setPurpose(Enum.LostItemPurpose.valueOf(requestDto.getPurpose().toUpperCase()));
          }
          if (requestDto.getStatus() != null) {
-             item.setStatus(Enum.LostItemStatus.valueOf(requestDto.getStatus().toUpperCase()));
+             Enum.LostItemStatus newStatus = Enum.LostItemStatus.valueOf(requestDto.getStatus().toUpperCase());
+             Enum.LostItemStatus oldStatus = item.getStatus();
+             // 1. 상태가 실제로 변경되었는지 확인
+             if (newStatus != oldStatus) {
+                 // 2. 관련된 모든 약속을 조회
+                 List<Appointment> appointments = appointmentRepository.findByPostTypeAndPostId("LOST_ITEM", postId);
+                 if (!appointments.isEmpty()) {
+                     switch (newStatus) {
+                         case RETURNED:
+                             // '회수 완료' 시: 모든 약속을 'COMPLETED'로 변경
+                             for (Appointment a : appointments) {
+                                 a.setStatus(Enum.AppointmentStatus.COMPLETED);
+                             }
+                             break;
+                         case DELETED:
+                         case REPORTED:
+                             // '삭제' 또는 '신고됨' 시: 모든 약속을 'CANCELED'로 변경
+                             for (Appointment a : appointments) {
+                                 a.setStatus(Enum.AppointmentStatus.CANCELED);
+                             }
+                             break;
+                     }
+                     appointmentRepository.saveAll(appointments);
+                 }
+                 item.setStatus(newStatus);
+             }
          }
          return item.getId();
      }

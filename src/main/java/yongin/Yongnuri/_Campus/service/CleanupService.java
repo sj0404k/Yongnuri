@@ -90,8 +90,8 @@ public class CleanupService {
 
         for(Long postId : postIds) {
             bookmarkRepository.deleteAllByPostTypeAndPostId(postType, postId);
-            if ("USED_ITEM".equals(postType)) {
-                appointmentRepository.deleteAllByPostTypeAndPostId(postType, postId);
+            if ("USED_ITEM".equals(postType) || "LOST_ITEM".equals(postType)) {
+                appointmentRepository.deleteAllByPostTypeAndPostIdIn(postType, postIds);
             }
             if ("GROUP_BUY".equals(postType)) {
                 applicantRepository.deleteAllByPostId(postId);

@@ -27,4 +27,6 @@ public interface ChatMessagesRepository extends JpaRepository<ChatMessages, Long
             "    FROM chat_messages WHERE chat_room_id IN :roomIds " +
             ") m WHERE m.rn = 1", nativeQuery = true)
     List<ChatMessages> findLastMessagesByRoomIds(@Param("roomIds") List<Long> roomIds);
+    @Query("SELECT m.message FROM ChatMessages m WHERE m.chatType = 'img'")
+    List<String> findAllImageUrls();
 }
