@@ -119,7 +119,8 @@ public class ChatService {
 
             return getEnterChatRoom(user, existing.get().getId());
         }else {
-            log.info("Creating room {}. Entering.", existing.get().getId());
+            log.info("No existing room. Creating new one for post {} with user {}",
+                    request.getTypeId(), toUser.getId());
             // 🔹 새로운 방 생성
             ChatRoom newChatRoom = ChatRoom.builder()
                     .type(request.getType())
