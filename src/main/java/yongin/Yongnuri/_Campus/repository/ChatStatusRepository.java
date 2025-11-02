@@ -19,7 +19,7 @@ public interface ChatStatusRepository extends JpaRepository<ChatStatus, Long> {
     List<ChatStatus> findByChatRoomId(Long chatRoomId);
 
     Optional<ChatStatus> findByChatRoomIdAndUserId(Long chatRoomId, Long userId);
-
+    List<ChatStatus> findByUserIdAndChatStatusTrue(Long userId);
 
     // leftAt IS NULL (나가지 않은) 방을 찾음
     List<ChatStatus> findByUserIdAndLeftAtIsNull(Long userId);

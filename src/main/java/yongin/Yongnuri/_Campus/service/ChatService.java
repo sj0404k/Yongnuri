@@ -41,30 +41,32 @@ public class ChatService {
     /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
+        log.debug("getChatRooms({}, {})", user.getUser().getId(), type);
         // 1️⃣ 내가 삭제하지 않은 참여방만 조회
-        List<ChatStatus> activeStatuses = chatStatusRepository.findActiveChatRoomsForUser(user.getUser().getId());
+        List<ChatStatus> activeStatuses = chatStatusRepository.findByUserIdAndChatStatusTrue(user.getUser().getId());
         if (activeStatuses.isEmpty()) return Collections.emptyList();
-        //  ChatRoom 객체 목록 추출
-        List<ChatRoom> rooms = activeStatuses.stream().map(ChatStatus::getChatRoom).distinct().toList();
-        List<Long> activeRoomIds = rooms.stream().map(ChatRoom::getId).toList();
+
+        List<Long> activeRoomIds = activeStatuses.stream()
+                .map(cs -> cs.getChatRoom().getId())
+                .toList();
+
         // 2️⃣ 타입별 필터
         Enum.ChatType chatType = (type != null) ? type : Enum.ChatType.ALL;
-        if (chatType != Enum.ChatType.ALL) {
-            rooms = rooms.stream().filter(r -> r.getType() == chatType).collect(Collectors.toList());
-        }
+        List<ChatRoom> rooms = (chatType == Enum.ChatType.ALL)
+                ? chatRoomRepository.findByIdInWithParticipants(activeRoomIds)
+                : chatRoomRepository.findByIdInAndTypeWithParticipants(activeRoomIds, chatType);
+
         if (rooms.isEmpty()) return Collections.emptyList();
-        //참여자 정보 미리 로드
-        Map<Long, List<ChatStatus>> participantsMap = chatStatusRepository.findByChatRoomIdInWithUser(activeRoomIds)
-                .stream().collect(Collectors.groupingBy(cs -> cs.getChatRoom().getId()));
+
         // 3️⃣ 각 방의 "마지막 메시지" 한 번에 조회
         Map<Long, ChatMessages> lastMessagesMap = chatMessagesRepository.findLastMessagesByRoomIds(activeRoomIds)
                 .stream()
                 .collect(Collectors.toMap(msg -> msg.getChatRoom().getId(), Function.identity()));
+
         // 4️⃣ DTO + 정렬 기준 시각 계산
         List<WithSort<ChatRoomDto>> boxed = new ArrayList<>(rooms.size());
         for (ChatRoom room : rooms) {
-            List<ChatStatus> participants = participantsMap.getOrDefault(room.getId(), Collections.emptyList());
-            User opponentUser = participants.stream()
+            User opponentUser = room.getParticipants().stream()
                     .map(ChatStatus::getUser)
                     .filter(u -> !u.getId().equals(user.getUser().getId()))
                     .findFirst()
@@ -72,7 +74,10 @@ public class ChatService {
 
             ChatMessages lastMessage = lastMessagesMap.get(room.getId());
 
-            LocalDateTime sortTs = (lastMessage != null) ? lastMessage.getCreatedAt() : room.getUpdateTime();
+            // ✅ 정렬 기준: 마지막 메시지 시각(우선) → 없으면 room.updateTime
+            LocalDateTime sortTs = (lastMessage != null && lastMessage.getCreatedAt() != null)
+                    ? lastMessage.getCreatedAt()
+                    : room.getUpdateTime();
 
             ChatRoomDto dto = ChatRoomDto.fromEntity(room, opponentUser, lastMessage);
             boxed.add(new WithSort<>(dto, sortTs != null ? sortTs : LocalDateTime.MIN));
@@ -92,7 +97,7 @@ public class ChatService {
     /** 채팅방 생성 */
     @Transactional
     public ChatEnterRes createChatRoom(CustomUserDetails user, ChatRoomReq request) {
-
+        log.info("createChatRoom({}, {})", user.getUser().getId(), request);
         List<ChatRoom> existingRooms = chatRoomRepository.findByTypeAndTypeIdWithParticipantsAndLock(
                 request.getType(), request.getTypeId());
 
@@ -111,63 +116,66 @@ public class ChatService {
 
         if (existing.isPresent()) {
             log.info("Existing room found {}. Entering.", existing.get().getId());
+
             return getEnterChatRoom(user, existing.get().getId());
-        }
-
-        // 🔹 새로운 방 생성
-        ChatRoom newChatRoom = ChatRoom.builder()
-                .type(request.getType())
-                .typeId(request.getTypeId())
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .status(ChatRoom.RoomStatus.ACTIVE)
-                .build();
-        chatRoomRepository.save(newChatRoom);
-
-        // 🔹 초기 메시지 저장 (있을 경우)
-        if (request.getMessage() != null) {
-            ChatMessages initMsg = ChatMessages.builder()
-                    .chatRoom(newChatRoom)
-                    .chatType(request.getMessageType())
-                    .message(request.getMessage())
-                    .sender(user.getUser())
-                    .createdAt(LocalDateTime.now())
+        }else {
+            log.info("Creating room {}. Entering.", existing.get().getId());
+            // 🔹 새로운 방 생성
+            ChatRoom newChatRoom = ChatRoom.builder()
+                    .type(request.getType())
+                    .typeId(request.getTypeId())
+                    .createTime(LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
+                    .status(ChatRoom.RoomStatus.ACTIVE)
                     .build();
-            chatMessagesRepository.save(initMsg);
+            chatRoomRepository.save(newChatRoom);
 
-            // ✅ 방 updateTime 최신 메시지로 갱신
-            newChatRoom.setUpdateTime(initMsg.getCreatedAt());
-            chatRoomRepository.saveAndFlush(newChatRoom);
+            // 🔹 초기 메시지 저장 (있을 경우)
+            if (request.getMessage() != null) {
+                ChatMessages initMsg = ChatMessages.builder()
+                        .chatRoom(newChatRoom)
+                        .chatType(request.getMessageType())
+                        .message(request.getMessage())
+                        .sender(user.getUser())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                chatMessagesRepository.save(initMsg);
+
+                // ✅ 방 updateTime 최신 메시지로 갱신
+                newChatRoom.setUpdateTime(initMsg.getCreatedAt());
+                chatRoomRepository.saveAndFlush(newChatRoom);
+            }
+
+            ChatStatus myStatus = ChatStatus.builder()
+                    .chatRoom(newChatRoom)
+                    .user(user.getUser())
+                    .firstDate(LocalDateTime.now())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+
+            ChatStatus opponentStatus = ChatStatus.builder()
+                    .chatRoom(newChatRoom)
+                    .user(toUser)
+                    .firstDate(LocalDateTime.now())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+
+            chatStatusRepository.saveAll(List.of(myStatus, opponentStatus));
+            return getEnterChatRoom(user, newChatRoom.getId());
         }
-
-        ChatStatus myStatus = ChatStatus.builder()
-                .chatRoom(newChatRoom)
-                .user(user.getUser())
-                .firstDate(LocalDateTime.now())
-                .lastDate(LocalDateTime.now())
-                .leftAt(null)// null( 활성) 상태
-                .build();
-
-        ChatStatus opponentStatus = ChatStatus.builder()
-                .chatRoom(newChatRoom)
-                .user(toUser)
-                .firstDate(LocalDateTime.now())
-                .lastDate(LocalDateTime.now())
-                .leftAt(null)// null(활성) 상태
-                .build();
-
-        chatStatusRepository.saveAll(List.of(myStatus, opponentStatus));
-        return getEnterChatRoom(user, newChatRoom.getId());
     }
 
     /** 채팅방 입장 */
     @Transactional(readOnly = true)
     public ChatEnterRes getEnterChatRoom(CustomUserDetails user, Long roomId) {
+        log.info("getEnterChatRoom({}, {})", user.getUser().getId(), roomId);
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."));
 
-        List<ChatStatus> participants = chatStatusRepository.findByChatRoomIdWithUser(roomId);
-        ChatStatus myStatus = participants.stream()
+        List<ChatStatus> participants = chatStatusRepository.findByChatRoomId(roomId);
+        participants.stream()
                 .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
@@ -177,19 +185,12 @@ public class ChatService {
                 .filter(u -> !u.getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElse(null);
-        LocalDateTime userLeftAt = myStatus.getLeftAt(); // 내가 체팅방 나갔던 시간
-        List<ChatMessages> allMessages = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
-
-        List<ChatMessages> messageList;
-        if (userLeftAt != null) {
-            //  나간 적이 있다면, 나간 시간 이후의 메시지만 필터링
-            messageList = allMessages.stream()
-                    .filter(msg -> msg.getCreatedAt().isAfter(userLeftAt))
-                    .collect(Collectors.toList());
-        } else {
-            // 나간 적이 없으면(null) 모든 메시지 표시
-            messageList = allMessages;
-        }
+        ChatStatus myStatus = participants.stream()
+                .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
+                .findFirst()
+                .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
+        List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
+//        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
         Object extraInfo = null;
         String thumbnailUrl = null;
@@ -231,6 +232,7 @@ public class ChatService {
     /** 읽음 시각 갱신 */
     @Transactional
     public void markRead(CustomUserDetails user, Long roomId) {
+        log.info("markRead({}, {})", user.getUser().getId(), roomId);
         int updated = chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
         if (updated == 0) throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다.");
     }
@@ -238,16 +240,19 @@ public class ChatService {
     /** 내 목록에서 채팅방 삭제 (상대방 유지) */
     @Transactional
     public void deleteChatRoom(CustomUserDetails user, Long chatRoomId) {
+        log.info("deleteChatRoom({}, {})", user.getUser().getId(), chatRoomId);
         ChatStatus chatStatus = chatStatusRepository.findByUserIdAndChatRoomId(user.getUser().getId(), chatRoomId);
         if (chatStatus == null)
             throw new IllegalArgumentException("해당 채팅방에 대한 참여 정보를 찾을 수 없습니다.");
-        chatStatus.setLeftAt(LocalDateTime.now()); // 현재 시간 기록
+        chatStatus.setChatStatus(false);
+        chatStatus.setDeletedAt(LocalDateTime.now());
         chatStatusRepository.save(chatStatus);
     }
 
     /** 거래 상태 변경 */
     @Transactional
     public void updateTradeStatus(CustomUserDetails user, Long roomId, Enum.UsedItemStatus newStatus) {
+        log.info("updateTradeStatus({}, {})", user.getUser().getId(), roomId);
         User currentUser = user.getUser();
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("채팅방을 찾을 수 없습니다. ID: " + roomId));
@@ -277,6 +282,7 @@ public class ChatService {
     /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
     @Transactional
     public ChatMessagesRes saveMessage(CustomUserDetails user, ChatMessageRequest message) {
+        log.info("saveMessage({}, {})", user.getUser().getId(), message);
         ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("메시지를 보낼 채팅방을 찾을 수 없습니다."));
 
@@ -296,6 +302,21 @@ public class ChatService {
 
         log.info(">>> ChatRoom {} updateTime 갱신 = {}", chatRoom.getId(), saved.getCreatedAt());
 
+        // 상대방 상태 확인 및 자동 복구
+        List<ChatStatus> statuses = chatStatusRepository.findByChatRoomId(chatRoom.getId());
+        for (ChatStatus status : statuses) {
+            // 상대방(메시지 보낸 사람 제외)
+            if (!status.getUser().getId().equals(user.getUser().getId())) {
+                if (!status.isChatStatus()) {
+                    // ✅ 삭제한 상대방 복구
+                    status.setChatStatus(true);
+//                    status.setDeletedAt(null);
+                    status.setLastDate(LocalDateTime.now());
+                    chatStatusRepository.save(status);
+                    log.info(">>> 복구: {}님이 삭제했던 방 {} 다시 활성화됨", status.getUser().getEmail(), chatRoom.getId());
+                }
+            }
+        }
         return ChatMessagesRes.builder()
                 .chatType(saved.getChatType())
                 .message(saved.getMessage())
