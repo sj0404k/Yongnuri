@@ -189,9 +189,7 @@ public class ChatService {
                 .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
-        List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(
-                roomId, myStatus.getDeletedAt()
-        );
+        List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
 //        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
         Object extraInfo = null;
