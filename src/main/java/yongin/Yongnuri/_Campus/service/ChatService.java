@@ -309,7 +309,7 @@ public class ChatService {
                 if (!status.isChatStatus()) {
                     // ✅ 삭제한 상대방 복구
                     status.setChatStatus(true);
-                    status.setDeletedAt(null);
+//                    status.setDeletedAt(null);
                     status.setLastDate(LocalDateTime.now());
                     chatStatusRepository.save(status);
                     log.info(">>> 복구: {}님이 삭제했던 방 {} 다시 활성화됨", status.getUser().getEmail(), chatRoom.getId());
