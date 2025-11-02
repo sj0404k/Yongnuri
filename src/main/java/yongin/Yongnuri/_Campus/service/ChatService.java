@@ -41,6 +41,7 @@ public class ChatService {
     /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
+        log.debug("getChatRooms({}, {})", user, type);
         // 1️⃣ 내가 삭제하지 않은 참여방만 조회
         List<ChatStatus> activeStatuses = chatStatusRepository.findByUserIdAndChatStatusTrue(user.getUser().getId());
         if (activeStatuses.isEmpty()) return Collections.emptyList();
@@ -96,7 +97,7 @@ public class ChatService {
     /** 채팅방 생성 */
     @Transactional
     public ChatEnterRes createChatRoom(CustomUserDetails user, ChatRoomReq request) {
-        log.info("createChatRoom");
+        log.info("createChatRoom({}, {})", user, request);
         List<ChatRoom> existingRooms = chatRoomRepository.findByTypeAndTypeIdWithParticipantsAndLock(
                 request.getType(), request.getTypeId());
 
@@ -167,7 +168,7 @@ public class ChatService {
     /** 채팅방 입장 */
     @Transactional(readOnly = true)
     public ChatEnterRes getEnterChatRoom(CustomUserDetails user, Long roomId) {
-        log.info("getEnterChatRoom");
+        log.info("getEnterChatRoom({}, {})", user, roomId);
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."));
 
@@ -231,7 +232,7 @@ public class ChatService {
     /** 읽음 시각 갱신 */
     @Transactional
     public void markRead(CustomUserDetails user, Long roomId) {
-        log.info("markRead");
+        log.info("markRead({}, {})", user, roomId);
         int updated = chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
         if (updated == 0) throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다.");
     }
@@ -239,7 +240,7 @@ public class ChatService {
     /** 내 목록에서 채팅방 삭제 (상대방 유지) */
     @Transactional
     public void deleteChatRoom(CustomUserDetails user, Long chatRoomId) {
-        log.info("deleteChatRoom");
+        log.info("deleteChatRoom({}, {})", user, chatRoomId);
         ChatStatus chatStatus = chatStatusRepository.findByUserIdAndChatRoomId(user.getUser().getId(), chatRoomId);
         if (chatStatus == null)
             throw new IllegalArgumentException("해당 채팅방에 대한 참여 정보를 찾을 수 없습니다.");
@@ -251,7 +252,7 @@ public class ChatService {
     /** 거래 상태 변경 */
     @Transactional
     public void updateTradeStatus(CustomUserDetails user, Long roomId, Enum.UsedItemStatus newStatus) {
-        log.info("updateTradeStatus");
+        log.info("updateTradeStatus({}, {})", user, roomId);
         User currentUser = user.getUser();
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("채팅방을 찾을 수 없습니다. ID: " + roomId));
@@ -281,7 +282,7 @@ public class ChatService {
     /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
     @Transactional
     public ChatMessagesRes saveMessage(CustomUserDetails user, ChatMessageRequest message) {
-        log.info("save message");
+        log.info("saveMessage({}, {})", user, message);
         ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("메시지를 보낼 채팅방을 찾을 수 없습니다."));
 
