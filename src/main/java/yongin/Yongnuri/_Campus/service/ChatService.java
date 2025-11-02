@@ -181,8 +181,14 @@ public class ChatService {
                 .filter(u -> !u.getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElse(null);
-
-        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
+        ChatStatus myStatus = participants.stream()
+                .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
+                .findFirst()
+                .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
+        List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(
+                roomId, myStatus.getDeletedAt()
+        );
+//        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
         Object extraInfo = null;
         String thumbnailUrl = null;
@@ -235,6 +241,7 @@ public class ChatService {
         if (chatStatus == null)
             throw new IllegalArgumentException("해당 채팅방에 대한 참여 정보를 찾을 수 없습니다.");
         chatStatus.setChatStatus(false);
+        chatStatus.setDeletedAt(LocalDateTime.now());
         chatStatusRepository.save(chatStatus);
     }
 

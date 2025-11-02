@@ -40,4 +40,5 @@ public class ChatStatus {
     private LocalDateTime firstDate; // 처음 접속 시간
     private LocalDateTime lastDate;  // 마지막 접속 시간
     private boolean chatStatus;      // true = 활성화, false = 비활성화
+    private LocalDateTime deletedAt;    //글 삭제 시간
 }
