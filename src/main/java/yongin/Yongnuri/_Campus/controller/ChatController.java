@@ -1,6 +1,7 @@
 package yongin.Yongnuri._Campus.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -25,6 +26,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/chat")
+@Slf4j
 public class ChatController {
 
     private final SimpMessagingTemplate messagingTemplate;
@@ -39,6 +41,7 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam Enum.ChatType type
     ) {
+        log.info("get /rooms");
         List<ChatRoomDto> rooms = chatService.getChatRooms(user, type);
         return ResponseEntity.ok(rooms);
     }
@@ -49,6 +52,7 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable("roomId") Long roomId
     ) {
+        log.info("Get /rooms/{roomId}");
         ChatEnterRes room = chatService.getEnterChatRoom(user, roomId);
         return ResponseEntity.ok(room);
     }
@@ -59,6 +63,7 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable Long roomId
     ) {
+        log.info("patch /rooms/{roomId}/read");
         chatService.markRead(user, roomId);
         return ResponseEntity.ok().build();
     }
@@ -69,6 +74,7 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserDetails user,
             @RequestBody ChatRoomReq request
     ) {
+        log.info("Post /rooms");
         ChatEnterRes createdRoom = chatService.createChatRoom(user, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdRoom);
     }
@@ -79,6 +85,7 @@ public class ChatController {
             @AuthenticationPrincipal CustomUserDetails user,
             @PathVariable("roomId") Long roomId
     ) {
+        log.info("Delete /rooms/{roomId}");
         chatService.deleteChatRoom(user, roomId);
         return ResponseEntity.noContent().build();
     }
@@ -90,6 +97,7 @@ public class ChatController {
             @PathVariable Long roomId,
             @RequestBody TradeStatusUpdateReq request
     ) {
+        log.info("Patch /rooms/{roomId}/trade-status");
         chatService.updateTradeStatus(user, roomId, request.getStatus());
         return ResponseEntity.ok().build();
     }
@@ -98,6 +106,7 @@ public class ChatController {
     @MessageMapping("/rooms/messages")
     public void sendMessage(@AuthenticationPrincipal CustomUserDetails user,
                             @RequestBody ChatMessageRequest message) {
+        log.info("Send /rooms/messages");
         ChatMessagesRes res = chatService.saveMessage(user, message);
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), res);
     }
@@ -106,6 +115,7 @@ public class ChatController {
     @PostMapping("/rooms/messages")
     public ResponseEntity<ChatMessagesRes> sendMessagePost(@AuthenticationPrincipal CustomUserDetails user,
                                                            @RequestBody ChatMessageRequest message) {
+        log.info("testPost /rooms/messages");
         ChatMessagesRes res = chatService.saveMessage(user, message);
         return ResponseEntity.ok(res);
     }
@@ -115,6 +125,7 @@ public class ChatController {
     @PostMapping("/rooms/report")
     public ResponseEntity<?> reportChat(@AuthenticationPrincipal CustomUserDetails user,
                                         @RequestBody ReportReq.reportDto reportReq) {
+        log.info("post /rooms/report");
         reportReq.setPostType(Enum.ChatType.Chat);
         Long reportedUserId = reportService.reports(user, reportReq);
         if (reportedUserId != null) {
