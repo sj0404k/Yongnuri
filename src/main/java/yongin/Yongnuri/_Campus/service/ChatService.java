@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.admin.AdminConfig;
@@ -39,9 +38,10 @@ public class ChatService {
     private final AdminConfig adminConfig;
     private final ImageRepository imageRepository;
 
-    /** 채팅방 목록 */
-    @Transactional(readOnly = true)
+    /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
+    @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
+        // 1️⃣ 내가 삭제하지 않은 참여방만 조회
         List<ChatStatus> activeStatuses = chatStatusRepository.findByUserIdAndChatStatusTrue(user.getUser().getId());
         if (activeStatuses.isEmpty()) return Collections.emptyList();
 
@@ -49,26 +49,48 @@ public class ChatService {
                 .map(cs -> cs.getChatRoom().getId())
                 .toList();
 
+        // 2️⃣ 타입별 필터
         Enum.ChatType chatType = (type != null) ? type : Enum.ChatType.ALL;
         List<ChatRoom> rooms = (chatType == Enum.ChatType.ALL)
                 ? chatRoomRepository.findByIdInWithParticipants(activeRoomIds)
                 : chatRoomRepository.findByIdInAndTypeWithParticipants(activeRoomIds, chatType);
 
+        if (rooms.isEmpty()) return Collections.emptyList();
+
+        // 3️⃣ 각 방의 "마지막 메시지" 한 번에 조회
         Map<Long, ChatMessages> lastMessagesMap = chatMessagesRepository.findLastMessagesByRoomIds(activeRoomIds)
                 .stream()
                 .collect(Collectors.toMap(msg -> msg.getChatRoom().getId(), Function.identity()));
 
-        return rooms.stream()
-                .map(room -> {
-                    User opponentUser = room.getParticipants().stream()
-                            .map(ChatStatus::getUser)
-                            .filter(u -> !u.getId().equals(user.getUser().getId()))
-                            .findFirst()
-                            .orElse(null);
-                    ChatMessages lastMessage = lastMessagesMap.get(room.getId());
-                    return ChatRoomDto.fromEntity(room, opponentUser, lastMessage);
-                })
-                .collect(Collectors.toList());
+        // 4️⃣ DTO + 정렬 기준 시각 계산
+        List<WithSort<ChatRoomDto>> boxed = new ArrayList<>(rooms.size());
+        for (ChatRoom room : rooms) {
+            User opponentUser = room.getParticipants().stream()
+                    .map(ChatStatus::getUser)
+                    .filter(u -> !u.getId().equals(user.getUser().getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            ChatMessages lastMessage = lastMessagesMap.get(room.getId());
+
+            // ✅ 정렬 기준: 마지막 메시지 시각(우선) → 없으면 room.updateTime
+            LocalDateTime sortTs = (lastMessage != null && lastMessage.getCreatedAt() != null)
+                    ? lastMessage.getCreatedAt()
+                    : room.getUpdateTime();
+
+            ChatRoomDto dto = ChatRoomDto.fromEntity(room, opponentUser, lastMessage);
+            boxed.add(new WithSort<>(dto, sortTs != null ? sortTs : LocalDateTime.MIN));
+        }
+
+        // 5️⃣ 최신순(내림차순)
+        boxed.sort((a, b) -> b.sortKey.compareTo(a.sortKey));
+        return boxed.stream().map(w -> w.value).toList();
+    }
+
+    private static class WithSort<T> {
+        final T value;
+        final LocalDateTime sortKey;
+        WithSort(T v, LocalDateTime k) { this.value = v; this.sortKey = k; }
     }
 
     /** 채팅방 생성 */
@@ -94,103 +116,61 @@ public class ChatService {
         if (existing.isPresent()) {
             log.info("Existing room found {}. Entering.", existing.get().getId());
             return getEnterChatRoom(user, existing.get().getId());
-        } else {
-            log.info("No existing room. Creating new one for post {} with user {}",
-                    request.getTypeId(), toUser.getId());
+        }
 
-            if (toUser.getId().equals(user.getUser().getId())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "본인에게는 채팅을 보낼 수 없습니다.");
-            }
+        // 🔹 새로운 방 생성
+        ChatRoom newChatRoom = ChatRoom.builder()
+                .type(request.getType())
+                .typeId(request.getTypeId())
+                .createTime(LocalDateTime.now())
+                .updateTime(LocalDateTime.now())
+                .status(ChatRoom.RoomStatus.ACTIVE)
+                .build();
+        chatRoomRepository.save(newChatRoom);
 
-            if (request.getType() != Enum.ChatType.ADMIN) {
-                User targetUser;
-                switch (request.getType()) {
-                    case LOST_ITEM -> {
-                        LostItem lostItem = lostItemRepository.findById(request.getTypeId())
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "분실물 게시글을 찾을 수 없습니다."));
-                        targetUser = lostItem.getUser();
-                    }
-                    case USED_ITEM -> {
-                        UsedItem usedItem = usedItemRepository.findById(request.getTypeId())
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "중고거래 게시글을 찾을 수 없습니다."));
-                        targetUser = userRepository.findById(usedItem.getUserId())
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 게시글 작성자를 찾을 수 없습니다."));
-                    }
-                    case GROUP_BUY -> {
-                        GroupBuy groupBuy = groupBuyRepository.findById(request.getTypeId())
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공동구매 게시글을 찾을 수 없습니다."));
-                        targetUser = userRepository.findById(groupBuy.getUserId())
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당 게시글 작성자를 찾을 수 없습니다."));
-                    }
-                    case ADMIN -> targetUser = userRepository.findByEmail(adminConfig.getEmail())
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
-                    default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 채팅 타입입니다.");
-                }
-                if (!targetUser.getId().equals(toUser.getId())) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시글 작성자가 아닌 사용자에게 채팅을 요청했습니다.");
-                }
-            }
-
-            ChatRoom newChatRoom = ChatRoom.builder()
-                    .type(request.getType())
-                    .typeId(request.getTypeId())
-                    .createTime(LocalDateTime.now())
-                    .updateTime(LocalDateTime.now())
-                    .status(ChatRoom.RoomStatus.ACTIVE)
-                    .build();
-            chatRoomRepository.save(newChatRoom);
-
-            // ✅ 초기 메시지 저장 (sender 반드시 세팅)
-            if (request.getMessageType() == ChatMessages.messageType.text && request.getMessage() != null) {
-                ChatMessages newChatMessages = ChatMessages.builder()
-                        .chatRoom(newChatRoom)
-                        .chatType(ChatMessages.messageType.text)
-                        .message(request.getMessage())
-                        .sender(user.getUser())               // ✅ 중요
-                        .createdAt(LocalDateTime.now())
-                        .build();
-                chatMessagesRepository.save(newChatMessages);
-            }// 초기 메시지가 이미지인 경우
-            else if (request.getMessageType() == ChatMessages.messageType.img && request.getMessage() != null) {
-            ChatMessages newChatMessages = ChatMessages.builder()
+        // 🔹 초기 메시지 저장 (있을 경우)
+        if (request.getMessage() != null) {
+            ChatMessages initMsg = ChatMessages.builder()
                     .chatRoom(newChatRoom)
-                    .chatType(ChatMessages.messageType.img)
+                    .chatType(request.getMessageType())
                     .message(request.getMessage())
                     .sender(user.getUser())
                     .createdAt(LocalDateTime.now())
                     .build();
-            chatMessagesRepository.save(newChatMessages);
+            chatMessagesRepository.save(initMsg);
+
+            // ✅ 방 updateTime 최신 메시지로 갱신
+            newChatRoom.setUpdateTime(initMsg.getCreatedAt());
+            chatRoomRepository.saveAndFlush(newChatRoom);
         }
 
-            ChatStatus myStatus = ChatStatus.builder()
-                    .chatRoom(newChatRoom)
-                    .user(user.getUser())
-                    .firstDate(LocalDateTime.now())
-                    .lastDate(LocalDateTime.now())
-                    .chatStatus(true)
-                    .build();
+        ChatStatus myStatus = ChatStatus.builder()
+                .chatRoom(newChatRoom)
+                .user(user.getUser())
+                .firstDate(LocalDateTime.now())
+                .lastDate(LocalDateTime.now())
+                .chatStatus(true)
+                .build();
 
-            ChatStatus opponentStatus = ChatStatus.builder()
-                    .chatRoom(newChatRoom)
-                    .user(toUser)
-                    .firstDate(LocalDateTime.now())
-                    .lastDate(LocalDateTime.now())
-                    .chatStatus(true)
-                    .build();
+        ChatStatus opponentStatus = ChatStatus.builder()
+                .chatRoom(newChatRoom)
+                .user(toUser)
+                .firstDate(LocalDateTime.now())
+                .lastDate(LocalDateTime.now())
+                .chatStatus(true)
+                .build();
 
-            chatStatusRepository.saveAll(List.of(myStatus, opponentStatus));
-            return getEnterChatRoom(user, newChatRoom.getId());
-        }
+        chatStatusRepository.saveAll(List.of(myStatus, opponentStatus));
+        return getEnterChatRoom(user, newChatRoom.getId());
     }
 
-    /** 채팅방 입장 상세 — ✅ 항상 senderId/senderEmail 포함해서 반환 */
+    /** 채팅방 입장 */
     @Transactional(readOnly = true)
     public ChatEnterRes getEnterChatRoom(CustomUserDetails user, Long roomId) {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."));
 
         List<ChatStatus> participants = chatStatusRepository.findByChatRoomId(roomId);
-
         participants.stream()
                 .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
                 .findFirst()
@@ -204,132 +184,110 @@ public class ChatService {
 
         List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
-        // 7. 게시글 등 추가 정보 조회
         Object extraInfo = null;
         String thumbnailUrl = null;
         switch (room.getType()) {
-            case LOST_ITEM: {
+            case LOST_ITEM -> {
                 LostItem lost = lostItemRepository.findById(room.getTypeId()).orElse(null);
                 extraInfo = lost;
-
                 if (lost != null && Boolean.TRUE.equals(lost.getIsImages())) {
-                    thumbnailUrl = imageRepository
-                            .findByTypeAndTypeIdInAndSequence("LOST_ITEM", List.of(lost.getId()), 1)
-                            .stream()
-                            .findFirst()
-                            .map(Image::getImageUrl)
-                            .orElse(null);
+                    thumbnailUrl = imageRepository.findByTypeAndTypeIdInAndSequence("LOST_ITEM", List.of(lost.getId()), 1)
+                            .stream().findFirst().map(Image::getImageUrl).orElse(null);
                 }
-                break;
             }
-            case USED_ITEM: {
+            case USED_ITEM -> {
                 UsedItem used = usedItemRepository.findById(room.getTypeId()).orElse(null);
                 extraInfo = used;
-
                 if (used != null && Boolean.TRUE.equals(used.getIsImages())) {
-                    thumbnailUrl = imageRepository
-                            .findByTypeAndTypeIdInAndSequence("USED_ITEM", List.of(used.getId()), 1)
-                            .stream()
-                            .findFirst()
-                            .map(Image::getImageUrl)
-                            .orElse(null);
+                    thumbnailUrl = imageRepository.findByTypeAndTypeIdInAndSequence("USED_ITEM", List.of(used.getId()), 1)
+                            .stream().findFirst().map(Image::getImageUrl).orElse(null);
                 }
-                break;
             }
-            case GROUP_BUY: {
+            case GROUP_BUY -> {
                 GroupBuy group = groupBuyRepository.findById(room.getTypeId()).orElse(null);
                 extraInfo = group;
-
                 if (group != null && Boolean.TRUE.equals(group.getIsImages())) {
-                    thumbnailUrl = imageRepository
-                            .findByTypeAndTypeIdInAndSequence("GROUP_BUY", List.of(group.getId()), 1)
-                            .stream()
-                            .findFirst()
-                            .map(Image::getImageUrl)
-                            .orElse(null);
+                    thumbnailUrl = imageRepository.findByTypeAndTypeIdInAndSequence("GROUP_BUY", List.of(group.getId()), 1)
+                            .stream().findFirst().map(Image::getImageUrl).orElse(null);
                 }
-                break;
             }
-            case ADMIN: {
-                User adminUser = userRepository.findByEmail(adminConfig.getEmail())
-                        .orElse(null);
+            case ADMIN -> {
+                User adminUser = userRepository.findByEmail(adminConfig.getEmail()).orElse(null);
                 extraInfo = (adminUser != null && adminUser.getText() != null)
                         ? adminUser.getText()
                         : "**채팅 공지사항**";
-                break;
             }
         }
-
-        // 8. DTO로 반환
         return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
     }
 
-
-    /** (신규) 읽음/입장 시각 갱신 — 단건 UPDATE */
+    /** 읽음 시각 갱신 */
     @Transactional
     public void markRead(CustomUserDetails user, Long roomId) {
         int updated = chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
-        if (updated == 0) {
-            throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다.");
-        }
+        if (updated == 0) throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다.");
     }
 
+    /** 내 목록에서 채팅방 삭제 (상대방 유지) */
     @Transactional
     public void deleteChatRoom(CustomUserDetails user, Long chatRoomId) {
-        ChatStatus chatStatus = chatStatusRepository.findByUserIdAndChatRoomId(
-                user.getUser().getId(), chatRoomId);
-        if (chatStatus == null) {
+        ChatStatus chatStatus = chatStatusRepository.findByUserIdAndChatRoomId(user.getUser().getId(), chatRoomId);
+        if (chatStatus == null)
             throw new IllegalArgumentException("해당 채팅방에 대한 참여 정보를 찾을 수 없습니다.");
-        }
         chatStatus.setChatStatus(false);
         chatStatusRepository.save(chatStatus);
     }
 
+    /** 거래 상태 변경 */
     @Transactional
     public void updateTradeStatus(CustomUserDetails user, Long roomId, Enum.UsedItemStatus newStatus) {
         User currentUser = user.getUser();
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("채팅방을 찾을 수 없습니다. ID: " + roomId));
 
-        if (chatRoom.getType() != Enum.ChatType.USED_ITEM) {
+        if (chatRoom.getType() != Enum.ChatType.USED_ITEM)
             throw new IllegalArgumentException("거래 상태를 변경할 수 없는 종류의 채팅방입니다.");
-        }
 
         Long usedItemId = chatRoom.getTypeId();
         UsedItem usedItem = usedItemRepository.findById(usedItemId)
-                .orElseThrow(() -> new ResourceNotFoundException("연결된 중고거래 게시글을 찾을 수 없습니다. ID: " + usedItemId));
+                .orElseThrow(() -> new ResourceNotFoundException("연결된 중고거래 게시글을 찾을 수 없습니다."));
 
-        if (!usedItem.getUserId().equals(currentUser.getId())) {
+        if (!usedItem.getUserId().equals(currentUser.getId()))
             throw new AccessDeniedException("거래 상태를 변경할 권한이 없습니다.");
-        }
 
         usedItem.setStatus(newStatus);
         usedItemRepository.save(usedItem);
 
-        String notificationMessage = "판매자가 상품 상태를 '" + newStatus + "'(으)로 변경했습니다.";
+        String msg = "판매자가 상품 상태를 '" + newStatus + "'(으)로 변경했습니다.";
         Notificationres notification = Notificationres.builder()
                 .chatType(Enum.ChatType.Chat)
                 .typeId(chatRoom.getId())
-                .message(notificationMessage)
+                .message(msg)
                 .build();
         messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, notification);
     }
 
-    /** 메시지 저장(웹소켓/HTTP 공용) — ✅ sender 보장 */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
+    @Transactional
     public ChatMessagesRes saveMessage(CustomUserDetails user, ChatMessageRequest message) {
         ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("메시지를 보낼 채팅방을 찾을 수 없습니다."));
 
-        ChatMessages newChatMessages = ChatMessages.builder()
+        ChatMessages newMsg = ChatMessages.builder()
                 .chatRoom(chatRoom)
                 .chatType(message.getType())
                 .message(message.getMessage())
-                .sender(user.getUser())                // ✅ 중요: 항상 설정
+                .sender(user.getUser())
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        ChatMessages saved = chatMessagesRepository.save(newChatMessages);
+        ChatMessages saved = chatMessagesRepository.save(newMsg);
+
+        // ✅ 핵심: 방의 updateTime을 최신 메시지로 갱신하고 즉시 flush
+        chatRoom.setUpdateTime(saved.getCreatedAt());
+        chatRoomRepository.saveAndFlush(chatRoom);
+
+        log.info(">>> ChatRoom {} updateTime 갱신 = {}", chatRoom.getId(), saved.getCreatedAt());
 
         return ChatMessagesRes.builder()
                 .chatType(saved.getChatType())

@@ -7,30 +7,30 @@ import yongin.Yongnuri._Campus.domain.Enum;
 
 import java.time.LocalDateTime;
 
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class ChatRoomDto {
-    private Long id;                    //방 id
-    private Enum.ChatType type;         //채팅의 타입 ( 전체, 중고, 분실, 공동구매, 관리자)
-    private String lastMessage;         //마지막 메시지
-    private String updateTime;          //마지막 채팅 보낸 시간
-    private String toUserNickName;              //user2 아마 게시글 작성자? 상대방
+    private Long id;                    // 방 id
+    private Enum.ChatType type;         // 채팅 타입 (중고, 분실, 공동구매 등)
+    private String lastMessage;         // 마지막 메시지 내용
+    private String updateTime;          // 마지막 메시지 시간(문자열 변환)
+    private String toUserNickName;      // 상대방 닉네임
 
-    // 엔티티 → DTO 변환
-    public static ChatRoomDto fromEntity(ChatRoom room, User toUser, ChatMessages chatMessages) {
+    // ✅ 수정 핵심: 마지막 메시지가 있으면 그 시각으로 updateTime 표시
+    public static ChatRoomDto fromEntity(ChatRoom room, User toUser, ChatMessages lastMessage) {
+        LocalDateTime timeToShow = (lastMessage != null && lastMessage.getCreatedAt() != null)
+                ? lastMessage.getCreatedAt()
+                : room.getUpdateTime();
+
         return ChatRoomDto.builder()
                 .id(room.getId())
-                .lastMessage(chatMessages != null
-                        ? chatMessages.getMessage()
-                        : "" )
-                .toUserNickName(toUser.getNickName())
                 .type(room.getType())
-                .updateTime(TimeUtils.toRelativeTime(room.getUpdateTime()))
-
+                .lastMessage(lastMessage != null ? lastMessage.getMessage() : "")
+                .toUserNickName(toUser != null ? toUser.getNickName() : "알 수 없음")
+                .updateTime(TimeUtils.toRelativeTime(timeToShow))  // ✅ 핵심
                 .build();
     }
 }
