@@ -41,7 +41,7 @@ public class ChatService {
     /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
-        log.debug("getChatRooms({}, {})", user, type);
+        log.debug("getChatRooms({}, {})", user.getUser().getId(), type);
         // 1️⃣ 내가 삭제하지 않은 참여방만 조회
         List<ChatStatus> activeStatuses = chatStatusRepository.findByUserIdAndChatStatusTrue(user.getUser().getId());
         if (activeStatuses.isEmpty()) return Collections.emptyList();
@@ -97,7 +97,7 @@ public class ChatService {
     /** 채팅방 생성 */
     @Transactional
     public ChatEnterRes createChatRoom(CustomUserDetails user, ChatRoomReq request) {
-        log.info("createChatRoom({}, {})", user, request);
+        log.info("createChatRoom({}, {})", user.getUser().getId(), request);
         List<ChatRoom> existingRooms = chatRoomRepository.findByTypeAndTypeIdWithParticipantsAndLock(
                 request.getType(), request.getTypeId());
 
@@ -116,59 +116,60 @@ public class ChatService {
 
         if (existing.isPresent()) {
             log.info("Existing room found {}. Entering.", existing.get().getId());
+
             return getEnterChatRoom(user, existing.get().getId());
-        }
-
-        // 🔹 새로운 방 생성
-        ChatRoom newChatRoom = ChatRoom.builder()
-                .type(request.getType())
-                .typeId(request.getTypeId())
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .status(ChatRoom.RoomStatus.ACTIVE)
-                .build();
-        chatRoomRepository.save(newChatRoom);
-
-        // 🔹 초기 메시지 저장 (있을 경우)
-        if (request.getMessage() != null) {
-            ChatMessages initMsg = ChatMessages.builder()
-                    .chatRoom(newChatRoom)
-                    .chatType(request.getMessageType())
-                    .message(request.getMessage())
-                    .sender(user.getUser())
-                    .createdAt(LocalDateTime.now())
+        }else {
+            // 🔹 새로운 방 생성
+            ChatRoom newChatRoom = ChatRoom.builder()
+                    .type(request.getType())
+                    .typeId(request.getTypeId())
+                    .createTime(LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
+                    .status(ChatRoom.RoomStatus.ACTIVE)
                     .build();
-            chatMessagesRepository.save(initMsg);
+            chatRoomRepository.save(newChatRoom);
 
-            // ✅ 방 updateTime 최신 메시지로 갱신
-            newChatRoom.setUpdateTime(initMsg.getCreatedAt());
-            chatRoomRepository.saveAndFlush(newChatRoom);
+            // 🔹 초기 메시지 저장 (있을 경우)
+            if (request.getMessage() != null) {
+                ChatMessages initMsg = ChatMessages.builder()
+                        .chatRoom(newChatRoom)
+                        .chatType(request.getMessageType())
+                        .message(request.getMessage())
+                        .sender(user.getUser())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+                chatMessagesRepository.save(initMsg);
+
+                // ✅ 방 updateTime 최신 메시지로 갱신
+                newChatRoom.setUpdateTime(initMsg.getCreatedAt());
+                chatRoomRepository.saveAndFlush(newChatRoom);
+            }
+
+            ChatStatus myStatus = ChatStatus.builder()
+                    .chatRoom(newChatRoom)
+                    .user(user.getUser())
+                    .firstDate(LocalDateTime.now())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+
+            ChatStatus opponentStatus = ChatStatus.builder()
+                    .chatRoom(newChatRoom)
+                    .user(toUser)
+                    .firstDate(LocalDateTime.now())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+
+            chatStatusRepository.saveAll(List.of(myStatus, opponentStatus));
+            return getEnterChatRoom(user, newChatRoom.getId());
         }
-
-        ChatStatus myStatus = ChatStatus.builder()
-                .chatRoom(newChatRoom)
-                .user(user.getUser())
-                .firstDate(LocalDateTime.now())
-                .lastDate(LocalDateTime.now())
-                .chatStatus(true)
-                .build();
-
-        ChatStatus opponentStatus = ChatStatus.builder()
-                .chatRoom(newChatRoom)
-                .user(toUser)
-                .firstDate(LocalDateTime.now())
-                .lastDate(LocalDateTime.now())
-                .chatStatus(true)
-                .build();
-
-        chatStatusRepository.saveAll(List.of(myStatus, opponentStatus));
-        return getEnterChatRoom(user, newChatRoom.getId());
     }
 
     /** 채팅방 입장 */
     @Transactional(readOnly = true)
     public ChatEnterRes getEnterChatRoom(CustomUserDetails user, Long roomId) {
-        log.info("getEnterChatRoom({}, {})", user, roomId);
+        log.info("getEnterChatRoom({}, {})", user.getUser().getId(), roomId);
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."));
 
@@ -232,7 +233,7 @@ public class ChatService {
     /** 읽음 시각 갱신 */
     @Transactional
     public void markRead(CustomUserDetails user, Long roomId) {
-        log.info("markRead({}, {})", user, roomId);
+        log.info("markRead({}, {})", user.getUser().getId(), roomId);
         int updated = chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
         if (updated == 0) throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다.");
     }
@@ -240,7 +241,7 @@ public class ChatService {
     /** 내 목록에서 채팅방 삭제 (상대방 유지) */
     @Transactional
     public void deleteChatRoom(CustomUserDetails user, Long chatRoomId) {
-        log.info("deleteChatRoom({}, {})", user, chatRoomId);
+        log.info("deleteChatRoom({}, {})", user.getUser().getId(), chatRoomId);
         ChatStatus chatStatus = chatStatusRepository.findByUserIdAndChatRoomId(user.getUser().getId(), chatRoomId);
         if (chatStatus == null)
             throw new IllegalArgumentException("해당 채팅방에 대한 참여 정보를 찾을 수 없습니다.");
@@ -252,7 +253,7 @@ public class ChatService {
     /** 거래 상태 변경 */
     @Transactional
     public void updateTradeStatus(CustomUserDetails user, Long roomId, Enum.UsedItemStatus newStatus) {
-        log.info("updateTradeStatus({}, {})", user, roomId);
+        log.info("updateTradeStatus({}, {})", user.getUser().getId(), roomId);
         User currentUser = user.getUser();
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("채팅방을 찾을 수 없습니다. ID: " + roomId));
@@ -282,7 +283,7 @@ public class ChatService {
     /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
     @Transactional
     public ChatMessagesRes saveMessage(CustomUserDetails user, ChatMessageRequest message) {
-        log.info("saveMessage({}, {})", user, message);
+        log.info("saveMessage({}, {})", user.getUser().getId(), message);
         ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("메시지를 보낼 채팅방을 찾을 수 없습니다."));
 
