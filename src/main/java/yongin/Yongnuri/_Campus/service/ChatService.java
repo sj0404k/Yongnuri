@@ -42,30 +42,29 @@ public class ChatService {
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
         // 1️⃣ 내가 삭제하지 않은 참여방만 조회
-        List<ChatStatus> activeStatuses = chatStatusRepository.findByUserIdAndChatStatusTrue(user.getUser().getId());
+        List<ChatStatus> activeStatuses = chatStatusRepository.findActiveChatRoomsForUser(user.getUser().getId());
         if (activeStatuses.isEmpty()) return Collections.emptyList();
-
-        List<Long> activeRoomIds = activeStatuses.stream()
-                .map(cs -> cs.getChatRoom().getId())
-                .toList();
-
+        //  ChatRoom 객체 목록 추출
+        List<ChatRoom> rooms = activeStatuses.stream().map(ChatStatus::getChatRoom).distinct().toList();
+        List<Long> activeRoomIds = rooms.stream().map(ChatRoom::getId).toList();
         // 2️⃣ 타입별 필터
         Enum.ChatType chatType = (type != null) ? type : Enum.ChatType.ALL;
-        List<ChatRoom> rooms = (chatType == Enum.ChatType.ALL)
-                ? chatRoomRepository.findByIdInWithParticipants(activeRoomIds)
-                : chatRoomRepository.findByIdInAndTypeWithParticipants(activeRoomIds, chatType);
-
+        if (chatType != Enum.ChatType.ALL) {
+            rooms = rooms.stream().filter(r -> r.getType() == chatType).collect(Collectors.toList());
+        }
         if (rooms.isEmpty()) return Collections.emptyList();
-
+        //참여자 정보 미리 로드
+        Map<Long, List<ChatStatus>> participantsMap = chatStatusRepository.findByChatRoomIdInWithUser(activeRoomIds)
+                .stream().collect(Collectors.groupingBy(cs -> cs.getChatRoom().getId()));
         // 3️⃣ 각 방의 "마지막 메시지" 한 번에 조회
         Map<Long, ChatMessages> lastMessagesMap = chatMessagesRepository.findLastMessagesByRoomIds(activeRoomIds)
                 .stream()
                 .collect(Collectors.toMap(msg -> msg.getChatRoom().getId(), Function.identity()));
-
         // 4️⃣ DTO + 정렬 기준 시각 계산
         List<WithSort<ChatRoomDto>> boxed = new ArrayList<>(rooms.size());
         for (ChatRoom room : rooms) {
-            User opponentUser = room.getParticipants().stream()
+            List<ChatStatus> participants = participantsMap.getOrDefault(room.getId(), Collections.emptyList());
+            User opponentUser = participants.stream()
                     .map(ChatStatus::getUser)
                     .filter(u -> !u.getId().equals(user.getUser().getId()))
                     .findFirst()
@@ -73,10 +72,7 @@ public class ChatService {
 
             ChatMessages lastMessage = lastMessagesMap.get(room.getId());
 
-            // ✅ 정렬 기준: 마지막 메시지 시각(우선) → 없으면 room.updateTime
-            LocalDateTime sortTs = (lastMessage != null && lastMessage.getCreatedAt() != null)
-                    ? lastMessage.getCreatedAt()
-                    : room.getUpdateTime();
+            LocalDateTime sortTs = (lastMessage != null) ? lastMessage.getCreatedAt() : room.getUpdateTime();
 
             ChatRoomDto dto = ChatRoomDto.fromEntity(room, opponentUser, lastMessage);
             boxed.add(new WithSort<>(dto, sortTs != null ? sortTs : LocalDateTime.MIN));
@@ -149,7 +145,7 @@ public class ChatService {
                 .user(user.getUser())
                 .firstDate(LocalDateTime.now())
                 .lastDate(LocalDateTime.now())
-                .chatStatus(true)
+                .leftAt(null)// null( 활성) 상태
                 .build();
 
         ChatStatus opponentStatus = ChatStatus.builder()
@@ -157,7 +153,7 @@ public class ChatService {
                 .user(toUser)
                 .firstDate(LocalDateTime.now())
                 .lastDate(LocalDateTime.now())
-                .chatStatus(true)
+                .leftAt(null)// null(활성) 상태
                 .build();
 
         chatStatusRepository.saveAll(List.of(myStatus, opponentStatus));
@@ -170,8 +166,8 @@ public class ChatService {
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."));
 
-        List<ChatStatus> participants = chatStatusRepository.findByChatRoomId(roomId);
-        participants.stream()
+        List<ChatStatus> participants = chatStatusRepository.findByChatRoomIdWithUser(roomId);
+        ChatStatus myStatus = participants.stream()
                 .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
@@ -181,8 +177,19 @@ public class ChatService {
                 .filter(u -> !u.getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElse(null);
+        LocalDateTime userLeftAt = myStatus.getLeftAt(); // 내가 체팅방 나갔던 시간
+        List<ChatMessages> allMessages = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
-        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
+        List<ChatMessages> messageList;
+        if (userLeftAt != null) {
+            //  나간 적이 있다면, 나간 시간 이후의 메시지만 필터링
+            messageList = allMessages.stream()
+                    .filter(msg -> msg.getCreatedAt().isAfter(userLeftAt))
+                    .collect(Collectors.toList());
+        } else {
+            // 나간 적이 없으면(null) 모든 메시지 표시
+            messageList = allMessages;
+        }
 
         Object extraInfo = null;
         String thumbnailUrl = null;
@@ -234,7 +241,7 @@ public class ChatService {
         ChatStatus chatStatus = chatStatusRepository.findByUserIdAndChatRoomId(user.getUser().getId(), chatRoomId);
         if (chatStatus == null)
             throw new IllegalArgumentException("해당 채팅방에 대한 참여 정보를 찾을 수 없습니다.");
-        chatStatus.setChatStatus(false);
+        chatStatus.setLeftAt(LocalDateTime.now()); // 현재 시간 기록
         chatStatusRepository.save(chatStatus);
     }
 
