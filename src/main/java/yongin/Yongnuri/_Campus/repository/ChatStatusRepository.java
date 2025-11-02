@@ -21,20 +21,15 @@ public interface ChatStatusRepository extends JpaRepository<ChatStatus, Long> {
     Optional<ChatStatus> findByChatRoomIdAndUserId(Long chatRoomId, Long userId);
     List<ChatStatus> findByUserIdAndChatStatusTrue(Long userId);
 
-    // leftAt IS NULL (나가지 않은) 방을 찾음
-    List<ChatStatus> findByUserIdAndLeftAtIsNull(Long userId);
-    // 방 ID로 모든 참여자 상태를 가져올 때 User 정보도 함께 가져옴
-    @Query("SELECT cs FROM ChatStatus cs JOIN FETCH cs.user WHERE cs.chatRoom.id = :roomId")
-    List<ChatStatus> findByChatRoomIdWithUser(@Param("roomId") Long roomId);
-    // 방 ID 목록으로 모든 참여자 상태를 가져올 때 User 정보도 함께 가져옴
-    @Query("SELECT cs FROM ChatStatus cs JOIN FETCH cs.user WHERE cs.chatRoom.id IN :roomIds")
-    List<ChatStatus> findByChatRoomIdInWithUser(@Param("roomIds") List<Long> roomIds);
-    //나가지 않은 방 또는 나갔지만 새 메시지가 온 방을 모두 조회
-    @Query("SELECT cs FROM ChatStatus cs " +
-            "JOIN FETCH cs.chatRoom cr " +
-            "WHERE cs.user.id = :userId " +
-            "AND (cs.leftAt IS NULL OR cr.updateTime > cs.leftAt)")
-    List<ChatStatus> findActiveChatRoomsForUser(@Param("userId") Long userId);
+//    // leftAt IS NULL (나가지 않은) 방을 찾음
+//    List<ChatStatus> findByUserIdAndLeftAtIsNull(Long userId);
+//    // 방 ID로 모든 참여자 상태를 가져올 때 User 정보도 함께 가져옴
+//    @Query("SELECT cs FROM ChatStatus cs JOIN FETCH cs.user WHERE cs.chatRoom.id = :roomId")
+//    List<ChatStatus> findByChatRoomIdWithUser(@Param("roomId") Long roomId);
+//    // 방 ID 목록으로 모든 참여자 상태를 가져올 때 User 정보도 함께 가져옴
+//    @Query("SELECT cs FROM ChatStatus cs JOIN FETCH cs.user WHERE cs.chatRoom.id IN :roomIds")
+//    List<ChatStatus> findByChatRoomIdInWithUser(@Param("roomIds") List<Long> roomIds);
+
 
     /** ✅ lastDate만 단건 업데이트 (조회→save 대신 바로 UPDATE) */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
