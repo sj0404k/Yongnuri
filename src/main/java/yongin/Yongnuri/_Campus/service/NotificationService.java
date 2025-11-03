@@ -51,6 +51,10 @@ public class NotificationService {
         Long userId = user.getUser().getId();
         List<Notification> notifications = notificationRepository.findByUserId(userId);
 
+        notifications.forEach(notification -> notification.setRead(true));
+
+        notificationRepository.saveAll(notifications);
+
         return notifications.stream()
                 .map(Notificationres::new)
                 .collect(Collectors.toList());
