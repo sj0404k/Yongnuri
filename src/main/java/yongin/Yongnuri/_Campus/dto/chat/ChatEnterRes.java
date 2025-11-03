@@ -50,6 +50,7 @@ public class ChatEnterRes {
         private String senderNickname;  // 표시용
         private String message;
         private String createdAt;       // ISO 문자열 (LocalDateTime#toString)
+        private ChatMessages.messageType chatType; //메시지 타입
     }
 
     private static String lower(String s) {
@@ -95,6 +96,7 @@ public class ChatEnterRes {
                         .senderNickname(m.getSender() != null ? m.getSender().getNickName() : null)
                         .message(m.getMessage())
                         .createdAt(m.getCreatedAt() != null ? m.getCreatedAt().toString() : null)
+                        .chatType(m.getChatType())
                         .build())
                 .collect(Collectors.toList());
 
