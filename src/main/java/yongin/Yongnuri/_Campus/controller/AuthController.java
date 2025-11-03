@@ -85,7 +85,7 @@ public class AuthController {
      * @param user : 정보 가져옴
      * @return 뭐줘야됨?
      */
-    @PostMapping("deleteAccount")
+    @PostMapping("/deleteAccount")
     public void deleteAccount(@AuthenticationPrincipal CustomUserDetails user){
         authService.deleteAccount(user);
         log.info("회원 id 값 : ", user.getUser().toString(),"현제 상태값 : ",user.getUser().getStatus());
