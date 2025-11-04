@@ -91,7 +91,12 @@ public class HistoryService {
                 items = lostItemRepository.findByUserAndPurposeOrderByCreatedAtDesc(currentUser, Enum.LostItemPurpose.LOST);
                 break;
             case "RETURNED":
-                items = lostItemRepository.findByUserAndStatusOrderByCreatedAtDesc(currentUser, Enum.LostItemStatus.RETURNED);
+                // ✅ 내가 작성한 분실 게시글 중 RETURNED 상태만 조회
+                items = lostItemRepository.findByUserAndPurposeAndStatusOrderByCreatedAtDesc(
+                        currentUser,
+                        Enum.LostItemPurpose.LOST,  // 분실 게시글만 (습득 게시글 제외)
+                        Enum.LostItemStatus.RETURNED
+                );
                 break;
             default:
                 throw new IllegalArgumentException("잘못된 필터입니다. 'found', 'lost', 'returned'를 사용하세요.");
