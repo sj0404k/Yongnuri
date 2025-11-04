@@ -277,6 +277,40 @@ public class ChatService {
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
         List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
+        // messageList (List<ChatMessages>) 변수가 있다고 가정합니다.
+
+        List<ChatMessagesRes> dtoList = messageList.stream()
+                .map(m -> {
+                    ChatMessagesRes.ChatMessagesResBuilder resBuilder = ChatMessagesRes.builder()
+                            .chatType(m.getChatType())
+                            .createdAt(m.getCreatedAt());
+
+                    // 1. 보낸 사람 정보 매핑
+                    if (m.getSender() != null) {
+                        resBuilder.senderId(m.getSender().getId())
+                                .senderEmail(m.getSender().getEmail() != null ? m.getSender().getEmail().toLowerCase() : null)
+                                .senderNickname(m.getSender().getNickName());
+                    }
+
+                    // 2. ⭐️ 메시지 타입에 따라 분기
+                    if (m.getChatType() == ChatMessages.messageType.img) {
+                        // 2-1. [이미지]
+                        // message 필드에 URL 저장
+                        resBuilder.message(m.getMessage());
+                        // imageUrls 리스트에 단일 URL을 담아서 저장
+                        resBuilder.imageUrls(List.of(m.getMessage()));
+
+                    } else {
+                        // 2-2. [텍스트]
+                        // message 필드에 텍스트 저장
+                        resBuilder.message(m.getMessage());
+                        // imageUrls는 null (또는 Collections.emptyList())
+                        resBuilder.imageUrls(null);
+                    }
+
+                    return resBuilder.build();
+                })
+                .toList();
 //        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
         Object extraInfo = null;
@@ -323,7 +357,7 @@ public class ChatService {
                         .build();
             }
         }
-        return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
+        return ChatEnterRes.from(room, opponent, dtoList, extraInfo, thumbnailUrl);
     }
 
     /** 읽음 시각 갱신 */
@@ -377,86 +411,71 @@ public class ChatService {
     }
 
     /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
-    /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
     @Transactional
     public ChatMessagesRes saveMessage(CustomUserDetails user, ChatMessageRequest message) {
         log.info("saveMessage({}, {})", user.getUser().getId(), message);
         ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("메시지를 보낼 채팅방을 찾을 수 없습니다."));
 
-        // ✅ 이미지 리스트 처리 (추가된 로직)
-        if (message.getType() == ChatMessages.messageType.img &&
-                message.getImageUrls() != null && !message.getImageUrls().isEmpty())
-        {
-            log.info("이미지 메시지 {}개 저장 시작", message.getImageUrls().size());
-            ChatMessages lastImageMsg = null;
+        ChatMessages newMsg = ChatMessages.builder()
+                .chatRoom(chatRoom)
+                .chatType(message.getType())
+                .message(message.getMessage())
+                .sender(user.getUser())
+                .createdAt(LocalDateTime.now())
+                .build();
 
-            for (String imageUrl : message.getImageUrls()) {
-                ChatMessages imgMsg = ChatMessages.builder()
-                        .chatRoom(chatRoom)
-                        .chatType(ChatMessages.messageType.img)
-                        .message(imageUrl) // 개별 이미지 URL 저장
-                        .sender(user.getUser())
-                        .createdAt(LocalDateTime.now()) // ⭐️ (주의) 빠른 속도로 저장 시 시각이 같을 수 있음
+        ChatMessages saved = chatMessagesRepository.save(newMsg);
+
+        // ✅ 핵심: 방의 updateTime을 최신 메시지로 갱신하고 즉시 flush
+        chatRoom.setUpdateTime(saved.getCreatedAt());
+        chatRoomRepository.saveAndFlush(chatRoom);
+
+        log.info(">>> ChatRoom {} updateTime 갱신 = {}", chatRoom.getId(), saved.getCreatedAt());
+
+        // 상대방 상태 확인 및 자동 복구
+        List<ChatStatus> statuses = chatStatusRepository.findByChatRoomId(chatRoom.getId());
+        for (ChatStatus status : statuses) {
+            // 상대방(메시지 보낸 사람 제외)
+            if (!status.getUser().getId().equals(user.getUser().getId())) {
+                if (!status.isChatStatus()) {
+                    // ✅ 삭제한 상대방 복구
+                    status.setChatStatus(true);
+//                    status.setDeletedAt(null);
+                    status.setLastDate(LocalDateTime.now());
+                    chatStatusRepository.save(status);
+                    log.info(">>> 복구: {}님이 삭제했던 방 {} 다시 활성화됨", status.getUser().getEmail(), chatRoom.getId());
+                }
+            }
+        }
+        // 관리자 답변 시 유저에게 알림 전송
+        if (chatRoom.getType() == Enum.ChatType.ADMIN && user.getUser().getRole() ==Enum.UserRole.ADMIN) {
+            // 수신자 찾기
+            User receiver = statuses.stream()
+                    .map(ChatStatus::getUser)
+                    .filter(u -> !u.getId().equals(user.getUser().getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (receiver != null) {
+                Notificationres notification = Notificationres.builder()
+                        .chatType(Enum.ChatType.ADMIN)
+                        .typeId(chatRoom.getId())
+                        .title("관리자에게 문의했던 답변이 왔습니다.")
+                        .message("문의하기 페이지를 확인해주세요!")
                         .build();
-                lastImageMsg = chatMessagesRepository.save(imgMsg);
 
-                // (개선) 각 이미지 메시지를 즉시 브로드캐스트할 수 있습니다.
-                // ChatMessagesRes res = ... (ChatMessagesRes.builder() ...);
-                // messagingTemplate.convertAndSend("/sub/chat/room/" + chatRoom.getId(), res);
+                // WebSocket 전송
+                messagingTemplate.convertAndSend("/sub/notifications/" + receiver.getId(), notification);
+                log.info("관리자 답변 알림 전송 완료 → userId={}", receiver.getId());
             }
-
-            // ✅ 핵심: *마지막* 메시지 시각으로 방의 updateTime 갱신
-            if (lastImageMsg != null) {
-                chatRoom.setUpdateTime(lastImageMsg.getCreatedAt());
-                chatRoomRepository.saveAndFlush(chatRoom);
-                log.info(">>> ChatRoom {} updateTime 갱신 = {}", chatRoom.getId(), lastImageMsg.getCreatedAt());
-            }
-
-            // ... (상대방 상태 복구 로직은 동일) ...
-            List<ChatStatus> statuses = chatStatusRepository.findByChatRoomId(chatRoom.getId());
-            // ... (중략) ...
-
-            // ⭐️ (주의) 여러 이미지 전송 시, 마지막 메시지 정보만 반환되거나 null일 수 있음
-            // 클라이언트는 본인이 보낸 이미지도 구독(sub)을 통해 받는 것이 좋습니다.
-            // 여기서는 마지막 이미지 기준으로 임시 반환
-            return ChatMessagesRes.fromEntity(lastImageMsg); // (ChatMessagesRes에 fromEntity 팩토리 메소드 필요)
-
         }
-        // ✅ 기존 텍스트 메시지 또는 message 필드를 이용한 단일 메시지 처리
-        else if (message.getMessage() != null)
-        {
-            log.info("텍스트 또는 단일 메시지 저장");
-            ChatMessages newMsg = ChatMessages.builder()
-                    .chatRoom(chatRoom)
-                    .chatType(message.getType())
-                    .message(message.getMessage()) // 텍스트 또는 단일 URL
-                    .sender(user.getUser())
-                    .createdAt(LocalDateTime.now())
-                    .build();
-
-            ChatMessages saved = chatMessagesRepository.save(newMsg);
-
-            // ✅ 핵심: 방의 updateTime을 최신 메시지로 갱신하고 즉시 flush
-            chatRoom.setUpdateTime(saved.getCreatedAt());
-            chatRoomRepository.saveAndFlush(chatRoom);
-            log.info(">>> ChatRoom {} updateTime 갱신 = {}", chatRoom.getId(), saved.getCreatedAt());
-
-            // ... (상대방 상태 복구 및 알림 로직은 동일) ...
-            List<ChatStatus> statuses = chatStatusRepository.findByChatRoomId(chatRoom.getId());
-            // ... (중략) ...
-
-            return ChatMessagesRes.builder()
-                    .chatType(saved.getChatType())
-                    .message(saved.getMessage())
-                    .senderId(saved.getSender() != null ? saved.getSender().getId() : null)
-                    .senderEmail(saved.getSender() != null ? saved.getSender().getEmail().toLowerCase() : null)
-                    .createdAt(saved.getCreatedAt())
-                    .build();
-        }
-
-        // 아무 작업도 하지 않은 경우 (예: 빈 메시지)
-        log.warn("저장할 메시지 내용이 없습니다. (No text message or image URLs)");
-        return null; // 또는 예외 처리
+        return ChatMessagesRes.builder()
+                .chatType(saved.getChatType())
+                .message(saved.getMessage())
+                .senderId(saved.getSender() != null ? saved.getSender().getId() : null)
+                .senderEmail(saved.getSender() != null ? saved.getSender().getEmail().toLowerCase() : null)
+                .createdAt(saved.getCreatedAt())
+                .build();
     }
 }

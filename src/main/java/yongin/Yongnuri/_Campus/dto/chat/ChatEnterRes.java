@@ -51,6 +51,7 @@ public class ChatEnterRes {
         private String message;
         private String createdAt;       // ISO 문자열 (LocalDateTime#toString)
         private ChatMessages.messageType chatType; //메시지 타입
+        private String chatImageUrl;
     }
 
     private static String lower(String s) {
@@ -59,7 +60,7 @@ public class ChatEnterRes {
 
     public static ChatEnterRes from(ChatRoom room,
                                     User opponent,
-                                    List<ChatMessages> messageList,
+                                    List<ChatMessagesRes> messageList,
                                     Object extraInfo,
                                     String thumbnailUrl) {
 
@@ -91,12 +92,13 @@ public class ChatEnterRes {
 
         List<MessageInfo> msgs = messageList.stream()
                 .map(m -> MessageInfo.builder()
-                        .senderId(m.getSender() != null ? m.getSender().getId() : null)
-                        .senderEmail(m.getSender() != null ? lower(m.getSender().getEmail()) : null) // ✅ 추가
-                        .senderNickname(m.getSender() != null ? m.getSender().getNickName() : null)
+                        .senderId(m.getSenderId() != null ? m.getSenderId() : null)
+                        .senderEmail(m.getSenderEmail() != null ? lower(m.getSenderEmail()) : null) // ✅ 추가
+                        .senderNickname(m.getSenderNickname() != null ? m.getSenderNickname() : null)
                         .message(m.getMessage())
                         .createdAt(m.getCreatedAt() != null ? m.getCreatedAt().toString() : null)
                         .chatType(m.getChatType())
+                        .chatImageUrl(m.getImageUrls() != null ? m.getImageUrls().toString() : null)
                         .build())
                 .collect(Collectors.toList());
 
