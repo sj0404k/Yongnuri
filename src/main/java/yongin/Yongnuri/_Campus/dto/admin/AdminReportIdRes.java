@@ -23,6 +23,7 @@ public class AdminReportIdRes {
     //게시판 관련 id?
     private Enum.ChatType reportType;
     private Long typeId;
+    private String postTitle;       // ✅ 게시글 제목 추가
     private List<ImageDto> images;
 
 }

@@ -21,35 +21,20 @@ public class AuthController {
     private final UserRepository userRepository;
     private final VerificationRepository verificationRepository;
     private final AuthService authService;
-    /*
-    회원가입
-    이메일 인증, 인증 요청 오면 인증번호 확인 -> 인증시 인증번호 db 저장
-    이메일 인증 확인 검증 필요
-    이름 학과 닉네임 비번 비번 확인 값 유효성 확인
-    비번, 비번 확인 값일치 확인
-    회원 정보 저장
-    그냥 인증 된거 다 검증하고 db에 저장
-     */
 
-    // 1. 회원가입 1단 됬나?
-    @PostMapping("/join")//  !!!!!!!!!!!!!블랙 당한 사람은 재 가입 막기
+    @PostMapping("/join") // 블랙 당한 사람은 재가입 막기(서비스에서 처리)
     public ResponseEntity<String> join(@RequestBody AuthReq.joinReqDto req) {
         authService.join(req);
         return ResponseEntity.ok("회원가입 성공");
     }
 
-    // 2. 로그인
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthReq.loginReqDto req) {
-
-       return authService.login(req.getEmail(),req.getPassword());
-//        return ResponseEntity.ok("로그인 성공");
+        return authService.login(req.getEmail(), req.getPassword());
     }
 
-    // 3. 이메일 요청 (인증번호 발송) 1단 만듬
     @PostMapping("/email")
     public ResponseEntity<String> sendEmail(@RequestBody AuthReq.emailReqDto email) {
-
         if (email == null) {
             return ResponseEntity.badRequest().body("이메일 미입력");
         }
@@ -57,7 +42,6 @@ public class AuthController {
         return ResponseEntity.ok("이메일 전송 성공");
     }
 
-    // 4. 이메일 확인 1단 만듬
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody AuthReq.verifyReqDto req) {
         Integer number = req.getNumber();
@@ -73,7 +57,6 @@ public class AuthController {
         }
     }
 
-    // 5. 비밀번호 재설정 -- 아직 안함 오류가 좀 있어서 후순위로 만들 예정
     @PostMapping("/resetPassword")
     public ResponseEntity<?> resetPassword(@RequestBody AuthReq.resetPasswordReqDto req) {
         authService.rePassword(req);
@@ -81,13 +64,11 @@ public class AuthController {
     }
 
     /**
-     * 계정 탈퇴
-     * @param user : 정보 가져옴
-     * @return 뭐줘야됨?
+     * 계정 탈퇴 (인증 필요)
      */
     @PostMapping("/deleteAccount")
     public void deleteAccount(@AuthenticationPrincipal CustomUserDetails user){
         authService.deleteAccount(user);
-        log.info("회원 id 값 : ", user.getUser().toString(),"현제 상태값 : ",user.getUser().getStatus());
+        log.info("회원 id 값: {}, 현재 상태값: {}", user.getUser().getId(), user.getUser().getStatus());
     }
 }

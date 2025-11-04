@@ -92,9 +92,10 @@ public class AdminService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
-        // 2) 일반 유저만 조회(ADMIN 제외)
+        // 2) 일반 유저만 조회(ADMIN 제외), 탈퇴한 유저 제외 추가
         List<User> users = userRepository.findAll().stream()
                 .filter(u -> u.getRole() != Enum.UserRole.ADMIN)
+                .filter(u -> u.getStatus() != Enum.authStatus.WITHDRAWN)
                 .collect(Collectors.toList());
 
         // 3) DTO 변환 (승인된 신고 횟수 포함)
@@ -183,20 +184,64 @@ public class AdminService {
         User reportedUser = userRepository.findById(report.getReportedId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "피신고 유저를 찾을 수 없습니다."));
 
-        //이미지리수트
+        // 3. 닉네임 처리 (없으면 이름, 이메일 순으로 폴백)
+        String nickName = reportedUser.getNickName();
+        if (nickName == null || nickName.trim().isEmpty()) {
+            nickName = reportedUser.getName();
+        }
+        if ((nickName == null || nickName.trim().isEmpty()) && reportedUser.getEmail() != null) {
+            nickName = reportedUser.getEmail().split("@")[0];
+        }
+        if (nickName == null || nickName.trim().isEmpty()) {
+            nickName = "탈퇴한 사용자";
+        }
+
+        // 4. 이미지 조회
         List<Image> images = List.of();
         if (Boolean.TRUE.equals(report.getIsImages())) {
             images = imageRepository.findByTypeAndTypeIdOrderBySequenceAsc("REPORT", reportId);
         }
         List<ImageDto> imageDtos = images.stream().map(ImageDto::new).collect(Collectors.toList());
 
-        // 3. DTO 변환
+        // 5. 게시글 제목 조회
+        String postTitle = null;
+        if (report.getPostId() != null && report.getPostType() != null) {
+            switch (report.getPostType()) {
+                case USED_ITEM:
+                    postTitle = usedItemRepository.findById(report.getPostId())
+                            .map(item -> item.getTitle())
+                            .orElse("삭제된 게시글");
+                    break;
+                case LOST_ITEM:
+                    postTitle = lostItemRepository.findById(report.getPostId())
+                            .map(item -> item.getTitle())
+                            .orElse("삭제된 게시글");
+                    break;
+                case GROUP_BUY:
+                    postTitle = groupBuyRepository.findById(report.getPostId())
+                            .map(item -> item.getTitle())
+                            .orElse("삭제된 게시글");
+                    break;
+                case ALL:
+                case ADMIN:
+                case Chat:
+                default:
+                    postTitle = null;
+                    break;
+            }
+        }
+
+        // 6. DTO 변환
         return AdminReportIdRes.builder()
                 .id(report.getId())
                 .reportedStudentId(reportedUser.getStudentId())
                 .reportedStudentName(reportedUser.getName())
+                .reportedStudentNickName(nickName)      // ✅ 닉네임 추가
                 .reason(report.getReportReason())
                 .content(report.getContent())
+                .reportType(report.getPostType())       // ✅ 게시글 타입 추가
+                .typeId(report.getPostId())             // ✅ 게시글 ID 추가
+                .postTitle(postTitle)                   // ✅ 게시글 제목 추가
                 .images(imageDtos)
                 .build();
     }
