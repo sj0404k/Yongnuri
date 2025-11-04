@@ -19,6 +19,7 @@ import yongin.Yongnuri._Campus.dto.bookmark.BookmarkCountDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemResponseDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemUpdateRequestDto;
+import yongin.Yongnuri._Campus.dto.NotificationRequest;
 import yongin.Yongnuri._Campus.repository.*;
 
 @Service
@@ -31,6 +32,7 @@ public class LostItemService {
     private final ImageRepository imageRepository;
     private final BookmarkRepository bookmarkRepository;
     private final AppointmentRepository appointmentRepository;
+    private final NotificationService notificationService;
     @Value("${file.upload-dir}")
     private String uploadDir;
     private User getUserByEmail(String email) {
@@ -191,6 +193,16 @@ public class LostItemService {
                              for (Appointment a : appointments) {
                                  a.setStatus(Enum.AppointmentStatus.COMPLETED);
                              }
+
+                             List<Long> userIdsToNotify = appointments.stream()
+                                     .map(Appointment::getBuyerId)
+                                     .distinct()
+                                     .collect(Collectors.toList());
+                             NotificationRequest notificationRequest = new NotificationRequest();
+                             notificationRequest.setTitle("[분실물] 물품이 회수되었습니다.");
+                             notificationRequest.setMessage("내역은 마이페이지에서 확인할 수 있습니다.");
+                             notificationRequest.setTargetUserIds(userIdsToNotify);
+                             notificationService.sendNotification(notificationRequest);
                              break;
                          case DELETED:
                          case REPORTED:
