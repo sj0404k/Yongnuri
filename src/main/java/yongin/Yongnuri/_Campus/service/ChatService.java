@@ -414,6 +414,28 @@ public class ChatService {
                 }
             }
         }
+        // 관리자 답변 시 유저에게 알림 전송
+        if (chatRoom.getType() == Enum.ChatType.ADMIN && user.getUser().getRole() ==Enum.UserRole.ADMIN) {
+            // 수신자 찾기
+            User receiver = statuses.stream()
+                    .map(ChatStatus::getUser)
+                    .filter(u -> !u.getId().equals(user.getUser().getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (receiver != null) {
+                Notificationres notification = Notificationres.builder()
+                        .chatType(Enum.ChatType.ADMIN)
+                        .typeId(chatRoom.getId())
+                        .title("관리자에게 문의했던 답변이 왔습니다.")
+                        .message("문의하기 페이지를 확인해주세요!")
+                        .build();
+
+                // WebSocket 전송
+                messagingTemplate.convertAndSend("/sub/notifications/" + receiver.getId(), notification);
+                log.info("관리자 답변 알림 전송 완료 → userId={}", receiver.getId());
+            }
+        }
         return ChatMessagesRes.builder()
                 .chatType(saved.getChatType())
                 .message(saved.getMessage())
