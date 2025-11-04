@@ -289,7 +289,8 @@ public class ChatService {
                 }
             }
             case ADMIN -> {
-                User adminUser = userRepository.findByEmail(adminConfig.getEmail()).orElse(null);
+                User adminUser = userRepository.findByEmail(adminConfig.getEmail())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
                 extraInfo = (adminUser != null && adminUser.getText() != null)
                         ? adminUser.getText()
                         : "**채팅 공지사항**";
