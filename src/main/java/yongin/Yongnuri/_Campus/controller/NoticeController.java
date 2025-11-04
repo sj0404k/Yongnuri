@@ -63,8 +63,8 @@ public class NoticeController {
 
         return ResponseEntity.ok("All공지사항 작성 완료");
     }
-    @GetMapping("/allnoticedetail")
-    public AllNotice getAllNoticesDetail(@AuthenticationPrincipal CustomUserDetails user, Long postId){
+    @GetMapping("/allnoticedetail/{postId}")
+    public AllNotice getAllNoticesDetail(@AuthenticationPrincipal CustomUserDetails user,@PathVariable("postId") Long postId){
         return noticeService.getAllNoticeDetail(postId);
 
     }
