@@ -199,7 +199,7 @@ public class LostItemService {
                                      .distinct()
                                      .collect(Collectors.toList());
                              NotificationRequest notificationRequest = new NotificationRequest();
-                             notificationRequest.setTitle("[분실물] 물품이 회수되었습니다.");
+                             notificationRequest.setTitle("[분실물] 거래가 정상적으로 완료되었습니다!.");
                              notificationRequest.setMessage("내역은 마이페이지에서 확인할 수 있습니다.");
                              notificationRequest.setTargetUserIds(userIdsToNotify);
                              notificationService.sendNotification(notificationRequest);
