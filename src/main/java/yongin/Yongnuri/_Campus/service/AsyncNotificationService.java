@@ -32,7 +32,12 @@ public class AsyncNotificationService {
                 // 전체 사용자 조회
                 request.setTargetUserIds(userRepository.findAllUserIds());
                 log.info("보낸 사용자 id : {}",userRepository.findAllUserIds());
-            }            // 대상자가 없으면 작업 종료
+            }// 개별 사용자 대상인 경우
+            else if (request.getUserId() != null) {
+                request.setTargetUserIds(List.of(request.getUserId())); // 단일 ID를 리스트로 변환
+                log.info("개별 사용자({})에게 알림 발송", request.getUserId());
+            }
+            // 대상자가 없으면 작업 종료
             if (request.getTargetUserIds() == null || request.getTargetUserIds().isEmpty()){
                 log.warn("알림을 보낼 대상자가 없습니다.");
                 return;
