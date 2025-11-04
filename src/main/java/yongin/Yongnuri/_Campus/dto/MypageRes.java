@@ -18,6 +18,7 @@ public class MypageRes {
         private String email;
         private String nickName;  //닉네임 추가
         private String major;
+        private boolean isAdmin;
         // 필요 시 major 등 필드 확장 가능
     }
     @Getter

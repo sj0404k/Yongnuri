@@ -3,6 +3,7 @@ package yongin.Yongnuri._Campus.service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import yongin.Yongnuri._Campus.domain.Enum;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -50,13 +51,14 @@ public class MypageService {
 
         // 닉네임: 엔티티에 이미 nickName 필드가 존재(setMypageDetails에서 사용중)
         String nickName = user.getNickName() != null ? user.getNickName() : "";
-
+        boolean isAdmin = user.getRole() == Enum.UserRole.ADMIN;
         return new MypageRes.getpage(
                 studentId,
                 safe(user.getName()),
                 safe(user.getEmail()),
                 nickName,
-                user.getMajor()
+                user.getMajor(),
+                isAdmin
         );
     }
 

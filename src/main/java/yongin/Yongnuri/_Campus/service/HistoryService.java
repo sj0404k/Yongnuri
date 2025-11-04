@@ -32,7 +32,7 @@ public class HistoryService {
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("사용자 정보를 찾을 수 없습니다."));
     }
-//중고거래내역
+    //중고거래내역
     public List<UsedItemResponseDto> getUsedItemTransactions(String email, String type) {
         User currentUser = getUserByEmail(email);
 
@@ -45,7 +45,8 @@ public class HistoryService {
             List<Appointment> appointments = appointmentRepository.findByBuyerIdAndPostType(currentUser.getId(), "USED_ITEM");
             List<Long> postIds = appointments.stream().map(Appointment::getPostId).collect(Collectors.toList());
 
-            List<Enum.UsedItemStatus> statuses = List.of(Enum.UsedItemStatus.RESERVED, Enum.UsedItemStatus.SOLD);
+            // ✅ SOLD(거래완료)만 구매 탭에 표시
+            List<Enum.UsedItemStatus> statuses = List.of(Enum.UsedItemStatus.SOLD);
             List<UsedItem> items = usedItemRepository.findByIdInAndStatusInOrderByCreatedAtDesc(postIds, statuses);
             return convertToDtoList(items, currentUser);
         } else {
@@ -77,7 +78,7 @@ public class HistoryService {
             return dto;
         }).collect(Collectors.toList());
     }
-   //분실물내역조회
+    //분실물내역조회
     public List<LostItemResponseDto> getLostItemHistory(String email, String filter) {
         User currentUser = getUserByEmail(email);
         List<LostItem> items;
@@ -121,7 +122,7 @@ public class HistoryService {
         }).collect(Collectors.toList());
     }
 
- //공동구매내역조회
+    //공동구매내역조회
     public List<GroupBuyResponseDto> getGroupBuyHistory(String email, String filter) {
         User currentUser = getUserByEmail(email);
         List<GroupBuy> items;
