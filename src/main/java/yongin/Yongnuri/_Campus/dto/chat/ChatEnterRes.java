@@ -7,9 +7,7 @@ import lombok.NoArgsConstructor;
 import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.domain.Enum;
 
-import java.util.Collections; // ✅ [추가]
 import java.util.List;
-import java.util.Map; // ✅ [추가]
 import java.util.stream.Collectors;
 
 @Data
@@ -28,16 +26,18 @@ public class ChatEnterRes {
     public static class RoomInfo {
         private Long roomId;
         private Enum.ChatType chatType;
-        private Long chatTypeId;
-        private Long opponentId;
-        private String opponentNickname;
+        private Long chatTypeId;              // ✅ 게시글/연결 ID
+        private Long opponentId;              // 상대 유저 ID (null-safe)
+        private String opponentNickname;      // 상대 닉네임 (null-safe)
+
+        // 타입별 추가 필드
         private String title;
-        private Enum.LostItemStatus status;
-        private String price;
-        private Enum.UsedItemStatus tradeStatus;
-        private Integer peopleCount;
-        private String text;
-        private String imageUrl;
+        private Enum.LostItemStatus status;   // LOST_ITEM 상태
+        private String price;                 // USED_ITEM
+        private Enum.UsedItemStatus tradeStatus; // USED_ITEM 거래상태
+        private Integer peopleCount;          // GROUP_BUY 인원 표시 (ex. 제한)
+        private String text;                  // ADMIN 텍스트 등
+        private String imageUrl;              // 썸네일
     }
 
     @Data
@@ -45,37 +45,33 @@ public class ChatEnterRes {
     @NoArgsConstructor
     @Builder
     public static class MessageInfo {
-        // ... (내용 동일, imageUrls 필드 확인)
-        private Long senderId;
-        private String senderEmail;
-        private String senderNickname;
+        private Long senderId;          // ✅ 필수
+        private String senderEmail;     // ✅ 필수(소문자)
+        private String senderNickname;  // 표시용
         private String message;
-        private String createdAt;
-        private ChatMessages.messageType chatType;
-        private List<String> imageUrls; //  메시지 이미지 URL
+        private String createdAt;       // ISO 문자열 (LocalDateTime#toString)
+        private ChatMessages.messageType chatType; //메시지 타입
     }
 
     private static String lower(String s) {
         return s == null ? null : s.toLowerCase();
     }
 
-    // ✅ [수정] from 메서드 시그니처에 'imagesByMessageId' 파라미터 추가
     public static ChatEnterRes from(ChatRoom room,
                                     User opponent,
                                     List<ChatMessages> messageList,
                                     Object extraInfo,
-                                    String thumbnailUrl,
-                                    Map<Long, List<String>> imagesByMessageId) { // <-- ✅ [추가]
+                                    String thumbnailUrl) {
 
         RoomInfo.RoomInfoBuilder infoBuilder = RoomInfo.builder()
                 .roomId(room.getId())
                 .chatType(room.getType())
-                .chatTypeId(room.getTypeId())
+                .chatTypeId(room.getTypeId()) // ✅ 누락 보완
                 .opponentId(opponent != null ? opponent.getId() : null)
                 .opponentNickname(opponent != null ? opponent.getNickName() : "상대방")
                 .imageUrl(thumbnailUrl);
 
-        // 🔹 타입별 추가정보 매핑 (내용 동일)
+        // 🔹 타입별 추가정보 매핑
         if (extraInfo instanceof LostItem lost) {
             infoBuilder.title(lost.getTitle())
                     .status(lost.getStatus());
@@ -93,7 +89,6 @@ public class ChatEnterRes {
             infoBuilder.text(chatAdminRes.getText());
         }
 
-        // ✅ [수정] MessageInfo 생성 시 'imageUrls' 필드 채우기
         List<MessageInfo> msgs = messageList.stream()
                 .map(m -> MessageInfo.builder()
                         .senderId(m.getSender() != null ? m.getSender().getId() : null)
@@ -102,8 +97,6 @@ public class ChatEnterRes {
                         .message(m.getMessage())
                         .createdAt(m.getCreatedAt() != null ? m.getCreatedAt().toString() : null)
                         .chatType(m.getChatType())
-                        // ✅ [추가] 해당 메시지 ID의 이미지 리스트를 맵에서 찾아 설정 (없으면 빈 리스트)
-                        .imageUrls(imagesByMessageId.getOrDefault(m.getId(), Collections.emptyList()))
                         .build())
                 .collect(Collectors.toList());
 
