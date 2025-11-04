@@ -43,9 +43,11 @@ public class ChatService {
     private final ImageService imageService;
     @Value("${admin.email}")
     private String adminEmail;
+
     /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
+        // ... (내용 동일)
         log.debug("getChatRooms({}, {})", user.getUser().getId(), type);
 
         // 1️⃣ 내가 삭제하지 않은 참여방만 조회
@@ -112,6 +114,7 @@ public class ChatService {
 
 
     private static class WithSort<T> {
+        // ... (내용 동일)
         final T value;
         final LocalDateTime sortKey;
         WithSort(T v, LocalDateTime k) { this.value = v; this.sortKey = k; }
@@ -120,6 +123,7 @@ public class ChatService {
     /** 채팅방 생성 */
     @Transactional
     public ChatEnterRes createChatRoom(CustomUserDetails user, ChatRoomReq request) {
+        // ... (내용 동일)
         log.info("createChatRoom({}, {})", user.getUser().getId(), request);
 
         // 🔹 ADMIN 채팅일 경우 typeId 없이 처리
@@ -278,9 +282,28 @@ public class ChatService {
                 .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
-        List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
-//        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
+        // 1. 메시지 목록 조회
+        List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
+
+        // 2. ✅ [추가] 메시지 이미지들 한 번에 조회
+        Map<Long, List<String>> imagesByMessageId = new HashMap<>();
+        if (!messageList.isEmpty()) {
+            // 메시지 ID 리스트 추출
+            List<Long> messageIds = messageList.stream().map(ChatMessages::getId).toList();
+
+            // "CHAT" 타입이면서 메시지 ID 리스트에 포함되는 모든 이미지 조회
+            List<Image> images = imageRepository.findByTypeAndTypeIdIn("CHAT", messageIds);
+
+            // 메시지 ID별로 이미지 URL을 그룹화
+            imagesByMessageId = images.stream()
+                    .collect(Collectors.groupingBy(
+                            Image::getTypeId,
+                            Collectors.mapping(Image::getImageUrl, Collectors.toList())
+                    ));
+        }
+
+        // 3. [수정] DTO 변환 메서드에 이미지 맵 전달
         Object extraInfo = null;
         String thumbnailUrl = null;
         switch (room.getType()) {
@@ -325,12 +348,15 @@ public class ChatService {
                         .build();
             }
         }
-        return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
+
+        // 4. ✅ [수정] from 메서드 호출 시 imagesByMessageId 전달
+        return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl, imagesByMessageId);
     }
 
     /** 읽음 시각 갱신 */
     @Transactional
     public void markRead(CustomUserDetails user, Long roomId) {
+        // ... (내용 동일)
         log.info("markRead({}, {})", user.getUser().getId(), roomId);
         int updated = chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
         if (updated == 0) throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다.");
@@ -339,6 +365,7 @@ public class ChatService {
     /** 내 목록에서 채팅방 삭제 (상대방 유지) */
     @Transactional
     public void deleteChatRoom(CustomUserDetails user, Long chatRoomId) {
+        // ... (내용 동일)
         log.info("deleteChatRoom({}, {})", user.getUser().getId(), chatRoomId);
         ChatStatus chatStatus = chatStatusRepository.findByUserIdAndChatRoomId(user.getUser().getId(), chatRoomId);
         if (chatStatus == null)
@@ -351,6 +378,7 @@ public class ChatService {
     /** 거래 상태 변경 */
     @Transactional
     public void updateTradeStatus(CustomUserDetails user, Long roomId, Enum.UsedItemStatus newStatus) {
+        // ... (내용 동일)
         log.info("updateTradeStatus({}, {})", user.getUser().getId(), roomId);
         User currentUser = user.getUser();
         ChatRoom chatRoom = chatRoomRepository.findById(roomId)
@@ -381,6 +409,7 @@ public class ChatService {
     /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
     @Transactional
     public ChatMessagesRes saveMessage(CustomUserDetails user, ChatMessageRequest message, List<MultipartFile> imageFiles) {
+        // ... (내용 동일 - 이 메서드는 이미 올바르게 구현되어 있었습니다)
         log.info("saveMessage({}, {})", user.getUser().getId(), message);
 
         // 1️⃣ 채팅방 조회
@@ -465,5 +494,4 @@ public class ChatService {
                 .createdAt(saved.getCreatedAt())
                 .build();
     }
-
 }
