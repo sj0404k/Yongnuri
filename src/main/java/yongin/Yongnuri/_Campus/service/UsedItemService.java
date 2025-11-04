@@ -1,6 +1,7 @@
 package yongin.Yongnuri._Campus.service;
 
 import yongin.Yongnuri._Campus.domain.*;
+import yongin.Yongnuri._Campus.dto.NotificationRequest;
 import yongin.Yongnuri._Campus.dto.useditem.UpdateStatusRequestDto;
 import yongin.Yongnuri._Campus.dto.useditem.UsedItemCreateRequestDto;
 import yongin.Yongnuri._Campus.repository.BookmarkRepository;
@@ -38,6 +39,7 @@ public class UsedItemService {
     private final ImageRepository imageRepository;
     private final BookmarkRepository bookmarkRepository;
     private final AppointmentRepository appointmentRepository;
+    private final NotificationService notificationService;
     @Value("${file.upload-dir}")
     private String uploadDir;
 
@@ -249,6 +251,13 @@ public class UsedItemService {
                 } else {
                     appointmentRepository.saveAll(appointments);
                 }
+                NotificationRequest notificationRequest = new NotificationRequest();
+                notificationRequest.setTitle("[중고거래] 거래물품이 예약중이예요.");
+                notificationRequest.setMessage("내역은 마이페이지에서 확인할 수 있어요.");
+                notificationRequest.setUserId(buyerId); // 전체 사용자에게 알림 전송용 플래그
+
+                // 3. NotificationService 호출
+                notificationService.sendNotification(notificationRequest);
                 break;
             }
 
@@ -271,6 +280,13 @@ public class UsedItemService {
                     }
                 }
                 appointmentRepository.saveAll(appointments);
+                NotificationRequest notificationRequest = new NotificationRequest();
+                notificationRequest.setTitle("[중고거래] 거래가 정상적으로 완료됬습니다.");
+                notificationRequest.setMessage("내역은 마이페이지에서 확인할 수 있어요.");
+                notificationRequest.setUserId(buyerId); // 전체 사용자에게 알림 전송용 플래그
+
+                // 3. NotificationService 호출
+                notificationService.sendNotification(notificationRequest);
                 break;
             }
 
@@ -291,6 +307,7 @@ public class UsedItemService {
                 appointmentRepository.saveAll(appointments);
                 break;
             }
+
         }
     }
 }
