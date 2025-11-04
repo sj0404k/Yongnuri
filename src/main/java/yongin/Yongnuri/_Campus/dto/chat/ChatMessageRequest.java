@@ -14,9 +14,9 @@ import java.util.List;
 @AllArgsConstructor
 public class ChatMessageRequest {
     private Long roomId;
-//    private String sender;
+
     private ChatMessages.messageType type;
     private String message;
-//    private Long timestamp;
-private List<String> imageUrls; // ✅ 이미지 URL 리스트
+
+    private List<String> imageUrls; // ✅ 이미지 URL 리스트
 }
