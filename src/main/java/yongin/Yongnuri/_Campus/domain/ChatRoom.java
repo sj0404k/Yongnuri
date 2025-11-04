@@ -28,7 +28,7 @@ public class ChatRoom {
     @Column(nullable = false)
     private Enum.ChatType type;  // 채팅방 종류 (전체, 중고, 분실, 공동구매 등)
 
-    @Column(nullable = false)
+    @Column
     private Long typeId;  // 파생된 대상 ID (예: 게시글 ID 등)
 
     @Column(nullable = false, updatable = false)
