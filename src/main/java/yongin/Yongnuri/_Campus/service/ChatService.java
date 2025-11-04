@@ -289,11 +289,20 @@ public class ChatService {
                 }
             }
             case ADMIN -> {
+                // 관리자 User 조회
                 User adminUser = userRepository.findByEmail(adminConfig.getEmail())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
-                extraInfo = (adminUser != null && adminUser.getText() != null)
+
+                // ADMIN 채팅용 DTO 생성
+                String defaultText = "**채팅 공지사항**";  // 기본 텍스트
+                String text = (adminUser.getText() != null && !adminUser.getText().isBlank())
                         ? adminUser.getText()
-                        : "**채팅 공지사항**";
+                        : defaultText;
+
+                extraInfo = ChatAdminRes.builder()
+                        .text(text)
+                        .user(adminUser)
+                        .build();
             }
         }
         return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
