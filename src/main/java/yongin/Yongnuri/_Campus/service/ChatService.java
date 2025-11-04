@@ -98,6 +98,55 @@ public class ChatService {
     @Transactional
     public ChatEnterRes createChatRoom(CustomUserDetails user, ChatRoomReq request) {
         log.info("createChatRoom({}, {})", user.getUser().getId(), request);
+
+        // 🔹 ADMIN 채팅일 경우 typeId 없이 처리
+        if (Enum.ChatType.ADMIN.equals(request.getType())) {
+            log.info("ADMIN 타입 채팅 생성 요청입니다.");
+
+            // 이미 ADMIN 채팅방이 존재하는지 확인 (한 명당 하나만 허용할 경우)
+            Optional<ChatRoom> existingAdminRoom = chatRoomRepository.findByTypeAndParticipantsUserId(Enum.ChatType.ADMIN, user.getUser().getId());
+            if (existingAdminRoom.isPresent()) {
+                log.info("기존 ADMIN 채팅방 존재: {}", existingAdminRoom.get().getId());
+                return getEnterChatRoom(user, existingAdminRoom.get().getId());
+            }
+
+            // 🔹 새 ADMIN 방 생성
+            ChatRoom adminRoom = ChatRoom.builder()
+                    .type(Enum.ChatType.ADMIN)
+                    .createTime(LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
+                    .status(ChatRoom.RoomStatus.ACTIVE)
+                    .build();
+            chatRoomRepository.save(adminRoom);
+
+            // 🔹 관리자(User) 조회 — 예시로 관리자 이메일 기준
+            User adminUser = userRepository.findByEmail("admin@yongin.ac.kr")
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
+
+            // 🔹 채팅 상태 등록
+            ChatStatus userStatus = ChatStatus.builder()
+                    .chatRoom(adminRoom)
+                    .user(user.getUser())
+                    .firstDate(LocalDateTime.now())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+
+            ChatStatus adminStatus = ChatStatus.builder()
+                    .chatRoom(adminRoom)
+                    .user(adminUser)
+                    .firstDate(LocalDateTime.now())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+
+            chatStatusRepository.saveAll(List.of(userStatus, adminStatus));
+
+            log.info("ADMIN 채팅방 생성 완료. roomId={}", adminRoom.getId());
+            return getEnterChatRoom(user, adminRoom.getId());
+        }
+
+        // 🔹 일반 채팅 로직 (기존 코드 그대로)
         List<ChatRoom> existingRooms = chatRoomRepository.findByTypeAndTypeIdWithParticipantsAndLock(
                 request.getType(), request.getTypeId());
 
@@ -116,12 +165,11 @@ public class ChatService {
 
         if (existing.isPresent()) {
             log.info("Existing room found {}. Entering.", existing.get().getId());
-
             return getEnterChatRoom(user, existing.get().getId());
-        }else {
+        } else {
             log.info("No existing room. Creating new one for post {} with user {}",
                     request.getTypeId(), toUser.getId());
-            // 🔹 새로운 방 생성
+
             ChatRoom newChatRoom = ChatRoom.builder()
                     .type(request.getType())
                     .typeId(request.getTypeId())
@@ -131,7 +179,6 @@ public class ChatService {
                     .build();
             chatRoomRepository.save(newChatRoom);
 
-            // 🔹 초기 메시지 저장 (있을 경우)
             if (request.getMessage() != null) {
                 ChatMessages initMsg = ChatMessages.builder()
                         .chatRoom(newChatRoom)
@@ -142,7 +189,6 @@ public class ChatService {
                         .build();
                 chatMessagesRepository.save(initMsg);
 
-                // ✅ 방 updateTime 최신 메시지로 갱신
                 newChatRoom.setUpdateTime(initMsg.getCreatedAt());
                 chatRoomRepository.saveAndFlush(newChatRoom);
             }
