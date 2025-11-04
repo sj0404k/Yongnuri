@@ -2,6 +2,7 @@
 package yongin.Yongnuri._Campus.admin;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ import yongin.Yongnuri._Campus.service.NotificationService;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class AdminService {
 
     private final UserRepository userRepository;
@@ -120,6 +122,7 @@ public class AdminService {
     /** 신고 처리 (APPROVED / REJECTED) */
     @Transactional
     public boolean processReport(String email, AdminReq.reportProcessReq req) {
+        log.info("processReport email: {}", email);
         // 1. 관리자 확인
         User admin = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 정보를 확인하세요."));
@@ -131,13 +134,19 @@ public class AdminService {
         // 2. 신고 조회
         Reports report = reportRepository.findById(req.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고를 찾을 수 없습니다."));
+
+        User reportedUser = userRepository.findById(report.getReportedId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고 유저를 찾을 수 없습니다."));
+        log.info("processReport reportedUser: {}", reportedUser.getNickName());
         // 3. 상태 변경
         Enum.ReportStatus next = req.getReportStatus();
         report.setStatus(next);
         report.setProcessedAt(LocalDateTime.now());
+
         // 4. DB 저장
         reportRepository.save(report);
 
+        // 5. 게시글 상태 처리
         if (Enum.ReportStatus.APPROVED.equals(next)) {
             // 인정 → 비노출/해결 처리
             softDeletePostIfNeeded(report);
@@ -145,9 +154,26 @@ public class AdminService {
             // 미인정 → 다시 노출(활성화)
             reactivatePostIfNeeded(report);
         }
+
+        // 6. 누적 신고 횟수 계산 (게시글 작성자 기준)
+        long processedReportsCount = reportRepository.countByReportedIdAndStatus(reportedUser.getId(), Enum.ReportStatus.APPROVED);
+
+        // 7. 알림 및 계정 처리
+        if (processedReportsCount == 5 || processedReportsCount == 9) {
+            NotificationRequest notificationRequest = new NotificationRequest();
+            notificationRequest.setTitle(String.format("[관리자] 누적 신고 횟수가 %d회 도달하였습니다.", processedReportsCount));
+            notificationRequest.setMessage("10회 이상 신고 누적 시 앱 이용이 제한되니 주의하세요.");
+            notificationRequest.setUserId(reportedUser.getId());
+
+            notificationService.sendNotification(notificationRequest);
+        } else if (processedReportsCount >= 10) {
+            // 자동 탈퇴 처리
+            reportedUser.setStatus(Enum.authStatus.SUSPENDED); // 계정 비활성화
+            userRepository.save(reportedUser);
+        }
+
         return true;
     }
-
     /** 동일 유저 대상 신고 일괄 처리 */
     @Transactional
     public boolean processReportUser(String email, AdminReq.reportProcessUserReq req) {
