@@ -17,7 +17,7 @@ public class Enum {
 
     public enum LostItemStatus {
         REPORTED, // 분실물 신고/게시됨
-        RETURNED, // 주인에게 반환됨
+        RESOLVED, // 주인에게 반환됨
         DELETED   // 삭제됨
     }
     public enum GroupBuyStatus {
