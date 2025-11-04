@@ -11,11 +11,9 @@ import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.dto.NotificationRequest;
-import yongin.Yongnuri._Campus.dto.notice.AllNoticeDto;
-import yongin.Yongnuri._Campus.dto.notice.NoticeResponseDto;
+import yongin.Yongnuri._Campus.dto.notice.*;
 import yongin.Yongnuri._Campus.repository.*;
-import yongin.Yongnuri._Campus.dto.notice.NoticeCreateRequestDto;
-import yongin.Yongnuri._Campus.dto.notice.NoticeUpdateRequestDto;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -144,8 +142,15 @@ public class NoticeService {
                 .build();
     }
     @Transactional
-    public List<AllNotice> getAllNotice() {
-        return allNoticeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    public List<AllNoticeReq> getAllNotice() {
+        return allNoticeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
+                .map(n -> AllNoticeReq.builder()
+                        .id(n.getId())
+                        .title(n.getTitle())
+                        .content(n.getContent())
+                        .createdAt(n.getCreatedAt())
+                        .build())
+                .toList();
     }
    //  공지사항 수정
 

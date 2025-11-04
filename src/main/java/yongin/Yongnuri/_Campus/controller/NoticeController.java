@@ -16,10 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.NotificationRequest;
-import yongin.Yongnuri._Campus.dto.notice.AllNoticeDto;
-import yongin.Yongnuri._Campus.dto.notice.NoticeCreateRequestDto;
-import yongin.Yongnuri._Campus.dto.notice.NoticeUpdateRequestDto;
-import yongin.Yongnuri._Campus.dto.notice.NoticeResponseDto;
+import yongin.Yongnuri._Campus.dto.notice.*;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.NoticeService;
 import yongin.Yongnuri._Campus.service.NotificationService;
@@ -69,7 +66,7 @@ public class NoticeController {
 
     }
     @GetMapping("/allnotice")
-    public List<AllNotice> getAllNotices(@AuthenticationPrincipal CustomUserDetails user, Long postId){
+    public List<AllNoticeReq> getAllNotices(@AuthenticationPrincipal CustomUserDetails user, Long postId){
         return noticeService.getAllNotice();
 
     }
