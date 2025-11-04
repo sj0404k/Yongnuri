@@ -10,11 +10,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import yongin.Yongnuri._Campus.domain.AllNotice;
 import yongin.Yongnuri._Campus.domain.Notice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.NotificationRequest;
+import yongin.Yongnuri._Campus.dto.notice.AllNoticeDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeUpdateRequestDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeResponseDto;
@@ -22,6 +24,7 @@ import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.NoticeService;
 import yongin.Yongnuri._Campus.service.NotificationService;
 
+import java.util.Collection;
 import java.util.List;
 
 import java.util.Map;
@@ -51,7 +54,25 @@ public class NoticeController {
         return ResponseEntity.ok(item);
     }
 
+    @PostMapping("/allnotice")
+    public ResponseEntity<?> createAllNotice( 
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Valid @RequestBody AllNoticeDto requestDto){
 
+        noticeService.allCreateNotice(user.getUser().getEmail() ,requestDto);
+
+        return ResponseEntity.ok("All공지사항 작성 완료");
+    }
+    @GetMapping("/allnoticedetail")
+    public AllNotice getAllNoticesDetail(@AuthenticationPrincipal CustomUserDetails user, Long postId){
+        return noticeService.getAllNoticeDetail(postId);
+
+    }
+    @GetMapping("/allnotice")
+    public List<AllNotice> getAllNotices(@AuthenticationPrincipal CustomUserDetails user, Long postId){
+        return noticeService.getAllNotice();
+
+    }
     //공지홍보 게시글 작성
 
     @PostMapping

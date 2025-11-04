@@ -36,6 +36,7 @@ public class AsyncNotificationService {
             if (request.isTargetAll()) {
                 // 전체 사용자 조회
                 request.setTargetUserIds(userRepository.findAllUserIds());
+                log.info("보낸 사용자 id : {}",userRepository.findAllUserIds());
             }            // 대상자가 없으면 작업 종료
             if (request.getTargetUserIds() == null || request.getTargetUserIds().isEmpty()){
                 log.warn("알림을 보낼 대상자가 없습니다.");
