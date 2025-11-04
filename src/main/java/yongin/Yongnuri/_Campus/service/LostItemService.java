@@ -195,26 +195,22 @@ public class LostItemService {
                             }
 
                             // 1. 알림 보낼 ID 목록 (중복 제거)
-                            List<Long> userIdsToNotify = appointments.stream()
-                                    .map(Appointment::getBuyerId)
-                                    .distinct()
-                                    .collect(Collectors.toList());
-
-                            // 2. 알림 메시지 생성
-                            NotificationRequest notificationRequest = new NotificationRequest();
-                            notificationRequest.setTitle("[분실물] 물품이 회수(반환)되었습니다.");
-                            notificationRequest.setMessage(String.format("'%s' 건의 물품이 처리되었습니다. 마이페이지에서 확인하세요.", item.getTitle()));
-                            notificationRequest.setTargetUserIds(userIdsToNotify);
-
-                            // 3. 알림 발송
-                            notificationService.sendNotification(notificationRequest);
-                            break;
-                        case DELETED:
-                        case REPORTED:
-                            // '삭제' 또는 '신고됨' 시: 모든 약속을 'CANCELED'로 변경
                             for (Appointment a : appointments) {
-                                a.setStatus(Enum.AppointmentStatus.CANCELED);
+                                Long buyerId = a.getBuyerId();
+                                if (buyerId != null) {
+                                    NotificationRequest notificationRequest = new NotificationRequest();
+                                    notificationRequest.setUserId(buyerId);
+                                    notificationRequest.setTitle("[분실물] 물품이 회수(반환)되었습니다.");
+                                    notificationRequest.setMessage(String.format(
+                                            "'%s' 건('%s', '%s')의 물품 상태가 변경되었습니다. 마이페이지에서 확인하세요.",
+                                            item.getTitle(),
+                                            item.getPurpose(),
+                                            item.getLocation()
+                                    ));
+                                    notificationService.sendNotification(notificationRequest);
+                                }
                             }
+                            appointmentRepository.saveAll(appointments);
                             break;
                     }
                     appointmentRepository.saveAll(appointments);
