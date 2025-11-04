@@ -21,18 +21,18 @@ public class AppointmentScheduler {
     private final NotificationService notificationService;
 
     /**
-     * 매시 0분 0초 (정각)에 실행됩니다.
-     * (예: 13:00, 14:00, 15:00...)
-     * 3시간 뒤 (예: 10시 정각 실행 -> 13:00:00 ~ 13:59:59) 사이에 잡힌 약속을 찾습니다.
+     *  매 분 0초에 실행됩니다.
+     * (예: 10:00:00, 10:01:00, 10:02:00...)
+     * 정확히 3시간 뒤 (예: 10:00 실행 -> 13:00:00 ~ 13:00:59) 에 잡힌 약속을 찾습니다.
      */
-    @Scheduled(cron = "0 0 * * * ?") //  매시 0분(정각)에 실행
+    @Scheduled(cron = "0 * * * * ?") //  매분 0초에 실행
     @Transactional
     public void sendAppointmentReminders() {
         LocalDateTime now = LocalDateTime.now();
 
-        //  3시간 뒤 정각 ~ 4시간 뒤 정각 사이의 약속을 찾습니다.
-        LocalDateTime startTime = now.plusHours(3).withMinute(0).withSecond(0).withNano(0);
-        LocalDateTime endTime = startTime.plusHours(1);
+        //  3시간 뒤 ~ 3시간 1분 뒤 사이의 약속을 찾습니다.
+        LocalDateTime startTime = now.plusHours(3);
+        LocalDateTime endTime = startTime.plusMinutes(1);
 
         // 1. DB에서 3시간 뒤에 예정된(SCHEDULED) 약속 목록을 조회합니다.
         List<Appointment> upcomingAppointments = appointmentRepository.findAllByStatusAndAppointmentAtBetween(
