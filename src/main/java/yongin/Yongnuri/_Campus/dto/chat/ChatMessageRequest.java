@@ -6,14 +6,17 @@ import lombok.NoArgsConstructor;
 import yongin.Yongnuri._Campus.domain.ChatMessages;
 import yongin.Yongnuri._Campus.domain.ChatRoom;
 
+import java.util.List;
+
 // 클라이언트로부터 메시지를 받을 때 사용하는 DTO
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageRequest {
     private Long roomId;
-//    private String sender;
+    //    private String sender;
     private ChatMessages.messageType type;
     private String message;
-//    private Long timestamp;
+    //    private Long timestamp;
+    private List<String> imageUrls; // ✅ 이미지 URL 리스트
 }

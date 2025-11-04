@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.admin.AdminConfig;
 import yongin.Yongnuri._Campus.domain.*;
@@ -39,6 +40,7 @@ public class ChatService {
     private final UserRepository userRepository;
     private final AdminConfig adminConfig;
     private final ImageRepository imageRepository;
+    private final ImageService imageService;
     @Value("${admin.email}")
     private String adminEmail;
     /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
@@ -258,11 +260,12 @@ public class ChatService {
     @Transactional(readOnly = true)
     public ChatEnterRes getEnterChatRoom(CustomUserDetails user, Long roomId) {
         log.info("getEnterChatRoom({}, {})", user.getUser().getId(), roomId);
+
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."));
 
         List<ChatStatus> participants = chatStatusRepository.findByChatRoomId(roomId);
-        participants.stream()
+        ChatStatus myStatus = participants.stream()
                 .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
@@ -272,15 +275,28 @@ public class ChatService {
                 .filter(u -> !u.getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElse(null);
-        ChatStatus myStatus = participants.stream()
-                .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
-                .findFirst()
-                .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
+
         List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
-//        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
+
+        // ✅ 메시지별 이미지 조회 및 DTO 변환
+        List<ChatMessagesRes> messagesRes = messageList.stream().map(msg -> {
+            List<String> imageUrls = imageRepository.findByTypeAndTypeIdIn("CHAT", List.of(msg.getId()))
+                    .stream().map(Image::getImageUrl).toList();
+
+            return ChatMessagesRes.builder()
+                    .chatType(msg.getChatType())
+                    .message(msg.getMessage())
+                    .imageUrls(imageUrls)
+                    .senderId(msg.getSender() != null ? msg.getSender().getId() : null)
+                    .senderEmail(msg.getSender() != null ? msg.getSender().getEmail().toLowerCase() : null)
+                    .createdAt(msg.getCreatedAt())
+                    .build();
+        }).toList();
 
         Object extraInfo = null;
         String thumbnailUrl = null;
+
+        // 🔹 기존 로직 그대로 (LOST_ITEM, USED_ITEM, GROUP_BUY, ADMIN)
         switch (room.getType()) {
             case LOST_ITEM -> {
                 LostItem lost = lostItemRepository.findById(room.getTypeId()).orElse(null);
@@ -307,12 +323,10 @@ public class ChatService {
                 }
             }
             case ADMIN -> {
-                // 관리자 User 조회
                 User adminUser = userRepository.findByEmail(adminConfig.getEmail())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
 
-                // ADMIN 채팅용 DTO 생성
-                String defaultText = "**채팅 공지사항**";  // 기본 텍스트
+                String defaultText = "**채팅 공지사항**";
                 String text = (adminUser.getText() != null && !adminUser.getText().isBlank())
                         ? adminUser.getText()
                         : defaultText;
@@ -323,8 +337,10 @@ public class ChatService {
                         .build();
             }
         }
-        return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
+
+        return ChatEnterRes.from(room, opponent, messagesRes, extraInfo, thumbnailUrl);
     }
+
 
     /** 읽음 시각 갱신 */
     @Transactional
@@ -378,11 +394,20 @@ public class ChatService {
 
     /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
     @Transactional
-    public ChatMessagesRes saveMessage(CustomUserDetails user, ChatMessageRequest message) {
+    public ChatMessagesRes saveMessage(CustomUserDetails user, ChatMessageRequest message, List<MultipartFile> imageFiles) {
         log.info("saveMessage({}, {})", user.getUser().getId(), message);
+
+        // 1️⃣ 채팅방 조회
         ChatRoom chatRoom = chatRoomRepository.findById(message.getRoomId())
                 .orElseThrow(() -> new ResourceNotFoundException("메시지를 보낼 채팅방을 찾을 수 없습니다."));
 
+        // 2️⃣ 이미지 업로드
+        List<String> uploadedImageUrls = new ArrayList<>();
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            uploadedImageUrls = imageService.uploadImages(imageFiles);  // ImageService 사용
+        }
+
+        // 3️⃣ 메시지 저장
         ChatMessages newMsg = ChatMessages.builder()
                 .chatRoom(chatRoom)
                 .chatType(message.getType())
@@ -393,30 +418,38 @@ public class ChatService {
 
         ChatMessages saved = chatMessagesRepository.save(newMsg);
 
-        // ✅ 핵심: 방의 updateTime을 최신 메시지로 갱신하고 즉시 flush
+        // 4️⃣ 업로드한 이미지 DB에 저장
+        if (!uploadedImageUrls.isEmpty()) {
+            List<Image> images = new ArrayList<>();
+            for (int i = 0; i < uploadedImageUrls.size(); i++) {
+                images.add(Image.builder()
+                        .type("CHAT")
+                        .typeId(saved.getId())       // 메시지 ID와 연결
+                        .imageUrl(uploadedImageUrls.get(i))
+                        .sequence(i + 1)
+                        .build());
+            }
+            imageRepository.saveAll(images);
+        }
+
+        // 5️⃣ 채팅방 updateTime 갱신
         chatRoom.setUpdateTime(saved.getCreatedAt());
         chatRoomRepository.saveAndFlush(chatRoom);
-
         log.info(">>> ChatRoom {} updateTime 갱신 = {}", chatRoom.getId(), saved.getCreatedAt());
 
-        // 상대방 상태 확인 및 자동 복구
+        // 6️⃣ 상대방 상태 확인 및 자동 복구
         List<ChatStatus> statuses = chatStatusRepository.findByChatRoomId(chatRoom.getId());
         for (ChatStatus status : statuses) {
-            // 상대방(메시지 보낸 사람 제외)
-            if (!status.getUser().getId().equals(user.getUser().getId())) {
-                if (!status.isChatStatus()) {
-                    // ✅ 삭제한 상대방 복구
-                    status.setChatStatus(true);
-//                    status.setDeletedAt(null);
-                    status.setLastDate(LocalDateTime.now());
-                    chatStatusRepository.save(status);
-                    log.info(">>> 복구: {}님이 삭제했던 방 {} 다시 활성화됨", status.getUser().getEmail(), chatRoom.getId());
-                }
+            if (!status.getUser().getId().equals(user.getUser().getId()) && !status.isChatStatus()) {
+                status.setChatStatus(true);
+                status.setLastDate(LocalDateTime.now());
+                chatStatusRepository.save(status);
+                log.info(">>> 복구: {}님이 삭제했던 방 {} 다시 활성화됨", status.getUser().getEmail(), chatRoom.getId());
             }
         }
-        // 관리자 답변 시 유저에게 알림 전송
-        if (chatRoom.getType() == Enum.ChatType.ADMIN && user.getUser().getRole() ==Enum.UserRole.ADMIN) {
-            // 수신자 찾기
+
+        // 7️⃣ 관리자 답변 시 유저에게 알림 전송
+        if (chatRoom.getType() == Enum.ChatType.ADMIN && user.getUser().getRole() == Enum.UserRole.ADMIN) {
             User receiver = statuses.stream()
                     .map(ChatStatus::getUser)
                     .filter(u -> !u.getId().equals(user.getUser().getId()))
@@ -431,17 +464,20 @@ public class ChatService {
                         .message("문의하기 페이지를 확인해주세요!")
                         .build();
 
-                // WebSocket 전송
                 messagingTemplate.convertAndSend("/sub/notifications/" + receiver.getId(), notification);
                 log.info("관리자 답변 알림 전송 완료 → userId={}", receiver.getId());
             }
         }
+
+        // 8️⃣ 응답 DTO 생성 (이미지 URL 포함)
         return ChatMessagesRes.builder()
                 .chatType(saved.getChatType())
                 .message(saved.getMessage())
+                .imageUrls(uploadedImageUrls)
                 .senderId(saved.getSender() != null ? saved.getSender().getId() : null)
                 .senderEmail(saved.getSender() != null ? saved.getSender().getEmail().toLowerCase() : null)
                 .createdAt(saved.getCreatedAt())
                 .build();
     }
+
 }

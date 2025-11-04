@@ -8,6 +8,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.dto.MypageReq;
 import yongin.Yongnuri._Campus.dto.ReportReq;
@@ -18,6 +19,7 @@ import yongin.Yongnuri._Campus.service.ChatService;
 import yongin.Yongnuri._Campus.service.MypageService;
 import yongin.Yongnuri._Campus.service.ReportService;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -105,18 +107,30 @@ public class ChatController {
     /** 메시지 보내기 (웹소켓 라우팅) — ✅ 표준 DTO로 브로드캐스트 */
     @MessageMapping("/rooms/messages")
     public void sendMessage(@AuthenticationPrincipal CustomUserDetails user,
-                            @RequestBody ChatMessageRequest message) {
-        log.info("Send /rooms/messages");
-        ChatMessagesRes res = chatService.saveMessage(user, message);
+                            @RequestPart("message") ChatMessageRequest message,
+                            @RequestPart(value = "images", required = false) List<MultipartFile> images) throws IOException {
+        log.info("Send /rooms/messages with images");
+
+        // 이미지 포함해서 메시지 저장
+        ChatMessagesRes res = chatService.saveMessage(user, message, images);
+
+        // WebSocket으로 전송
         messagingTemplate.convertAndSend("/sub/chat/room/" + message.getRoomId(), res);
     }
 
+
     /** 메시지 보내기 (HTTP) — ✅ 표준 DTO로 반환 */
-    @PostMapping("/rooms/messages")
-    public ResponseEntity<ChatMessagesRes> sendMessagePost(@AuthenticationPrincipal CustomUserDetails user,
-                                                           @RequestBody ChatMessageRequest message) {
-        log.info("testPost /rooms/messages");
-        ChatMessagesRes res = chatService.saveMessage(user, message);
+    @PostMapping(value = "/rooms/messages")
+    public ResponseEntity<ChatMessagesRes> sendMessagePost(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @RequestPart("message") ChatMessageRequest message,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) throws IOException {
+
+        log.info("sendMessagePost /rooms/messages with images");
+
+        // 이미지 포함 메시지 저장
+        ChatMessagesRes res = chatService.saveMessage(user, message, images);
+
         return ResponseEntity.ok(res);
     }
 
