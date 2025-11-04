@@ -60,7 +60,7 @@ public class ChatEnterRes {
 
     public static ChatEnterRes from(ChatRoom room,
                                     User opponent,
-                                    List<ChatMessagesRes> messageList,
+                                    List<ChatMessages> messageList,
                                     Object extraInfo,
                                     String thumbnailUrl) {
 
@@ -72,30 +72,32 @@ public class ChatEnterRes {
                 .opponentNickname(opponent != null ? opponent.getNickName() : "상대방")
                 .imageUrl(thumbnailUrl);
 
-        // 타입별 추가정보 매핑
+        // 🔹 타입별 추가정보 매핑
         if (extraInfo instanceof LostItem lost) {
             infoBuilder.title(lost.getTitle())
                     .status(lost.getStatus());
+
         } else if (extraInfo instanceof UsedItem used) {
             infoBuilder.title(used.getTitle())
                     .price(String.valueOf(used.getPrice()))
                     .tradeStatus(used.getStatus());
+
         } else if (extraInfo instanceof GroupBuy group) {
             infoBuilder.title(group.getTitle())
                     .peopleCount(group.getLimit());
+
         } else if (extraInfo instanceof ChatAdminRes chatAdminRes) {
             infoBuilder.text(chatAdminRes.getText());
         }
 
         List<MessageInfo> msgs = messageList.stream()
                 .map(m -> MessageInfo.builder()
-                        .senderId(m.getSenderId())
-                        .senderEmail(m.getSenderEmail() != null ? lower(m.getSenderEmail()) : null)
-                        .senderNickname(m.getSenderNickname())
+                        .senderId(m.getSender() != null ? m.getSender().getId() : null)
+                        .senderEmail(m.getSender() != null ? lower(m.getSender().getEmail()) : null) // ✅ 추가
+                        .senderNickname(m.getSender() != null ? m.getSender().getNickName() : null)
                         .message(m.getMessage())
                         .createdAt(m.getCreatedAt() != null ? m.getCreatedAt().toString() : null)
                         .chatType(m.getChatType())
-                        .imageUrls(m.getImageUrls()) // 메시지 이미지 URL
                         .build())
                 .collect(Collectors.toList());
 
@@ -104,5 +106,4 @@ public class ChatEnterRes {
                 .messages(msgs)
                 .build();
     }
-
 }

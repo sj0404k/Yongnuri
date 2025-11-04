@@ -260,12 +260,11 @@ public class ChatService {
     @Transactional(readOnly = true)
     public ChatEnterRes getEnterChatRoom(CustomUserDetails user, Long roomId) {
         log.info("getEnterChatRoom({}, {})", user.getUser().getId(), roomId);
-
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."));
 
         List<ChatStatus> participants = chatStatusRepository.findByChatRoomId(roomId);
-        ChatStatus myStatus = participants.stream()
+        participants.stream()
                 .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
@@ -275,28 +274,15 @@ public class ChatService {
                 .filter(u -> !u.getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElse(null);
-
+        ChatStatus myStatus = participants.stream()
+                .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
+                .findFirst()
+                .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
         List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
-
-        // ✅ 메시지별 이미지 조회 및 DTO 변환
-        List<ChatMessagesRes> messagesRes = messageList.stream().map(msg -> {
-            List<String> imageUrls = imageRepository.findByTypeAndTypeIdIn("CHAT", List.of(msg.getId()))
-                    .stream().map(Image::getImageUrl).toList();
-
-            return ChatMessagesRes.builder()
-                    .chatType(msg.getChatType())
-                    .message(msg.getMessage())
-                    .imageUrls(imageUrls)
-                    .senderId(msg.getSender() != null ? msg.getSender().getId() : null)
-                    .senderEmail(msg.getSender() != null ? msg.getSender().getEmail().toLowerCase() : null)
-                    .createdAt(msg.getCreatedAt())
-                    .build();
-        }).toList();
+//        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
         Object extraInfo = null;
         String thumbnailUrl = null;
-
-        // 🔹 기존 로직 그대로 (LOST_ITEM, USED_ITEM, GROUP_BUY, ADMIN)
         switch (room.getType()) {
             case LOST_ITEM -> {
                 LostItem lost = lostItemRepository.findById(room.getTypeId()).orElse(null);
@@ -323,10 +309,12 @@ public class ChatService {
                 }
             }
             case ADMIN -> {
+                // 관리자 User 조회
                 User adminUser = userRepository.findByEmail(adminConfig.getEmail())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
 
-                String defaultText = "**채팅 공지사항**";
+                // ADMIN 채팅용 DTO 생성
+                String defaultText = "**채팅 공지사항**";  // 기본 텍스트
                 String text = (adminUser.getText() != null && !adminUser.getText().isBlank())
                         ? adminUser.getText()
                         : defaultText;
@@ -337,10 +325,8 @@ public class ChatService {
                         .build();
             }
         }
-
-        return ChatEnterRes.from(room, opponent, messagesRes, extraInfo, thumbnailUrl);
+        return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
     }
-
 
     /** 읽음 시각 갱신 */
     @Transactional

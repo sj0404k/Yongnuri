@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
+
 /*
 채팅 관련 파일들 이름
 WebSocketConfig
@@ -49,7 +51,7 @@ public class ChatMessages {
      */
     @Column(columnDefinition = "TEXT")
     private String message;
-
+    private List<String> imageUrls; // ✅ 이미지 URL 리스트
     /**
      * 메시지 보낸 사람
      */
