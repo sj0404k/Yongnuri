@@ -56,13 +56,13 @@ public class AsyncNotificationService {
 
 
 
-            // 4. FCM 푸시 알림을 발송합니다.
-            for (Long userId : request.getTargetUserIds()) {
-                String token = userRepository.findDeviceTokenById(userId);
-                if (token != null && !token.isEmpty()) {
-                    fCMService.sendPush(token, request.getTitle(), request.getMessage());
-                }
-            }
+//            // 4. FCM 푸시 알림을 발송합니다.
+//            for (Long userId : request.getTargetUserIds()) {
+//                String token = userRepository.findDeviceTokenById(userId);
+//                if (token != null && !token.isEmpty()) {
+//                    fCMService.sendPush(token, request.getTitle(), request.getMessage());
+//                }
+//            }
 
 
 

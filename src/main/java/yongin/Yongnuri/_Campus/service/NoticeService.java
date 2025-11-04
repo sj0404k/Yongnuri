@@ -1,7 +1,6 @@
 package yongin.Yongnuri._Campus.service;
 
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -15,7 +14,6 @@ import yongin.Yongnuri._Campus.dto.NotificationRequest;
 import yongin.Yongnuri._Campus.dto.notice.AllNoticeDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeResponseDto;
 import yongin.Yongnuri._Campus.repository.*;
-import jakarta.persistence.EntityNotFoundException;
 import yongin.Yongnuri._Campus.dto.notice.NoticeCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeUpdateRequestDto;
 import java.util.List;
@@ -112,7 +110,7 @@ public class NoticeService {
         return newPostId;
     }
     @Transactional
-    public Long allCreateNotice(String adminEmail , AllNoticeDto requestDto) {
+    public void allCreateNotice(String adminEmail , AllNoticeDto requestDto) {
         User admin = getAdminUser(adminEmail);
         AllNotice newAllNotice = AllNotice.builder()
                 .user(admin)
@@ -130,7 +128,6 @@ public class NoticeService {
 
         // 3. NotificationService 호출
         notificationService.sendNotification(notificationRequest);
-        return newPostId;
     }
 
     @Transactional
