@@ -61,6 +61,6 @@ public class NotificationService {
     }
     public Integer getNotificationsCount(CustomUserDetails user) {
         Long userId = user.getUser().getId();
-        return notificationRepository.countByUserIdAndReadFalse(userId);
+        return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 }
