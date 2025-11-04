@@ -2,6 +2,7 @@ package yongin.Yongnuri._Campus.service;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -15,19 +16,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
-@NoArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class AsyncNotificationService {
 
-    private UserRepository userRepository;
-    private NotificationRepository notificationRepository;
-    private FCMService fCMService;
-
-    @Autowired
-    public AsyncNotificationService(FCMService fCMService) {
-        this.fCMService = fCMService;
-    }
+    private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
+    private final FCMService fCMService;
 
     @Async
     public void processNotificationSending(NotificationRequest request) {
