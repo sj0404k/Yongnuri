@@ -90,12 +90,12 @@ public class HistoryService {
             case "LOST":
                 items = lostItemRepository.findByUserAndPurposeOrderByCreatedAtDesc(currentUser, Enum.LostItemPurpose.LOST);
                 break;
-            case "RESOLVED":
-                // ✅ 내가 작성한 분실 게시글 중 RESOLVED 상태만 조회
+            case "RETURNED":
+                // ✅ 내가 작성한 분실 게시글 중 RETURNED 상태만 조회
                 items = lostItemRepository.findByUserAndPurposeAndStatusOrderByCreatedAtDesc(
                         currentUser,
                         Enum.LostItemPurpose.LOST,  // 분실 게시글만 (습득 게시글 제외)
-                        Enum.LostItemStatus.RESOLVED
+                        Enum.LostItemStatus.RETURNED
                 );
                 break;
             default:

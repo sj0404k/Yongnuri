@@ -188,7 +188,7 @@ public class LostItemService {
                 List<Appointment> appointments = appointmentRepository.findByPostTypeAndPostId("LOST_ITEM", postId);
                 if (!appointments.isEmpty()) {
                     switch (newStatus) {
-                        case RESOLVED:
+                        case RETURNED:
                             // '회수 완료' 시: 모든 약속을 'COMPLETED'로 변경
                             for (Appointment a : appointments) {
                                 a.setStatus(Enum.AppointmentStatus.COMPLETED);
