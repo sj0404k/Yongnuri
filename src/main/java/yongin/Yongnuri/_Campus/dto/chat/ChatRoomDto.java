@@ -18,9 +18,10 @@ public class ChatRoomDto {
     private String lastMessage;         // 마지막 메시지 내용
     private String updateTime;          // 마지막 메시지 시간(문자열 변환)
     private String toUserNickName;      // 상대방 닉네임
+    private Long unReadCount;
 
     // ✅ 수정 핵심: 마지막 메시지가 있으면 그 시각으로 updateTime 표시
-    public static ChatRoomDto fromEntity(ChatRoom room, User toUser, ChatMessages lastMessage) {
+    public static ChatRoomDto fromEntity(ChatRoom room, User toUser, ChatMessages lastMessage, Long unReadCount) {
         LocalDateTime timeToShow = (lastMessage != null && lastMessage.getCreatedAt() != null)
                 ? lastMessage.getCreatedAt()
                 : room.getUpdateTime();
@@ -31,6 +32,7 @@ public class ChatRoomDto {
                 .lastMessage(lastMessage != null ? lastMessage.getMessage() : "")
                 .toUserNickName(toUser != null ? toUser.getNickName() : "알 수 없음")
                 .updateTime(TimeUtils.toRelativeTime(timeToShow))  // ✅ 핵심
+                .unReadCount(unReadCount != null ? unReadCount : 0L)  // ✅ 추가
                 .build();
     }
 }

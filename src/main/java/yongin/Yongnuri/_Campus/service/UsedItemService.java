@@ -254,7 +254,7 @@ public class UsedItemService {
                 NotificationRequest notificationRequest = new NotificationRequest();
                 notificationRequest.setTitle("[중고거래] 거래물품이 예약중이예요.");
                 notificationRequest.setMessage("내역은 마이페이지에서 확인할 수 있어요.");
-                notificationRequest.setUserId(buyerId); // 전체 사용자에게 알림 전송용 플래그
+                notificationRequest.setUserId(buyerId);
 
                 // 3. NotificationService 호출
                 notificationService.sendNotification(notificationRequest);

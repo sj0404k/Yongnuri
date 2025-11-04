@@ -45,13 +45,15 @@ public class ChatService {
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
         log.debug("getChatRooms({}, {})", user.getUser().getId(), type);
+
         // 1️⃣ 내가 삭제하지 않은 참여방만 조회
         List<ChatStatus> activeStatuses = chatStatusRepository.findByUserIdAndChatStatusTrue(user.getUser().getId());
         if (activeStatuses.isEmpty()) return Collections.emptyList();
 
-        List<Long> activeRoomIds = activeStatuses.stream()
-                .map(cs -> cs.getChatRoom().getId())
-                .toList();
+        Map<Long, ChatStatus> statusMap = activeStatuses.stream()
+                .collect(Collectors.toMap(cs -> cs.getChatRoom().getId(), Function.identity()));
+
+        List<Long> activeRoomIds = new ArrayList<>(statusMap.keySet());
 
         // 2️⃣ 타입별 필터
         Enum.ChatType chatType = (type != null) ? type : Enum.ChatType.ALL;
@@ -66,7 +68,21 @@ public class ChatService {
                 .stream()
                 .collect(Collectors.toMap(msg -> msg.getChatRoom().getId(), Function.identity()));
 
-        // 4️⃣ DTO + 정렬 기준 시각 계산
+        // ✅ 4️⃣ 각 방의 안읽은 메시지 수 조회
+        // (lastDate 이후에 생성된 메시지 개수)
+        Map<Long, Long> unreadCountMap = new HashMap<>();
+        for (ChatRoom room : rooms) {
+            ChatStatus myStatus = statusMap.get(room.getId());
+            if (myStatus == null) continue;
+
+            Long count = chatMessagesRepository.countByChatRoomIdAndCreatedAtAfter(
+                    room.getId(),
+                    myStatus.getLastDate()
+            );
+            unreadCountMap.put(room.getId(), count);
+        }
+
+        // 5️⃣ DTO + 정렬 기준 시각 계산
         List<WithSort<ChatRoomDto>> boxed = new ArrayList<>(rooms.size());
         for (ChatRoom room : rooms) {
             User opponentUser = room.getParticipants().stream()
@@ -76,20 +92,22 @@ public class ChatService {
                     .orElse(null);
 
             ChatMessages lastMessage = lastMessagesMap.get(room.getId());
+            Long unReadCount = unreadCountMap.getOrDefault(room.getId(), 0L);
 
             // ✅ 정렬 기준: 마지막 메시지 시각(우선) → 없으면 room.updateTime
             LocalDateTime sortTs = (lastMessage != null && lastMessage.getCreatedAt() != null)
                     ? lastMessage.getCreatedAt()
                     : room.getUpdateTime();
 
-            ChatRoomDto dto = ChatRoomDto.fromEntity(room, opponentUser, lastMessage);
+            ChatRoomDto dto = ChatRoomDto.fromEntity(room, opponentUser, lastMessage, unReadCount);
             boxed.add(new WithSort<>(dto, sortTs != null ? sortTs : LocalDateTime.MIN));
         }
 
-        // 5️⃣ 최신순(내림차순)
+        // 6️⃣ 최신순 정렬
         boxed.sort((a, b) -> b.sortKey.compareTo(a.sortKey));
         return boxed.stream().map(w -> w.value).toList();
     }
+
 
     private static class WithSort<T> {
         final T value;

@@ -38,4 +38,6 @@ public interface ChatMessagesRepository extends JpaRepository<ChatMessages, Long
     List<ChatMessages> findLastMessagesByRoomIds(@Param("roomIds") List<Long> roomIds);
     @Query("SELECT m.message FROM ChatMessages m WHERE m.chatType = 'img'")
     List<String> findAllImageUrls();
+
+    Long countByChatRoomIdAndCreatedAtAfter(Long chatRoomId, LocalDateTime createdAtAfter);
 }
