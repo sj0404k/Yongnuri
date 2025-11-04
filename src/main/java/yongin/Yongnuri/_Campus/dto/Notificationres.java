@@ -21,6 +21,11 @@ public class Notificationres {
     private LocalDateTime createdAt;
 
     public Notificationres(Notification notification) {
+        this.id = notification.getId();
+        this.title = notification.getTitle();
+        this.message = notification.getMessage();
+        this.createdAt = notification.getCreatedAt();
+        this.isRead = notification.isRead();
     }
 
 
