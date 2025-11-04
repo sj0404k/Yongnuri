@@ -146,6 +146,25 @@ public class ChatService {
             chatStatusRepository.saveAll(List.of(userStatus, adminStatus));
 
             log.info("ADMIN 채팅방 생성 완료. roomId={}", adminRoom.getId());
+            if (request.getMessage() != null && !request.getMessage().isBlank()) {
+                ChatMessages adminMessage = ChatMessages.builder()
+                        .chatRoom(adminRoom)
+                        .sender(adminUser)
+                        .chatType(request.getMessageType()) // TEXT, IMAGE 등
+                        .message(request.getMessage())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                chatMessagesRepository.save(adminMessage);
+                log.info("관리자 초기 메시지 저장 완료: {}", adminMessage.getMessage());
+
+                // 🔹 채팅방 updateTime 갱신
+                adminRoom.setUpdateTime(LocalDateTime.now());
+                chatRoomRepository.saveAndFlush(adminRoom);
+
+                // 🔹 실시간 WebSocket 전송
+                messagingTemplate.convertAndSend("/sub/chat/room/" + adminRoom.getId(), adminMessage);
+            }
             return getEnterChatRoom(user, adminRoom.getId());
         }
 
