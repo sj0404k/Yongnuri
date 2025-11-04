@@ -1,5 +1,5 @@
 package yongin.Yongnuri._Campus.service;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,13 +35,14 @@ public class LostItemService {
     private final NotificationService notificationService;
     @Value("${file.upload-dir}")
     private String uploadDir;
+
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("사용자 정보를 찾을 수 없습니다."));
     }
 
     /*
-     분실물 게시글 목록 조회 
+     분실물 게시글 목록 조회
     */
     public List<LostItemResponseDto> getLostItems(String email, String type) {
         User currentUser = getUserByEmail(email);
@@ -87,6 +88,7 @@ public class LostItemService {
                 })
                 .collect(Collectors.toList());
     }
+
     //상세조회
     public LostItemResponseDto getLostItemDetail(String email, Long postId) {
         User currentUser = getUserByEmail(email);
@@ -114,7 +116,8 @@ public class LostItemService {
 
         return dto;
     }
-    /* 
+
+    /*
      분실물 게시글 작성
      */
     @Transactional
@@ -141,6 +144,7 @@ public class LostItemService {
 
         return newPostId;
     }
+
     /*
     분실물 게시글 수정
     */
@@ -182,42 +186,134 @@ public class LostItemService {
         if (requestDto.getStatus() != null) {
             Enum.LostItemStatus newStatus = Enum.LostItemStatus.valueOf(requestDto.getStatus().toUpperCase());
             Enum.LostItemStatus oldStatus = item.getStatus();
-            // 1. 상태가 실제로 변경되었는지 확인
-            if (newStatus != oldStatus) {
-                // 2. 관련된 모든 약속을 조회
-                List<Appointment> appointments = appointmentRepository.findByPostTypeAndPostId("LOST_ITEM", postId);
-                if (!appointments.isEmpty()) {
-                    switch (newStatus) {
-                        case RETURNED:
-                            // '회수 완료' 시: 모든 약속을 'COMPLETED'로 변경
-                            for (Appointment a : appointments) {
-                                a.setStatus(Enum.AppointmentStatus.COMPLETED);
-                            }
 
-                            // 1. 알림 보낼 ID 목록 (중복 제거)
-                            for (Appointment a : appointments) {
-                                Long buyerId = a.getBuyerId();
-                                if (buyerId != null) {
-                                    NotificationRequest notificationRequest = new NotificationRequest();
-                                    notificationRequest.setUserId(buyerId);
-                                    notificationRequest.setTitle("[분실물] 물품이 회수(반환)되었습니다.");
-                                    notificationRequest.setMessage(String.format(
-                                            "'%s' 건('%s', '%s')의 물품 상태가 변경되었습니다. 마이페이지에서 확인하세요.",
-                                            item.getTitle(),
-                                            item.getPurpose(),
-                                            item.getLocation()
-                                    ));
-                                    notificationService.sendNotification(notificationRequest);
-                                }
-                            }
+            if (newStatus != oldStatus) {
+                List<Appointment> appointments = appointmentRepository.findByPostTypeAndPostId("LOST_ITEM", postId);
+
+                switch (newStatus) {
+                    case RETURNED:
+                        // '회수 완료' 시: 모든 약속을 'COMPLETED'로 변경
+                        for (Appointment a : appointments) {
+                            a.setStatus(Enum.AppointmentStatus.COMPLETED);
+                        }
+
+
+                        Set<Long> userIdsToNotify = appointments.stream()
+                                .map(Appointment::getBuyerId)
+                                .collect(Collectors.toSet());
+                        userIdsToNotify.add(item.getUser().getId());
+
+                        if (!userIdsToNotify.isEmpty()) {
                             appointmentRepository.saveAll(appointments);
-                            break;
-                    }
-                    appointmentRepository.saveAll(appointments);
+
+                            NotificationRequest notificationRequest = new NotificationRequest();
+                            notificationRequest.setTitle("[분실물] 물품이 회수(반환)되었습니다.");
+                            notificationRequest.setMessage(String.format("'%s' 건(%s, %s)의 물품이 처리되었습니다. 마이페이지에서 확인하세요.",
+                                    item.getTitle(),
+                                    item.getPurpose().name(),
+                                    item.getLocation() != null ? item.getLocation() : "장소 미정"
+                            ));
+                            notificationRequest.setTargetUserIds(new ArrayList<>(userIdsToNotify));
+                            notificationService.sendNotification(notificationRequest);
+                        }
+
+
+
+
+                        List<Long> userIdsToNotify_Test = appointments.stream()
+                                .map(Appointment::getBuyerId)
+                                .distinct()
+                                .collect(Collectors.toList());
+
+                        if (!userIdsToNotify_Test.isEmpty()) {
+
+
+                            NotificationRequest notificationRequest_Test = new NotificationRequest();
+                            notificationRequest_Test.setTitle("[분실물] 물품이 회수(반환)되었습니다. (테스트)");
+                            notificationRequest_Test.setMessage(String.format("'%s' 건(%s, %s)의 물품이 처리되었습니다. 마이페이지에서 확인하세요.",
+                                    item.getTitle(),
+                                    item.getPurpose().name(),
+                                    item.getLocation() != null ? item.getLocation() : "장소 미정"
+                            ));
+                            notificationRequest_Test.setTargetUserIds(userIdsToNotify_Test);
+                            notificationService.sendNotification(notificationRequest_Test);
+                        }
+                        break;
+/**
+ if (requestDto.getStatus() != null) {
+
+ Enum.LostItemStatus newStatus = Enum.LostItemStatus.valueOf(requestDto.getStatus().toUpperCase());
+
+ Enum.LostItemStatus oldStatus = item.getStatus();
+ if (newStatus != oldStatus) {
+
+ List<Appointment> appointments = appointmentRepository.findByPostTypeAndPostId("LOST_ITEM", postId);
+
+ switch (newStatus) {
+
+ case RETURNED:
+
+ // '회수 완료' 시: 모든 약속을 'COMPLETED'로 변경
+
+ for (Appointment a : appointments) {
+
+ a.setStatus(Enum.AppointmentStatus.COMPLETED);
+
+ }
+
+ List<Long> userIdsToNotify = appointments.stream()
+
+ .map(Appointment::getBuyerId)
+
+ .distinct()
+
+ .collect(Collectors.toList());
+
+ if (!userIdsToNotify.isEmpty()) {
+
+ appointmentRepository.saveAll(appointments);
+
+ NotificationRequest notificationRequest = new NotificationRequest();
+
+ notificationRequest.setTitle("[분실물] 물품이 회수(반환)되었습니다.");
+
+ notificationRequest.setMessage(String.format("'%s' 건(%s, %s)의 물품이 처리되었습니다. 마이페이지에서 확인하세요.",
+
+ item.getTitle(), // 게시글 제목
+
+ item.getPurpose().name(), // FOUND or LOST
+
+ item.getLocation() != null ? item.getLocation() : "장소 미정"
+
+ ));
+
+ notificationRequest.setTargetUserIds(userIdsToNotify);
+
+ // 3. NotificationService 호출
+
+ notificationService.sendNotification(notificationRequest);
+
+ }
+ break;
+ */
+                    case DELETED:
+                    case REPORTED:
+                        // '삭제' 또는 '신고됨' 시: 모든 약속을 'CANCELED'로 변경
+                        for (Appointment a : appointments) {
+                            a.setStatus(Enum.AppointmentStatus.CANCELED);
+                        }
+
+                        if (!appointments.isEmpty()) {
+                            appointmentRepository.saveAll(appointments);
+                        }
+                        break;
                 }
+
                 item.setStatus(newStatus);
             }
         }
         return item.getId();
     }
 }
+
+
