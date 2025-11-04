@@ -9,7 +9,8 @@ import yongin.Yongnuri._Campus.dto.Notificationres;
 import yongin.Yongnuri._Campus.repository.NotificationRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,9 +22,17 @@ public class NotificationService {
     private final UserRepository userRepository; // 전체 사용자 조회용
     private final FCMService fcmService;
     private final AsyncNotificationService asyncNotificationService;
-
+    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
     public void sendNotification(NotificationRequest request) {
-        asyncNotificationService.processNotificationSending(request);
+        log.info("[DEBUG] NotificationService.sendNotification() 진입: {}", request);
+
+        try {
+            asyncNotificationService.processNotificationSending(request);
+            log.info("[DEBUG] AsyncNotificationService 호출 완료");
+        } catch (Exception e) {
+            log.error("[ERROR] AsyncNotificationService 호출 중 예외 발생: {}", e.getMessage(), e);
+        }
+
 /*
         if (request.isTargetAll()) {
             // 전체 사용자 조회
