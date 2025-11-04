@@ -2,6 +2,7 @@ package yongin.Yongnuri._Campus.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
@@ -37,7 +38,8 @@ public class ChatService {
     private final UserRepository userRepository;
     private final AdminConfig adminConfig;
     private final ImageRepository imageRepository;
-
+    @Value("${admin.email}")
+    private String adminEmail;
     /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
@@ -120,7 +122,7 @@ public class ChatService {
             chatRoomRepository.save(adminRoom);
 
             // 🔹 관리자(User) 조회 — 예시로 관리자 이메일 기준
-            User adminUser = userRepository.findByEmail("admin@yongin.ac.kr")
+            User adminUser = userRepository.findByEmail(adminEmail)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
 
             // 🔹 채팅 상태 등록
