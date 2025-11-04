@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.domain.Image;
 import yongin.Yongnuri._Campus.domain.Reports;
 import yongin.Yongnuri._Campus.domain.User;
+import yongin.Yongnuri._Campus.dto.NotificationRequest;
 import yongin.Yongnuri._Campus.dto.admin.*;
 import yongin.Yongnuri._Campus.repository.ReportRepository;
 import yongin.Yongnuri._Campus.repository.UserRepository;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 import yongin.Yongnuri._Campus.domain.Enum;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
+import yongin.Yongnuri._Campus.service.NotificationService;
 
 @Service
 @AllArgsConstructor
@@ -40,6 +42,7 @@ public class AdminService {
     private final UsedItemRepository usedItemRepository;
     private final LostItemRepository lostItemRepository;
     private final GroupBuyRepository groupBuyRepository;
+    private final NotificationService notificationService;
 
     /** 신고 목록 */
     @Transactional(readOnly = true)
@@ -156,21 +159,41 @@ public class AdminService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자만 접근할 수 있습니다.");
         }
 
-        // 2. 신고당한 유저의 모든 신고 조회
+        // 2. 신고당한 유저 조회
+        User reportedUser = userRepository.findById(req.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "신고 유저를 찾을 수 없습니다."));
+
+        // 3. 신고 내역 조회
         List<Reports> reports = reportRepository.findByReportedId(req.getUserId());
         if (reports.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "신고를 찾을 수 없습니다.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "신고 내역을 찾을 수 없습니다.");
         }
-        // 3. 상태 변경
+
+        // 4. 상태 변경
         reports.forEach(r -> {
             r.setStatus(req.getReportStatus());
             r.setProcessedAt(LocalDateTime.now());
         });
-
-        // 4. DB 저장
         reportRepository.saveAll(reports);
 
-        // 필요하면 일괄 활성/비활성도 여기서 돌릴 수 있음
+        // 5. 누적 신고 횟수 계산 (처리 완료된 신고 기준)
+        long processedReportsCount = reportRepository.countByReportedIdAndStatus(reportedUser.getId(), Enum.ReportStatus.APPROVED);
+
+        // 6. 알림 및 계정 처리
+        if (processedReportsCount == 5 || processedReportsCount == 9) {
+            NotificationRequest notificationRequest = new NotificationRequest();
+            notificationRequest.setTitle(String.format("[관리자] 누적 신고 횟수가 %d회 도달하였습니다.", processedReportsCount));
+            notificationRequest.setMessage("10회 이상 신고 누적 시 앱 이용이 제한되니 주의하세요.");
+            notificationRequest.setUserId(reportedUser.getId()); // 전체 사용자에게 알림 전송용 플래그
+
+            // 3. NotificationService 호출
+            notificationService.sendNotification(notificationRequest);
+        } else if (processedReportsCount >= 10) {
+            // 자동 탈퇴 처리
+            reportedUser.setStatus(Enum.authStatus.SUSPENDED); // 계정 비활성화
+            userRepository.save(reportedUser);
+        }
+
         return true;
     }
 
