@@ -198,10 +198,20 @@ public class LostItemService {
                                      .map(Appointment::getBuyerId)
                                      .distinct()
                                      .collect(Collectors.toList());
+                             String title = "[분실물] 거래가 정상적으로 완료되었습니다!";
+                             String message = String.format("'%s' 건(%s, %s)의 물품이 회수 완료되었습니다. 내역은 마이페이지에서 확인하세요.",
+                                     item.getTitle(),         // 게시글 제목
+                                     item.getPurpose().name(),  // FOUND or LOST
+                                     item.getLocation()       // 장소
+                             );
+
+                             // 3. 알림 요청 생성
                              NotificationRequest notificationRequest = new NotificationRequest();
-                             notificationRequest.setTitle("[분실물] 거래가 정상적으로 완료되었습니다!.");
-                             notificationRequest.setMessage("내역은 마이페이지에서 확인할 수 있습니다.");
+                             notificationRequest.setTitle(title);
+                             notificationRequest.setMessage(message);
                              notificationRequest.setTargetUserIds(userIdsToNotify);
+
+                             // 4. 알림 발송
                              notificationService.sendNotification(notificationRequest);
                              break;
                          case DELETED:
