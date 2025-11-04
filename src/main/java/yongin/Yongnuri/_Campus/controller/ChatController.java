@@ -120,6 +120,23 @@ public class ChatController {
         return ResponseEntity.ok(res);
     }
 
+    /** ✅ 이미지 메시지 업로드 (multipart/form-data) */
+    @PostMapping(
+            value = "/rooms/{roomId}/images",
+            consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<ChatMessagesRes> uploadImageMessage(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @PathVariable Long roomId,
+            @org.springframework.web.bind.annotation.RequestPart("file")
+            org.springframework.web.multipart.MultipartFile file
+    ) {
+        log.info("POST /chat/rooms/{}/images (multipart)", roomId);
+        ChatMessagesRes res = chatService.saveImageMessage(user, roomId, file);
+        messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, res);
+        return ResponseEntity.ok(res);
+    }
+
     // ===== 신고/차단 =====
 
     @PostMapping("/rooms/report")

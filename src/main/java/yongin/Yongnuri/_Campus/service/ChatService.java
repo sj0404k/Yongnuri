@@ -375,6 +375,99 @@ public class ChatService {
                 .build();
         messagingTemplate.convertAndSend("/sub/chat/room/" + roomId, notification);
     }
+    @org.springframework.beans.factory.annotation.Value("${file.upload-dir:C:/yongnuri/storage/uploads/}")
+    private String uploadDir; // ✅ 절대 경로 기반 업로드 루트 (application.properties와 동일 키)
+
+    /** ✅ 이미지 메시지 저장 (파일 저장 + 메시지 엔티티 생성) */
+    @Transactional
+    public ChatMessagesRes saveImageMessage(CustomUserDetails user, Long roomId, org.springframework.web.multipart.MultipartFile file) {
+        log.info("saveImageMessage({}, roomId={}, file={})", user.getUser().getId(), roomId, file != null ? file.getOriginalFilename() : null);
+
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("메시지를 보낼 채팅방을 찾을 수 없습니다."));
+
+        // 1) 파일 저장 (절대 경로 + 디렉터리 생성 보장)
+        String publicUrl = storeChatImage(roomId, file); // 예: /uploads/chat/rooms/{roomId}/{uuid}.jpg
+
+        // 2) 메시지 생성 (type=img, message=이미지URL)
+        ChatMessages newMsg = ChatMessages.builder()
+                .chatRoom(chatRoom)
+                .chatType(ChatMessages.messageType.img)
+                .message(publicUrl)
+                .sender(user.getUser())
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        ChatMessages saved = chatMessagesRepository.save(newMsg);
+
+        // 3) 방 updateTime 갱신
+        chatRoom.setUpdateTime(saved.getCreatedAt());
+        chatRoomRepository.saveAndFlush(chatRoom);
+
+        // 4) 상대가 삭제했던 방이면 자동 복구 (기존 로직 재사용)
+        List<ChatStatus> statuses = chatStatusRepository.findByChatRoomId(chatRoom.getId());
+        for (ChatStatus status : statuses) {
+            if (!status.getUser().getId().equals(user.getUser().getId())) {
+                if (!status.isChatStatus()) {
+                    status.setChatStatus(true);
+                    status.setLastDate(LocalDateTime.now());
+                    chatStatusRepository.save(status);
+                }
+            }
+        }
+
+        // 5) 응답 DTO
+        return ChatMessagesRes.builder()
+                .chatType(saved.getChatType())
+                .message(saved.getMessage()) // ← 이미지 URL
+                .senderId(saved.getSender() != null ? saved.getSender().getId() : null)
+                .senderEmail(saved.getSender() != null ? saved.getSender().getEmail().toLowerCase() : null)
+                .createdAt(saved.getCreatedAt())
+                .build();
+    }
+
+    /** 실제 파일 저장 (절대 경로 사용) → 공개 URL 반환 */
+    private String storeChatImage(Long roomId, org.springframework.web.multipart.MultipartFile file) {
+        try {
+            if (file == null || file.isEmpty()) {
+                throw new IllegalArgumentException("업로드할 파일이 없습니다.");
+            }
+            // (선택) MIME 체크
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
+            }
+
+            java.nio.file.Path base = java.nio.file.Paths.get(uploadDir)
+                    .toAbsolutePath()
+                    .normalize()
+                    .resolve("chat")
+                    .resolve("rooms")
+                    .resolve(roomId.toString());
+
+            java.nio.file.Files.createDirectories(base); // ✅ 디렉터리 보장
+
+            String original = java.util.Objects.requireNonNullElse(file.getOriginalFilename(), "image");
+            String ext = getExt(original);
+            String filename = java.util.UUID.randomUUID() + ext;
+            java.nio.file.Path target = base.resolve(filename);
+
+            // transferTo는 임시폴더에서 이동 → 대상 경로가 절대경로여야 안전
+            file.transferTo(target.toFile());
+
+            // 공개 URL: application.properties의 매핑(/uploads/** → file://C:/yongnuri/storage/uploads/**)와 일치시킴
+            return "/uploads/chat/rooms/" + roomId + "/" + filename;
+
+        } catch (Exception e) {
+            log.error("이미지 저장 실패", e);
+            throw new RuntimeException("이미지 저장 실패", e);
+        }
+    }
+
+    private String getExt(String filename) {
+        int dot = filename.lastIndexOf('.');
+        return (dot >= 0) ? filename.substring(dot) : "";
+    }
 
     /** ✅ 메시지 저장 — 마지막 메시지 시간으로 updateTime 갱신 */
     @Transactional
@@ -412,28 +505,6 @@ public class ChatService {
                     chatStatusRepository.save(status);
                     log.info(">>> 복구: {}님이 삭제했던 방 {} 다시 활성화됨", status.getUser().getEmail(), chatRoom.getId());
                 }
-            }
-        }
-        // 관리자 답변 시 유저에게 알림 전송
-        if (chatRoom.getType() == Enum.ChatType.ADMIN && user.getUser().getRole() ==Enum.UserRole.ADMIN) {
-            // 수신자 찾기
-            User receiver = statuses.stream()
-                    .map(ChatStatus::getUser)
-                    .filter(u -> !u.getId().equals(user.getUser().getId()))
-                    .findFirst()
-                    .orElse(null);
-
-            if (receiver != null) {
-                Notificationres notification = Notificationres.builder()
-                        .chatType(Enum.ChatType.ADMIN)
-                        .typeId(chatRoom.getId())
-                        .title("관리자에게 문의했던 답변이 왔습니다.")
-                        .message("문의하기 페이지를 확인해주세요!")
-                        .build();
-
-                // WebSocket 전송
-                messagingTemplate.convertAndSend("/sub/notifications/" + receiver.getId(), notification);
-                log.info("관리자 답변 알림 전송 완료 → userId={}", receiver.getId());
             }
         }
         return ChatMessagesRes.builder()
