@@ -50,8 +50,8 @@ public class AppointmentScheduler {
         // 2. 각 약속의 판매자와 구매자에게 알림을 보냅니다.
         for (Appointment appt : upcomingAppointments) {
             try {
-                String title = "약속 3시간 전 알림 ";
-                String message = "'" + appt.getLocation() + "'에서 약속이 있습니다.";
+                String title = "[게시글] 거래자와 약속 3시간 전이에요!";
+                String message = "물품을 챙겨 늦지 않게 약속 장소에 도착하세요!";
 
                 // 판매자에게 알림 발송
                 NotificationRequest requestToSeller = new NotificationRequest();
