@@ -2,6 +2,7 @@ package yongin.Yongnuri._Campus.service;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -15,19 +16,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
-@NoArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class AsyncNotificationService {
 
-    private UserRepository userRepository;
-    private NotificationRepository notificationRepository;
-    private FCMService fCMService;
-
-    @Autowired
-    public AsyncNotificationService(FCMService fCMService) {
-        this.fCMService = fCMService;
-    }
+    private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
+    private final FCMService fCMService;
 
     @Async
     public void processNotificationSending(NotificationRequest request) {
@@ -36,6 +31,7 @@ public class AsyncNotificationService {
             if (request.isTargetAll()) {
                 // 전체 사용자 조회
                 request.setTargetUserIds(userRepository.findAllUserIds());
+                log.info("보낸 사용자 id : {}",userRepository.findAllUserIds());
             }            // 대상자가 없으면 작업 종료
             if (request.getTargetUserIds() == null || request.getTargetUserIds().isEmpty()){
                 log.warn("알림을 보낼 대상자가 없습니다.");
@@ -55,13 +51,13 @@ public class AsyncNotificationService {
 
 
 
-            // 4. FCM 푸시 알림을 발송합니다.
-            for (Long userId : request.getTargetUserIds()) {
-                String token = userRepository.findDeviceTokenById(userId);
-                if (token != null && !token.isEmpty()) {
-                    fCMService.sendPush(token, request.getTitle(), request.getMessage());
-                }
-            }
+//            // 4. FCM 푸시 알림을 발송합니다.
+//            for (Long userId : request.getTargetUserIds()) {
+//                String token = userRepository.findDeviceTokenById(userId);
+//                if (token != null && !token.isEmpty()) {
+//                    fCMService.sendPush(token, request.getTitle(), request.getMessage());
+//                }
+//            }
 
 
 

@@ -1,7 +1,6 @@
 package yongin.Yongnuri._Campus.service;
 
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -11,9 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import yongin.Yongnuri._Campus.domain.*;
 import yongin.Yongnuri._Campus.domain.Enum;
+import yongin.Yongnuri._Campus.dto.NotificationRequest;
+import yongin.Yongnuri._Campus.dto.notice.AllNoticeDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeResponseDto;
 import yongin.Yongnuri._Campus.repository.*;
-import jakarta.persistence.EntityNotFoundException;
 import yongin.Yongnuri._Campus.dto.notice.NoticeCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.notice.NoticeUpdateRequestDto;
 import java.util.List;
@@ -32,6 +32,8 @@ public class NoticeService {
     private final UserRepository userRepository;
     private final ImageRepository imageRepository;
     private final BookmarkRepository bookmarkRepository;
+    private final AllNoticeRepository allNoticeRepository;
+    private final NotificationService notificationService;
 
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException("사용자 정보를 찾을 수 없습니다."));
@@ -107,8 +109,44 @@ public class NoticeService {
         }
         return newPostId;
     }
+    @Transactional
+    public void allCreateNotice(String adminEmail , AllNoticeDto requestDto) {
+        User admin = getAdminUser(adminEmail);
+        AllNotice newAllNotice = AllNotice.builder()
+                .user(admin)
+                .title(requestDto.getTitle())
+                .content(requestDto.getContent())
+                .build();
 
+        AllNotice savedNotice = allNoticeRepository.save(newAllNotice);
+        Long newPostId = savedNotice.getId();
+        // 2. NotificationRequest 생성
+        NotificationRequest notificationRequest = new NotificationRequest();
+        notificationRequest.setTitle(requestDto.getTitle());
+        notificationRequest.setMessage(requestDto.getContent());
+        notificationRequest.setTargetAll(true); // 전체 사용자에게 알림 전송용 플래그
 
+        // 3. NotificationService 호출
+        notificationService.sendNotification(notificationRequest);
+    }
+
+    @Transactional
+    public AllNotice getAllNoticeDetail(Long postId) {
+        // 1️⃣ 공지사항 조회
+        AllNotice allNotice = allNoticeRepository.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "공지사항을 찾을 수 없습니다."));
+
+        // 2️⃣ DTO 변환 및 반환
+        return AllNotice.builder()
+                .id(allNotice.getId())
+                .title(allNotice.getTitle())
+                .content(allNotice.getContent())
+                .build();
+    }
+    @Transactional
+    public List<AllNotice> getAllNotice() {
+        return allNoticeRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
    //  공지사항 수정
 
     @Transactional
