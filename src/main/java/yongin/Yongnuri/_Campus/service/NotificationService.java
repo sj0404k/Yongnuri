@@ -59,4 +59,8 @@ public class NotificationService {
                 .map(Notificationres::new)
                 .collect(Collectors.toList());
     }
+    public Integer getNotificationsCount(CustomUserDetails user) {
+        Long userId = user.getUser().getId();
+        return notificationRepository.countByUserIdAndReadFalse(userId);
+    }
 }

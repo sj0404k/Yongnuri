@@ -1,6 +1,7 @@
 package yongin.Yongnuri._Campus.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.NotificationRequest;
@@ -37,6 +38,11 @@ public class NotificationController {
     public List<Notificationres> getNotifications(@AuthenticationPrincipal CustomUserDetails user) {
         return notificationService.getNotifications(user);
 
+    }
+    @GetMapping("/unread/count")
+    public ResponseEntity<Integer> getUnreadNotificationsCount(@AuthenticationPrincipal CustomUserDetails user) {
+        int count = notificationService.getNotificationsCount(user);
+        return ResponseEntity.ok(count);
     }
 
 }
