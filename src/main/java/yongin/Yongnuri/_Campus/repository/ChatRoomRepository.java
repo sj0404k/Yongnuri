@@ -40,4 +40,8 @@ List<ChatRoom> findByTypeAndTypeIdWithParticipantsAndLock(
     List<ChatRoom> findByIdInAndType(List<Long> activeRoomIds, Enum.ChatType chatType);
 
     List<ChatRoom> findByTypeAndTypeId(Enum.ChatType type, Long typeId);
+
+    @Query("SELECT r FROM ChatRoom r JOIN r.participants p WHERE r.type = :type AND p.user.id = :userId")
+    Optional<ChatRoom> findByTypeAndParticipantsUserId(@Param("type") Enum.ChatType type, @Param("userId") Long userId);
+
 }

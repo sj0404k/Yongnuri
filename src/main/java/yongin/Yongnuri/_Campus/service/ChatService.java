@@ -1,7 +1,9 @@
 package yongin.Yongnuri._Campus.service;
 
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
@@ -24,7 +26,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
@@ -37,7 +39,8 @@ public class ChatService {
     private final UserRepository userRepository;
     private final AdminConfig adminConfig;
     private final ImageRepository imageRepository;
-
+    @Value("${admin.email}")
+    private String adminEmail;
     /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
@@ -98,6 +101,74 @@ public class ChatService {
     @Transactional
     public ChatEnterRes createChatRoom(CustomUserDetails user, ChatRoomReq request) {
         log.info("createChatRoom({}, {})", user.getUser().getId(), request);
+
+        // 🔹 ADMIN 채팅일 경우 typeId 없이 처리
+        if (Enum.ChatType.ADMIN.equals(request.getType())) {
+            log.info("ADMIN 타입 채팅 생성 요청입니다.");
+
+            // 이미 ADMIN 채팅방이 존재하는지 확인 (한 명당 하나만 허용할 경우)
+            Optional<ChatRoom> existingAdminRoom = chatRoomRepository.findByTypeAndParticipantsUserId(Enum.ChatType.ADMIN, user.getUser().getId());
+            if (existingAdminRoom.isPresent()) {
+                log.info("기존 ADMIN 채팅방 존재: {}", existingAdminRoom.get().getId());
+                return getEnterChatRoom(user, existingAdminRoom.get().getId());
+            }
+
+            // 🔹 새 ADMIN 방 생성
+            ChatRoom adminRoom = ChatRoom.builder()
+                    .type(Enum.ChatType.ADMIN)
+                    .createTime(LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
+                    .status(ChatRoom.RoomStatus.ACTIVE)
+                    .build();
+            chatRoomRepository.save(adminRoom);
+
+            // 🔹 관리자(User) 조회 — 예시로 관리자 이메일 기준
+            User adminUser = userRepository.findByEmail(adminEmail)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
+
+            // 🔹 채팅 상태 등록
+            ChatStatus userStatus = ChatStatus.builder()
+                    .chatRoom(adminRoom)
+                    .user(user.getUser())
+                    .firstDate(LocalDateTime.now())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+
+            ChatStatus adminStatus = ChatStatus.builder()
+                    .chatRoom(adminRoom)
+                    .user(adminUser)
+                    .firstDate(LocalDateTime.now())
+                    .lastDate(LocalDateTime.now())
+                    .chatStatus(true)
+                    .build();
+
+            chatStatusRepository.saveAll(List.of(userStatus, adminStatus));
+
+            log.info("ADMIN 채팅방 생성 완료. roomId={}", adminRoom.getId());
+            if (request.getMessage() != null && !request.getMessage().isBlank()) {
+                ChatMessages adminMessage = ChatMessages.builder()
+                        .chatRoom(adminRoom)
+                        .sender(adminUser)
+                        .chatType(request.getMessageType()) // TEXT, IMAGE 등
+                        .message(request.getMessage())
+                        .createdAt(LocalDateTime.now())
+                        .build();
+
+                chatMessagesRepository.save(adminMessage);
+                log.info("관리자 초기 메시지 저장 완료: {}", adminMessage.getMessage());
+
+                // 🔹 채팅방 updateTime 갱신
+                adminRoom.setUpdateTime(LocalDateTime.now());
+                chatRoomRepository.saveAndFlush(adminRoom);
+
+                // 🔹 실시간 WebSocket 전송
+                messagingTemplate.convertAndSend("/sub/chat/room/" + adminRoom.getId(), adminMessage);
+            }
+            return getEnterChatRoom(user, adminRoom.getId());
+        }
+
+        // 🔹 일반 채팅 로직 (기존 코드 그대로)
         List<ChatRoom> existingRooms = chatRoomRepository.findByTypeAndTypeIdWithParticipantsAndLock(
                 request.getType(), request.getTypeId());
 
@@ -116,12 +187,11 @@ public class ChatService {
 
         if (existing.isPresent()) {
             log.info("Existing room found {}. Entering.", existing.get().getId());
-
             return getEnterChatRoom(user, existing.get().getId());
-        }else {
+        } else {
             log.info("No existing room. Creating new one for post {} with user {}",
                     request.getTypeId(), toUser.getId());
-            // 🔹 새로운 방 생성
+
             ChatRoom newChatRoom = ChatRoom.builder()
                     .type(request.getType())
                     .typeId(request.getTypeId())
@@ -131,7 +201,6 @@ public class ChatService {
                     .build();
             chatRoomRepository.save(newChatRoom);
 
-            // 🔹 초기 메시지 저장 (있을 경우)
             if (request.getMessage() != null) {
                 ChatMessages initMsg = ChatMessages.builder()
                         .chatRoom(newChatRoom)
@@ -142,7 +211,6 @@ public class ChatService {
                         .build();
                 chatMessagesRepository.save(initMsg);
 
-                // ✅ 방 updateTime 최신 메시지로 갱신
                 newChatRoom.setUpdateTime(initMsg.getCreatedAt());
                 chatRoomRepository.saveAndFlush(newChatRoom);
             }
@@ -221,10 +289,20 @@ public class ChatService {
                 }
             }
             case ADMIN -> {
-                User adminUser = userRepository.findByEmail(adminConfig.getEmail()).orElse(null);
-                extraInfo = (adminUser != null && adminUser.getText() != null)
+                // 관리자 User 조회
+                User adminUser = userRepository.findByEmail(adminConfig.getEmail())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자 계정을 찾을 수 없습니다."));
+
+                // ADMIN 채팅용 DTO 생성
+                String defaultText = "**채팅 공지사항**";  // 기본 텍스트
+                String text = (adminUser.getText() != null && !adminUser.getText().isBlank())
                         ? adminUser.getText()
-                        : "**채팅 공지사항**";
+                        : defaultText;
+
+                extraInfo = ChatAdminRes.builder()
+                        .text(text)
+                        .user(adminUser)
+                        .build();
             }
         }
         return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
