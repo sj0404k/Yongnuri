@@ -365,8 +365,8 @@ public class ChatService {
     @Transactional
     public void markRead(CustomUserDetails user, Long roomId) {
         log.info("markRead({}, {})", user.getUser().getId(), roomId);
-        int updated = chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
-        if (updated == 0) throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다.");
+        chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
+
     }
 
     /** 내 목록에서 채팅방 삭제 (상대방 유지) */
