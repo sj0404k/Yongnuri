@@ -277,6 +277,40 @@ public class ChatService {
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
         List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
+        // messageList (List<ChatMessages>) 변수가 있다고 가정합니다.
+
+        List<ChatMessagesRes> dtoList = messageList.stream()
+                .map(m -> {
+                    ChatMessagesRes.ChatMessagesResBuilder resBuilder = ChatMessagesRes.builder()
+                            .chatType(m.getChatType())
+                            .createdAt(m.getCreatedAt());
+
+                    // 1. 보낸 사람 정보 매핑
+                    if (m.getSender() != null) {
+                        resBuilder.senderId(m.getSender().getId())
+                                .senderEmail(m.getSender().getEmail() != null ? m.getSender().getEmail().toLowerCase() : null)
+                                .senderNickname(m.getSender().getNickName());
+                    }
+
+                    // 2. ⭐️ 메시지 타입에 따라 분기
+                    if (m.getChatType() == ChatMessages.messageType.img) {
+                        // 2-1. [이미지]
+                        // message 필드에 URL 저장
+                        resBuilder.message(m.getMessage());
+                        // imageUrls 리스트에 단일 URL을 담아서 저장
+                        resBuilder.imageUrls(List.of(m.getMessage()));
+
+                    } else {
+                        // 2-2. [텍스트]
+                        // message 필드에 텍스트 저장
+                        resBuilder.message(m.getMessage());
+                        // imageUrls는 null (또는 Collections.emptyList())
+                        resBuilder.imageUrls(null);
+                    }
+
+                    return resBuilder.build();
+                })
+                .toList();
 //        List<ChatMessages> messageList = chatMessagesRepository.findByChatRoomIdOrderByCreatedAtAsc(roomId);
 
         Object extraInfo = null;
@@ -323,15 +357,14 @@ public class ChatService {
                         .build();
             }
         }
-        return ChatEnterRes.from(room, opponent, messageList, extraInfo, thumbnailUrl);
+        return ChatEnterRes.from(room, opponent, dtoList, extraInfo, thumbnailUrl);
     }
 
     /** 읽음 시각 갱신 */
     @Transactional
     public void markRead(CustomUserDetails user, Long roomId) {
         log.info("markRead({}, {})", user.getUser().getId(), roomId);
-        int updated = chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
-        if (updated == 0) throw new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다.");
+        chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
     }
 
     /** 내 목록에서 채팅방 삭제 (상대방 유지) */
