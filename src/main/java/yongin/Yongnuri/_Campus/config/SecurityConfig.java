@@ -91,7 +91,7 @@ public class SecurityConfig {
                         .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
                         .requestMatchers("/notifications/**").permitAll()
                         .requestMatchers("/report/**").permitAll()
-
+                        .requestMatchers("/Yongnuri.apk").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 );
