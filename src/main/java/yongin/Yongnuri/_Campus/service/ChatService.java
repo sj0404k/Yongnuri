@@ -276,7 +276,6 @@ public class ChatService {
                 .filter(p -> p.getUser().getId().equals(user.getUser().getId()))
                 .findFirst()
                 .orElseThrow(() -> new AccessDeniedException("이 채팅방에 접근할 권한이 없습니다."));
-        markRead(user,roomId);
         List<ChatMessages> messageList = chatMessagesRepository.findMessagesAfterDeletedAt(roomId, myStatus.getDeletedAt());
         // messageList (List<ChatMessages>) 변수가 있다고 가정합니다.
 
@@ -366,7 +365,6 @@ public class ChatService {
     public void markRead(CustomUserDetails user, Long roomId) {
         log.info("markRead({}, {})", user.getUser().getId(), roomId);
         chatStatusRepository.touchLastDate(roomId, user.getUser().getId(), LocalDateTime.now());
-
     }
 
     /** 내 목록에서 채팅방 삭제 (상대방 유지) */
