@@ -252,10 +252,13 @@ public class UsedItemService {
                     appointmentRepository.saveAll(appointments);
                 }
                 NotificationRequest notificationRequest = new NotificationRequest();
-                notificationRequest.setTitle("[중고거래] 거래물품이 예약중이예요.");
-                notificationRequest.setMessage("내역은 마이페이지에서 확인할 수 있어요.");
+                notificationRequest.setTitle("[중고거래] 상품이 예약되었습니다.");
+                notificationRequest.setMessage(String.format("'%s' 건(%d원, %s)이 회원님께 예약되었습니다.",
+                        item.getTitle(),
+                        item.getPrice(),
+                        item.getLocation() != null ? item.getLocation() : "장소 미정"
+                ));
                 notificationRequest.setUserId(buyerId);
-
                 // 3. NotificationService 호출
                 notificationService.sendNotification(notificationRequest);
                 break;
@@ -279,14 +282,25 @@ public class UsedItemService {
                         a.setStatus(Enum.AppointmentStatus.COMPLETED);
                     }
                 }
-                appointmentRepository.saveAll(appointments);
-                NotificationRequest notificationRequest = new NotificationRequest();
-                notificationRequest.setTitle("[중고거래] 거래가 정상적으로 완료됬습니다.");
-                notificationRequest.setMessage("내역은 마이페이지에서 확인할 수 있어요.");
-                notificationRequest.setUserId(buyerId); // 전체 사용자에게 알림 전송용 플래그
+                List<Long> userIdsToNotify = appointments.stream()
+                        .map(Appointment::getBuyerId)
+                        .distinct()
+                        .collect(Collectors.toList());
 
-                // 3. NotificationService 호출
-                notificationService.sendNotification(notificationRequest);
+                if (!userIdsToNotify.isEmpty()) {
+                    appointmentRepository.saveAll(appointments);
+                    NotificationRequest notificationRequest = new NotificationRequest();
+                    notificationRequest.setTitle("[중고거래] 거래가 완료되었습니다.");
+                    notificationRequest.setMessage(String.format("'%s' 건(%d원, %s)의 거래가 완료되었습니다.",
+                            item.getTitle(),
+                            item.getPrice(),
+                            item.getLocation() != null ? item.getLocation() : "장소 미정"
+                    ));
+                    notificationRequest.setTargetUserIds(userIdsToNotify);
+
+                    // 3. NotificationService 호출
+                    notificationService.sendNotification(notificationRequest);
+                }
                 break;
             }
 
