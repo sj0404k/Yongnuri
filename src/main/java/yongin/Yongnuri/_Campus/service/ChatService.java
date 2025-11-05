@@ -3,6 +3,7 @@ package yongin.Yongnuri._Campus.service;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -41,6 +42,8 @@ public class ChatService {
     private final ImageRepository imageRepository;
     @Value("${admin.email}")
     private String adminEmail;
+    @Value("${app.base-url}")
+    private String appBaseUrl;
     /** ✅ 채팅방 목록 — 마지막 메시지 기준 최신순 정렬 */
     @Transactional(readOnly = false)
     public List<ChatRoomDto> getChatRooms(CustomUserDetails user, Enum.ChatType type) {
@@ -295,10 +298,11 @@ public class ChatService {
                     // 2. ⭐️ 메시지 타입에 따라 분기
                     if (m.getChatType() == ChatMessages.messageType.img) {
                         // 2-1. [이미지]
+                        String relativeUrl = m.getMessage();
                         // message 필드에 URL 저장
-                        resBuilder.message(m.getMessage());
+                        resBuilder.message(appBaseUrl + relativeUrl);
                         // imageUrls 리스트에 단일 URL을 담아서 저장
-                        resBuilder.imageUrls(List.of(m.getMessage()));
+                        resBuilder.imageUrls(List.of(appBaseUrl + relativeUrl));
 
                     } else {
                         // 2-2. [텍스트]
@@ -469,12 +473,20 @@ public class ChatService {
                 log.info("관리자 답변 알림 전송 완료 → userId={}", receiver.getId());
             }
         }
-        return ChatMessagesRes.builder()
+        ChatMessagesRes.ChatMessagesResBuilder resBuilder = ChatMessagesRes.builder()
                 .chatType(saved.getChatType())
-                .message(saved.getMessage())
                 .senderId(saved.getSender() != null ? saved.getSender().getId() : null)
                 .senderEmail(saved.getSender() != null ? saved.getSender().getEmail().toLowerCase() : null)
-                .createdAt(saved.getCreatedAt())
-                .build();
+                .createdAt(saved.getCreatedAt());
+
+        if (saved.getChatType() == ChatMessages.messageType.img) {
+            String relativeUrl = saved.getMessage();
+            resBuilder.message(appBaseUrl + relativeUrl);
+            resBuilder.imageUrls(List.of(appBaseUrl + relativeUrl));
+        } else {
+            resBuilder.message(saved.getMessage());
+            resBuilder.imageUrls(null);
+        }
+        return resBuilder.build();
     }
 }
