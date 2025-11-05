@@ -62,6 +62,7 @@ public class SecurityConfig {
                     });
                 })
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // 관리자
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
