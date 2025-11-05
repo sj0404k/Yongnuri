@@ -13,6 +13,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import yongin.Yongnuri._Campus.security.JwtAuthenticationFilter;
 
 import java.time.LocalDateTime;
@@ -29,6 +31,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // Spring Security 설정
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
@@ -62,7 +65,7 @@ public class SecurityConfig {
                         // 관리자
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                        // ✅ deleteAccount는 반드시 인증 필요 (먼저 고정)
+                        // deleteAccount 인증 필요
                         .requestMatchers(HttpMethod.POST, "/auth/deleteAccount").authenticated()
 
                         // 공지사항
@@ -74,16 +77,16 @@ public class SecurityConfig {
                         // 정적 업로드 이미지
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
 
-                        // ✅ 인증 없이 접근 허용할 auth API (로그인/회원가입/메일/검증/비번재설정)
+                        // 인증 없이 접근 허용할 auth API
                         .requestMatchers("/auth/email/**", "/auth/verify/**").permitAll()
                         .requestMatchers("/auth/resetPassword").permitAll()
                         .requestMatchers("/auth/join").permitAll()
                         .requestMatchers("/auth/login").permitAll()
 
-                        // 채팅(테스트용): 필요 시 authenticated로 전환
+                        // 채팅(테스트용)
                         .requestMatchers("/chat/**").permitAll()
 
-                        // 마이페이지는 인증 필요
+                        // 마이페이지
                         .requestMatchers("/mypage/**", "/mypage/bookmarks").authenticated()
 
                         // 기타 공개 API
@@ -91,14 +94,30 @@ public class SecurityConfig {
                         .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
                         .requestMatchers("/notifications/**").permitAll()
                         .requestMatchers("/report/**").permitAll()
+                        .requestMatchers("/Yongnuri.apk").permitAll()  // APK 다운로드 허용
 
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 );
 
-        // JWT 필터를 UsernamePasswordAuthenticationFilter 이전에 추가
+        // JWT 필터 추가
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // 모든 도메인에서 접근 가능하도록 CORS 설정 (테스트용)
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("*") // 실제 서비스 시 도메인 제한 필요
+                        .allowedMethods("*")
+                        .allowedHeaders("*")
+                        .allowCredentials(false);
+            }
+        };
     }
 }

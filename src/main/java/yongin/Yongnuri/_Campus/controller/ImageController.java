@@ -1,6 +1,7 @@
 package yongin.Yongnuri._Campus.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/images")
+@Slf4j
 public class ImageController {
 
     private final ImageService imageService;
@@ -23,6 +25,7 @@ public class ImageController {
             @RequestParam("images") List<MultipartFile> imageFiles
     ) {
         List<String> imageUrls = imageService.uploadImages(imageFiles);
+        log.info("Successfully uploaded images.");
         return ResponseEntity.ok(Map.of("imageUrls", imageUrls));
     }
 }
