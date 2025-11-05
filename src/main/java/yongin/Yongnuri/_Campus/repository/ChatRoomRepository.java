@@ -13,35 +13,32 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ChatRoomRepository extends JpaRepository<ChatRoom,Long> {
+public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
 
-//    List<ChatRoom> findByFromUserIdOrToUserId(Long fromUserId, Long toUserId);
-//    List<ChatRoom> findByFromUserIdOrToUserIdAndType(Long fromUserId, Long toUserId, Enum.ChatType type);
-//    Optional<ChatRoom> findById(Long Id);
-//    Optional<ChatRoom> findByTypeAndTypeIdAndFromUserIdAndToUserId(Enum.ChatType type, Long typeId, Long fromUserId, Long toUserId);
-// [수정] 비관적 락을 적용하여 동시성 문제를 해결하고, JOIN FETCH로 N+1 방지
-@Lock(LockModeType.PESSIMISTIC_WRITE)
-@Query("SELECT cr FROM ChatRoom cr LEFT JOIN FETCH cr.participants p WHERE cr.type = :type AND cr.typeId = :typeId")
-List<ChatRoom> findByTypeAndTypeIdWithParticipantsAndLock(
-        @Param("type") Enum.ChatType type,
-        @Param("typeId") Long typeId
-);
+    // ✅ 분실물(또는 다른 타입) 게시글 ID 기준으로 방 목록 조회 (웹소켓 브로드캐스트용)
+    List<ChatRoom> findByTypeAndTypeId(Enum.ChatType type, Long typeId);
 
-    // [수정] 채팅방 목록 조회 시 N+1 문제 해결을 위해 JOIN FETCH 사용
+    // ✅ 동시성 높을 때(예: 상태 일괄 갱신) 사용 가능한 비관적 락 + participants 즉시 로딩
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT cr FROM ChatRoom cr LEFT JOIN FETCH cr.participants p WHERE cr.type = :type AND cr.typeId = :typeId")
+    List<ChatRoom> findByTypeAndTypeIdWithParticipantsAndLock(
+            @Param("type") Enum.ChatType type,
+            @Param("typeId") Long typeId
+    );
+
+    // ✅ 목록 조회 시 N+1 방지: participants, user까지 즉시 로딩
     @Query("SELECT DISTINCT cr FROM ChatRoom cr JOIN FETCH cr.participants p JOIN FETCH p.user WHERE cr.id IN :roomIds")
     List<ChatRoom> findByIdInWithParticipants(@Param("roomIds") List<Long> roomIds);
 
-    // [수정] 타입 필터링이 추가된 버전
+    // ✅ 타입 필터 포함 버전
     @Query("SELECT DISTINCT cr FROM ChatRoom cr JOIN FETCH cr.participants p JOIN FETCH p.user WHERE cr.id IN :roomIds AND cr.type = :type")
     List<ChatRoom> findByIdInAndTypeWithParticipants(@Param("roomIds") List<Long> roomIds, @Param("type") Enum.ChatType type);
 
+    // 일반 헬퍼들
     List<ChatRoom> findByIdIn(List<Long> activeRoomIds);
-
     List<ChatRoom> findByIdInAndType(List<Long> activeRoomIds, Enum.ChatType chatType);
 
-    List<ChatRoom> findByTypeAndTypeId(Enum.ChatType type, Long typeId);
-
+    // 유저가 속한 타입별 방 찾기
     @Query("SELECT r FROM ChatRoom r JOIN r.participants p WHERE r.type = :type AND p.user.id = :userId")
     Optional<ChatRoom> findByTypeAndParticipantsUserId(@Param("type") Enum.ChatType type, @Param("userId") Long userId);
-
 }

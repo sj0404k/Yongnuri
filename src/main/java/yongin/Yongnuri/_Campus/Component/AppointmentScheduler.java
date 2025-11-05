@@ -5,8 +5,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import yongin.Yongnuri._Campus.domain.Appointment;
 import yongin.Yongnuri._Campus.domain.Enum;
+import yongin.Yongnuri._Campus.domain.UsedItem;
 import yongin.Yongnuri._Campus.dto.NotificationRequest;
 import yongin.Yongnuri._Campus.repository.AppointmentRepository;
+import yongin.Yongnuri._Campus.repository.UsedItemRepository;
 import yongin.Yongnuri._Campus.service.NotificationService;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,18 +21,19 @@ public class AppointmentScheduler {
 
     private final AppointmentRepository appointmentRepository;
     private final NotificationService notificationService;
+    private final UsedItemRepository usedItemRepository;
 
     /**
-     *  매 분 0초에 실행됩니다.
+     * 매 분 0초에 실행됩니다.
      * (예: 10:00:00, 10:01:00, 10:02:00...)
-     * 정확히 3시간 뒤 (예: 10:00 실행 -> 13:00:00 ~ 13:00:59) 에 잡힌 약속을 찾습니다.
+     * 정확히 3시간 뒤 (예: 10:00 실행 -> 13:00:00 ~ 13:00:59)에 잡힌 약속을 찾습니다.
      */
-    @Scheduled(cron = "0 * * * * ?") //  매분 0초에 실행
+    @Scheduled(cron = "0 * * * * ?") // 매분 0초에 실행
     @Transactional
     public void sendAppointmentReminders() {
         LocalDateTime now = LocalDateTime.now();
 
-        //  3시간 뒤 ~ 3시간 1분 뒤 사이의 약속을 찾습니다.
+        // 3시간 뒤 ~ 3시간 1분 뒤 사이의 약속을 찾습니다.
         LocalDateTime startTime = now.plusHours(3);
         LocalDateTime endTime = startTime.plusMinutes(1);
 
@@ -50,8 +53,33 @@ public class AppointmentScheduler {
         // 2. 각 약속의 판매자와 구매자에게 알림을 보냅니다.
         for (Appointment appt : upcomingAppointments) {
             try {
-                String title = "[게시글] 거래자와 약속 3시간 전이에요!";
-                String message = "물품을 챙겨 늦지 않게 약속 장소에 도착하세요!";
+                String title;
+                String message;
+
+                // ✅ 중고거래 약속인 경우 상세 정보 포함
+                if ("USED_ITEM".equals(appt.getPostType())) {
+                    UsedItem item = usedItemRepository.findById(appt.getPostId())
+                            .orElse(null);
+
+                    if (item != null) {
+                        title = "[중고거래] 거래자와 약속 3시간 전이에요!";
+                        message = String.format(
+                                "‘%s’ (%d원, %s) 물품을 챙겨 늦지 않게 약속 장소에 도착하세요!",
+                                item.getTitle(),
+                                item.getPrice(),
+                                item.getLocation() != null ? item.getLocation() : "장소 미정"
+                        );
+                    } else {
+                        // 게시글이 삭제된 경우 기본 문구
+                        title = "[게시글] 거래자와 약속 3시간 전이에요!";
+                        message = "물품을 챙겨 늦지 않게 약속 장소에 도착하세요!";
+                    }
+
+                } else {
+                    // ✅ 중고거래 외 다른 게시글의 약속
+                    title = "[게시글] 거래자와 약속 3시간 전이에요!";
+                    message = "물품을 챙겨 늦지 않게 약속 장소에 도착하세요!";
+                }
 
                 // 판매자에게 알림 발송
                 NotificationRequest requestToSeller = new NotificationRequest();

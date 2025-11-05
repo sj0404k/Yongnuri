@@ -3,18 +3,15 @@ package yongin.Yongnuri._Campus.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemResponseDto;
 import yongin.Yongnuri._Campus.security.CustomUserDetails;
 import yongin.Yongnuri._Campus.service.LostItemService;
 import java.util.List;
-import java.util.Map; 
-import jakarta.validation.Valid; 
-import org.springframework.web.bind.annotation.*; 
+import java.util.Map;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemCreateRequestDto;
 import yongin.Yongnuri._Campus.dto.lostitem.LostItemUpdateRequestDto;
-
-
 
 @RestController
 @RequiredArgsConstructor
@@ -22,9 +19,6 @@ import yongin.Yongnuri._Campus.dto.lostitem.LostItemUpdateRequestDto;
 public class LostItemController {
 
     private final LostItemService lostItemService;
-
-
-     //분실물 목록 조회
 
     @GetMapping
     public ResponseEntity<?> getLostItems(
@@ -35,18 +29,14 @@ public class LostItemController {
         return ResponseEntity.ok(items);
     }
 
-     //분실물 상세 조회
-
     @GetMapping("/{postId}")
     public ResponseEntity<?> getLostItemDetail(
             @PathVariable("postId") Long postId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         LostItemResponseDto item = lostItemService.getLostItemDetail(user.getUser().getEmail(), postId);
-        return ResponseEntity.ok(item); 
+        return ResponseEntity.ok(item);
     }
-
-    // 분실물 게시글 작성
 
     @PostMapping
     public ResponseEntity<?> createLostItem(
@@ -54,13 +44,8 @@ public class LostItemController {
             @Valid @RequestBody LostItemCreateRequestDto requestDto
     ) {
         Long newPostId = lostItemService.createLostItem(user.getUser().getEmail(), requestDto);
-        return ResponseEntity.ok(Map.of(
-                "message", "게시글 작성 성공",
-                "postId", newPostId
-        ));
+        return ResponseEntity.ok(Map.of("message", "게시글 작성 성공", "postId", newPostId));
     }
-
-     // 분실물 게시글 수정
 
     @PatchMapping("/{postId}")
     public ResponseEntity<?> updateLostItem(
@@ -69,9 +54,6 @@ public class LostItemController {
             @RequestBody LostItemUpdateRequestDto requestDto
     ) {
         Long updatedPostId = lostItemService.updateLostItem(user.getUser().getEmail(), postId, requestDto);
-
-
-        return ResponseEntity.ok(Map.of("message", "게시글 수정 성공", "postId", updatedPostId
-        ));
+        return ResponseEntity.ok(Map.of("message", "게시글 수정 성공", "postId", updatedPostId));
     }
 }
