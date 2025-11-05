@@ -75,7 +75,7 @@ public class ChatService {
             ChatStatus myStatus = statusMap.get(room.getId());
             if (myStatus == null) continue;
 
-            Long count = chatMessagesRepository.countByChatRoomIdAndCreatedAtAfter(
+            Long count = chatMessagesRepository.countMessagesIncludingEqual(
                     room.getId(),
                     myStatus.getLastDate()
             );

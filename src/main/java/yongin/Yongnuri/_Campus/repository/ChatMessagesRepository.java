@@ -39,5 +39,6 @@ public interface ChatMessagesRepository extends JpaRepository<ChatMessages, Long
     @Query("SELECT m.message FROM ChatMessages m WHERE m.chatType = 'img'")
     List<String> findAllImageUrls();
 
-    Long countByChatRoomIdAndCreatedAtAfter(Long chatRoomId, LocalDateTime createdAtAfter);
+    @Query("SELECT COUNT(m) FROM ChatMessages m WHERE m.chatRoom.id = :roomId AND m.createdAt >= :lastDate")
+    Long countMessagesIncludingEqual(@Param("roomId") Long roomId, @Param("lastDate") LocalDateTime lastDate);
 }

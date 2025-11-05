@@ -15,7 +15,7 @@ import java.util.List;
 public class ChatMessageRequest {
     private Long roomId;
 
-    private ChatMessages.messageType type;
+    private ChatMessages.messageType type; //img, txt
     private String message;
 
     private List<String> imageUrls; // ✅ 이미지 URL 리스트
