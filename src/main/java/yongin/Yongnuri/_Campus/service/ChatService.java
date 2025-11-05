@@ -57,11 +57,25 @@ public class ChatService {
 
         // 2️⃣ 타입별 필터
         Enum.ChatType chatType = (type != null) ? type : Enum.ChatType.ALL;
-        List<ChatRoom> rooms = (chatType == Enum.ChatType.ALL)
-                ? chatRoomRepository.findByIdInWithParticipants(activeRoomIds)
-                : chatRoomRepository.findByIdInAndTypeWithParticipants(activeRoomIds, chatType);
+        List<ChatRoom> rooms = List.of();
+        if(user.getUser().getRole().equals(Enum.UserRole.ADMIN)) {
 
-        if (rooms.isEmpty()) return Collections.emptyList();
+            rooms = chatRoomRepository.findByIdInWithParticipants(activeRoomIds);
+
+            if (rooms.isEmpty()) return Collections.emptyList();
+        }else {
+
+            if (chatType == Enum.ChatType.ALL) {
+                // ALL이면 ADMIN 타입은 제외하고 조회
+                rooms = chatRoomRepository.findByIdInAndTypeNotWithParticipants(activeRoomIds, Enum.ChatType.ADMIN);
+            } else {
+                // 특정 타입이면 그대로 조회
+                rooms = chatRoomRepository.findByIdInAndTypeWithParticipants(activeRoomIds, chatType);
+            }
+
+            if (rooms.isEmpty()) return Collections.emptyList();
+        }
+
 
         // 3️⃣ 각 방의 "마지막 메시지" 한 번에 조회
         Map<Long, ChatMessages> lastMessagesMap = chatMessagesRepository.findLastMessagesByRoomIds(activeRoomIds)

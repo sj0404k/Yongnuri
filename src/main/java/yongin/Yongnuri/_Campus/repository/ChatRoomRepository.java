@@ -41,4 +41,9 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     // 유저가 속한 타입별 방 찾기
     @Query("SELECT r FROM ChatRoom r JOIN r.participants p WHERE r.type = :type AND p.user.id = :userId")
     Optional<ChatRoom> findByTypeAndParticipantsUserId(@Param("type") Enum.ChatType type, @Param("userId") Long userId);
+
+    @Query("SELECT r FROM ChatRoom r JOIN FETCH r.participants WHERE r.id IN :ids AND r.type <> :excludedType")
+    List<ChatRoom> findByIdInAndTypeNotWithParticipants(@Param("ids") List<Long> ids,
+                                                        @Param("excludedType") Enum.ChatType excludedType);
+
 }
