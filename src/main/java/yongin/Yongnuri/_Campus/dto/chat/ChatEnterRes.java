@@ -91,15 +91,22 @@ public class ChatEnterRes {
         }
 
         List<MessageInfo> msgs = messageList.stream()
-                .map(m -> MessageInfo.builder()
-                        .senderId(m.getSenderId() != null ? m.getSenderId() : null)
-                        .senderEmail(m.getSenderEmail() != null ? lower(m.getSenderEmail()) : null) // ✅ 추가
-                        .senderNickname(m.getSenderNickname() != null ? m.getSenderNickname() : null)
-                        .message(m.getMessage())
-                        .createdAt(m.getCreatedAt() != null ? m.getCreatedAt().toString() : null)
-                        .chatType(m.getChatType())
-                        .chatImageUrl(m.getImageUrls() != null ? m.getImageUrls().toString() : null)
-                        .build())
+                .map(m -> {
+                    String imageUrl = null;
+                    // chatType이 'img'이고 imageUrls 리스트가 비어있지 않으면
+                    if (m.getChatType() == ChatMessages.messageType.img && m.getImageUrls() != null && !m.getImageUrls().isEmpty()) {
+                        imageUrl = m.getImageUrls().get(0); //  첫 번째 URL을 꺼냄
+                    }
+                    return MessageInfo.builder()
+                            .senderId(m.getSenderId())
+                            .senderEmail(m.getSenderEmail() != null ? lower(m.getSenderEmail()) : null)
+                            .senderNickname(m.getSenderNickname())
+                            .message(m.getMessage())
+                            .createdAt(m.getCreatedAt() != null ? m.getCreatedAt().toString() : null)
+                            .chatType(m.getChatType())
+                            .chatImageUrl(imageUrl)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return ChatEnterRes.builder()
