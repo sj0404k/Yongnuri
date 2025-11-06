@@ -13,15 +13,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import yongin.Yongnuri._Campus.security.JwtAuthenticationFilter;
 import org.springframework.security.config.Customizer;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.springframework.security.config.Customizer; // ✅ .cors()를 위해 추가
-import org.springframework.http.HttpMethod; // ✅ OPTIONS를 위해 추가
+import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -33,13 +33,12 @@ public class SecurityConfig {
     }
 
     // Spring Security 설정
-    // Spring Security 설정
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
 
-                // ✅ 1. 이 줄을 추가하여 CORS 설정을 활성화합니다.
+                // 1. CORS 설정을 활성화합니다.
                 .cors(Customizer.withDefaults())
 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -68,45 +67,48 @@ public class SecurityConfig {
                     });
                 })
                 .authorizeHttpRequests(authorize -> authorize
-                        // ✅ 2. 이 줄을 가장 위에 추가하여 모든 OPTIONS 요청을 허용합니다.
+                        // 1. 모든 OPTIONS 요청을 허용합니다. (CORS 사전 요청)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 관리자
+                        // 2. 인증 없이 접근 허용 (PermitAll)
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                        .requestMatchers("/auth/email/**", "/auth/verify/**", "/auth/resetPassword", "/auth/join", "/auth/login").permitAll()
+                        .requestMatchers("/search").permitAll()
+                        .requestMatchers("/ws/chat/**").permitAll()
+                        .requestMatchers("/notifications/**").permitAll()
+                        .requestMatchers("/report/**").permitAll()
+                        .requestMatchers("/Yongnuri.apk").permitAll()
+                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/chat/**").permitAll() // 모든 채팅 경로는 현재 permitAll로 설정되어 있음
+                        // 게시판 목록 조회 (읽기 전용)
+                        .requestMatchers(HttpMethod.GET, "/lost-items/**", "/used-items/**").permitAll()
+
+                        // 3. 관리자 권한 필요 (ADMIN)
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-
-                        // deleteAccount 인증 필요
-                        .requestMatchers(HttpMethod.POST, "/auth/deleteAccount").authenticated()
-
-                        // 공지사항
-                        .requestMatchers(HttpMethod.GET, "/board/notices/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/board/notices").hasRole("ADMIN")
+                        // 공지사항 작성/수정/삭제
+                        .requestMatchers(HttpMethod.POST, "/board/notices", "/board/notices/allnotice").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/board/notices/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/board/notices/**").hasRole("ADMIN")
 
-                        // 정적 업로드 이미지
-                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-
-                        // 인증 없이 접근 허용할 auth API
-                        .requestMatchers("/auth/email/**", "/auth/verify/**").permitAll()
-                        .requestMatchers("/auth/resetPassword").permitAll()
-                        .requestMatchers("/auth/join").permitAll()
-                        .requestMatchers("/auth/login").permitAll()
-
-                        // 채팅(테스트용)
-                        .requestMatchers("/chat/**").permitAll()
-
-                        .requestMatchers("/search").permitAll()
-                        // 마이페이지
+                        // 4. 인증 필요 (Authenticated)
+                        // 인증/마이페이지
+                        .requestMatchers(HttpMethod.POST, "/auth/deleteAccount").authenticated()
                         .requestMatchers("/mypage/**", "/mypage/bookmarks").authenticated()
+                        // 검색 기록
+                        .requestMatchers("/search/history/**", "/search/test").authenticated()
+                        // 거래/히스토리
+                        .requestMatchers("/history/**").authenticated() // 내역 조회
+                        .requestMatchers("/board/makedeal/**").authenticated() // 약속 생성/수정
+                        .requestMatchers("/board/delete-post").authenticated() // 통합 게시글 삭제
+                        .requestMatchers("/board/bookmarks").authenticated() // 북마크 생성/삭제/조회
+                        // 게시글 작성/수정
+                        .requestMatchers(HttpMethod.POST, "/board/lost-found", "/board/market").authenticated()
+                        .requestMatchers(HttpMethod.PATCH, "/board/lost-found/**", "/board/market/**").authenticated()
+                        .requestMatchers("/board/group-buys/**").authenticated()
+                        // 공지사항 조회
+                        .requestMatchers(HttpMethod.GET, "/board/notices/**", "/board/notices/allnoticedetail/**", "/board/notices/allnotice").authenticated()
 
-                        // 기타 공개 API
-                        .requestMatchers("/ws/chat/**").permitAll()
-                        .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
-                        .requestMatchers("/notifications/**").permitAll()
-                        .requestMatchers("/report/**").permitAll()
-                        .requestMatchers("/Yongnuri.apk").permitAll()  // APK 다운로드 허용
-                        .requestMatchers("/api/**").permitAll()
-                        // 나머지는 인증 필요
+                        // 5. 나머지는 인증 필요
                         .anyRequest().authenticated()
                 );
 
