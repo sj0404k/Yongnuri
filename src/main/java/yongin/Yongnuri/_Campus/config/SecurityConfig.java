@@ -20,7 +20,8 @@ import org.springframework.security.config.Customizer;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
+import org.springframework.security.config.Customizer; // ✅ .cors()를 위해 추가
+import org.springframework.http.HttpMethod; // ✅ OPTIONS를 위해 추가
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -32,10 +33,15 @@ public class SecurityConfig {
     }
 
     // Spring Security 설정
+    // Spring Security 설정
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()).cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
+
+                // ✅ 1. 이 줄을 추가하여 CORS 설정을 활성화합니다.
+                .cors(Customizer.withDefaults())
+
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> {
                     exception.accessDeniedHandler((request, response, accessDeniedException) -> {
@@ -62,7 +68,9 @@ public class SecurityConfig {
                     });
                 })
                 .authorizeHttpRequests(authorize -> authorize
-//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // ✅ 2. 이 줄을 가장 위에 추가하여 모든 OPTIONS 요청을 허용합니다.
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // 관리자
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
@@ -105,20 +113,5 @@ public class SecurityConfig {
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    }
-
-    // 모든 도메인에서 접근 가능하도록 CORS 설정 (테스트용)
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins("*") // 실제 서비스 시 도메인 제한 필요
-                        .allowedMethods("*")
-                        .allowedHeaders("*")
-                        .allowCredentials(false);
-            }
-        };
     }
 }
