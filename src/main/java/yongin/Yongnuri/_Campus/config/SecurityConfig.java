@@ -95,16 +95,17 @@ public class SecurityConfig {
                         // 채팅(테스트용)
                         .requestMatchers("/chat/**").permitAll()
 
+                        .requestMatchers("/search").permitAll()
                         // 마이페이지
                         .requestMatchers("/mypage/**", "/mypage/bookmarks").authenticated()
 
                         // 기타 공개 API
-                        .requestMatchers("/ws-stomp/**", "/ws-stomp").permitAll()
+                        .requestMatchers("/ws/chat/**").permitAll()
                         .requestMatchers("/lost-items/**", "/used-items/**").permitAll()
                         .requestMatchers("/notifications/**").permitAll()
                         .requestMatchers("/report/**").permitAll()
                         .requestMatchers("/Yongnuri.apk").permitAll()  // APK 다운로드 허용
-
+                        .requestMatchers("/api/**").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 );
